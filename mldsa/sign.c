@@ -6,7 +6,7 @@
 #include "poly.h"
 #include "randombytes.h"
 #include "symmetric.h"
-#include "fips202.h"
+#include "fips202/fips202.h"
 
 /*************************************************
 * Name:        crypto_sign_keypair
