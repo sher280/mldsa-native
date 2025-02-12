@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 The mldsa-native project authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef API_H
 #define API_H
 
