@@ -1,11 +1,15 @@
+/*
+ * Copyright (c) 2025 The mldsa-native project authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef REDUCE_H
 #define REDUCE_H
 
 #include <stdint.h>
 #include "params.h"
 
-#define MONT -4186625 // 2^32 % Q
-#define QINV 58728449 // q^(-1) mod 2^32
+#define MONT -4186625  // 2^32 % Q
+#define QINV 58728449  // q^(-1) mod 2^32
 
 #define montgomery_reduce DILITHIUM_NAMESPACE(montgomery_reduce)
 int32_t montgomery_reduce(int64_t a);

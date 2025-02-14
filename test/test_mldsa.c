@@ -35,22 +35,26 @@ static int test_sign(void)
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
 
 
-  if(rc){
+  if (rc)
+  {
     printf("ERROR: crypto_sign_open\n");
     return 1;
   }
 
-  if(memcmp(m, m2, MLEN)){
+  if (memcmp(m, m2, MLEN))
+  {
     printf("ERROR: crypto_sign_open - wrong message\n");
     return 1;
   }
 
-  if(smlen != MLEN + CRYPTO_BYTES){
+  if (smlen != MLEN + CRYPTO_BYTES)
+  {
     printf("ERROR: crypto_sign_open - wrong smlen\n");
     return 1;
   }
 
-  if(mlen != MLEN){
+  if (mlen != MLEN)
+  {
     printf("ERROR: crypto_sign_open - wrong mlen\n");
     return 1;
   }
@@ -58,125 +62,137 @@ static int test_sign(void)
   return 0;
 }
 
-static int test_wrong_pk(void){
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    uint8_t sm[MLEN + CRYPTO_BYTES];
-    uint8_t m[MLEN];
-    uint8_t m2[MLEN + CRYPTO_BYTES] = {0};
-    uint8_t ctx[CTXLEN];
-    size_t smlen;
-    size_t mlen;
-    int rc;
-    size_t idx;
-  
-    crypto_sign_keypair(pk, sk);
-    randombytes(ctx, CTXLEN);
-    randombytes(m, MLEN);
-  
-    crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
-  
-    /* flip bit in public key */
-    randombytes((uint8_t *)&idx, sizeof(size_t));
-    idx %= CRYPTO_PUBLICKEYBYTES;
+static int test_wrong_pk(void)
+{
+  uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+  uint8_t sk[CRYPTO_SECRETKEYBYTES];
+  uint8_t sm[MLEN + CRYPTO_BYTES];
+  uint8_t m[MLEN];
+  uint8_t m2[MLEN + CRYPTO_BYTES] = {0};
+  uint8_t ctx[CTXLEN];
+  size_t smlen;
+  size_t mlen;
+  int rc;
+  size_t idx;
 
-    pk[idx] ^= 1;
+  crypto_sign_keypair(pk, sk);
+  randombytes(ctx, CTXLEN);
+  randombytes(m, MLEN);
 
-    rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
-    if(!rc){
-        printf("ERROR: wrong_pk: crypto_sign_open\n");
-        return 1;
+  /* flip bit in public key */
+  randombytes((uint8_t *)&idx, sizeof(size_t));
+  idx %= CRYPTO_PUBLICKEYBYTES;
+
+  pk[idx] ^= 1;
+
+  rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  if (!rc)
+  {
+    printf("ERROR: wrong_pk: crypto_sign_open\n");
+    return 1;
+  }
+
+  for (size_t i = 0; i < MLEN; i++)
+  {
+    if (m2[i] != 0)
+    {
+      printf("ERROR: wrong_pk: crypto_sign_open - message should be zero\n");
+      return 1;
     }
-
-    for(size_t i=0;i<MLEN;i++){
-        if(m2[i] != 0){
-            printf("ERROR: wrong_pk: crypto_sign_open - message should be zero\n");
-            return 1;
-        }
-    }
-    return 0;
+  }
+  return 0;
 }
 
-static int test_wrong_sig(void){
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    uint8_t sm[MLEN + CRYPTO_BYTES];
-    uint8_t m[MLEN];
-    uint8_t m2[MLEN + CRYPTO_BYTES] = {0};
-    uint8_t ctx[CTXLEN];
-    size_t smlen;
-    size_t mlen;
-    int rc;
-    size_t idx;
-  
-    crypto_sign_keypair(pk, sk);
-    randombytes(ctx, CTXLEN);
-    randombytes(m, MLEN);
-  
-    crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
-  
-    /* flip bit in signed message */
-    randombytes((uint8_t *)&idx, sizeof(size_t));
-    idx %= MLEN + CRYPTO_BYTES;
+static int test_wrong_sig(void)
+{
+  uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+  uint8_t sk[CRYPTO_SECRETKEYBYTES];
+  uint8_t sm[MLEN + CRYPTO_BYTES];
+  uint8_t m[MLEN];
+  uint8_t m2[MLEN + CRYPTO_BYTES] = {0};
+  uint8_t ctx[CTXLEN];
+  size_t smlen;
+  size_t mlen;
+  int rc;
+  size_t idx;
 
-    sm[idx] ^= 1;
+  crypto_sign_keypair(pk, sk);
+  randombytes(ctx, CTXLEN);
+  randombytes(m, MLEN);
 
-    rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
-    if(!rc){
-        printf("ERROR: wrong_sig: crypto_sign_open\n");
-        return 1;
+  /* flip bit in signed message */
+  randombytes((uint8_t *)&idx, sizeof(size_t));
+  idx %= MLEN + CRYPTO_BYTES;
+
+  sm[idx] ^= 1;
+
+  rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  if (!rc)
+  {
+    printf("ERROR: wrong_sig: crypto_sign_open\n");
+    return 1;
+  }
+
+  for (size_t i = 0; i < MLEN; i++)
+  {
+    if (m2[i] != 0)
+    {
+      printf("ERROR: wrong_sig: crypto_sign_open - message should be zero\n");
+      return 1;
     }
-
-    for(size_t i=0;i<MLEN;i++){
-        if(m2[i] != 0){
-            printf("ERROR: wrong_sig: crypto_sign_open - message should be zero\n");
-            return 1;
-        }
-    }
-    return 0;
+  }
+  return 0;
 }
 
 
-static int test_wrong_ctx(void){
-    uint8_t pk[CRYPTO_PUBLICKEYBYTES];
-    uint8_t sk[CRYPTO_SECRETKEYBYTES];
-    uint8_t sm[MLEN + CRYPTO_BYTES];
-    uint8_t m[MLEN];
-    uint8_t m2[MLEN] = {0};
-    uint8_t ctx[CTXLEN];
-    size_t smlen;
-    size_t mlen;
-    int rc;
-    size_t idx;
-  
-    crypto_sign_keypair(pk, sk);
-    randombytes(ctx, CTXLEN);
-    randombytes(m, MLEN);
-  
-    crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
-  
-    /* flip bit in ctx */
-    randombytes((uint8_t *)&idx, sizeof(size_t));
-    idx %= CTXLEN;
+static int test_wrong_ctx(void)
+{
+  uint8_t pk[CRYPTO_PUBLICKEYBYTES];
+  uint8_t sk[CRYPTO_SECRETKEYBYTES];
+  uint8_t sm[MLEN + CRYPTO_BYTES];
+  uint8_t m[MLEN];
+  uint8_t m2[MLEN] = {0};
+  uint8_t ctx[CTXLEN];
+  size_t smlen;
+  size_t mlen;
+  int rc;
+  size_t idx;
 
-    ctx[idx] ^= 1;
+  crypto_sign_keypair(pk, sk);
+  randombytes(ctx, CTXLEN);
+  randombytes(m, MLEN);
 
-    rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
-    if(!rc){
-        printf("ERROR: wrong_sig: crypto_sign_open\n");
-        return 1;
+  /* flip bit in ctx */
+  randombytes((uint8_t *)&idx, sizeof(size_t));
+  idx %= CTXLEN;
+
+  ctx[idx] ^= 1;
+
+  rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  if (!rc)
+  {
+    printf("ERROR: wrong_sig: crypto_sign_open\n");
+    return 1;
+  }
+
+  for (size_t i = 0; i < MLEN; i++)
+  {
+    if (m2[i] != 0)
+    {
+      printf("ERROR: wrong_sig: crypto_sign_open - message should be zero\n");
+      return 1;
     }
-
-    for(size_t i=0;i<MLEN;i++){
-        if(m2[i] != 0){
-            printf("ERROR: wrong_sig: crypto_sign_open - message should be zero\n");
-            return 1;
-        }
-    }
-    return 0;
+  }
+  return 0;
 }
 
 int main(void)
