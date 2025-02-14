@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: func \
-	func_44 \
-	func_65 \
-	func_87 \
-	run_func \
-	run_func_44 \
-	run_func_65\
-	run_func_87 \
+.PHONY: func kat nistkat \
+	func_44 kat_44 nistkat_44 \
+	func_65 kat_65 nistkat_65 \
+	func_87 kat_87 nistkat_87 \
+	run_func run_kat run_nistkat \
+	run_func_44 run_kat_44 run_nistkat_44 \
+	run_func_65 run_kat_65 run_nistkat_65 \
+	run_func_87 run_kat_87 run_nistkat_87 \
 	build test all \
 	clean quickcheck
 
@@ -22,11 +22,29 @@ include test/mk/rules.mk
 
 quickcheck: test
 
-build: func
+build: func nistkat kat
 	$(Q)echo "  Everything builds fine!"
 
-test: run_func
+test: run_kat run_nistkat run_func
 	$(Q)echo "  Everything checks fine!"
+
+
+run_kat_44: kat_44
+	$(W) $(MLDSA44_DIR)/bin/gen_KAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  kat-sha256
+run_kat_65: kat_65
+	$(W) $(MLDSA65_DIR)/bin/gen_KAT65 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-65  kat-sha256
+run_kat_87: kat_87
+	$(W) $(MLDSA87_DIR)/bin/gen_KAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  kat-sha256
+run_kat: run_kat_44 run_kat_65 run_kat_87
+
+
+run_nistkat_44: nistkat_44
+	$(W) $(MLDSA44_DIR)/bin/gen_NISTKAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  nistkat-sha256
+run_nistkat_65: nistkat_65
+	$(W) $(MLDSA65_DIR)/bin/gen_NISTKAT65 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-65  nistkat-sha256
+run_nistkat_87: nistkat_87
+	$(W) $(MLDSA87_DIR)/bin/gen_NISTKAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  nistkat-sha256
+run_nistkat: run_nistkat_44 run_nistkat_65 run_nistkat_87
 
 run_func_44: func_44
 	$(W) $(MLDSA44_DIR)/bin/test_mldsa44
@@ -43,6 +61,22 @@ func_65: $(MLDSA65_DIR)/bin/test_mldsa65
 func_87: $(MLDSA87_DIR)/bin/test_mldsa87
 	$(Q)echo "  FUNC       ML-DSA-87:  $^"
 func: func_44 func_65 func_87
+
+nistkat_44: $(MLDSA44_DIR)/bin/gen_NISTKAT44
+	$(Q)echo "  NISTKAT    ML-DSA-44:   $^"
+nistkat_65: $(MLDSA65_DIR)/bin/gen_NISTKAT65
+	$(Q)echo "  NISTKAT    ML-DSA-65:   $^"
+nistkat_87: $(MLDSA87_DIR)/bin/gen_NISTKAT87
+	$(Q)echo "  NISTKAT    ML-DSA-87:  $^"
+nistkat: nistkat_44 nistkat_65 nistkat_87
+
+kat_44: $(MLDSA44_DIR)/bin/gen_KAT44
+	$(Q)echo "  KAT        ML-DSA-44:   $^"
+kat_65: $(MLDSA65_DIR)/bin/gen_KAT65
+	$(Q)echo "  KAT        ML-DSA-65:   $^"
+kat_87: $(MLDSA87_DIR)/bin/gen_KAT87
+	$(Q)echo "  KAT        ML-DSA-87:  $^"
+kat: kat_44 kat_65 kat_87
 
 lib: $(BUILD_DIR)/libmldsa.a $(BUILD_DIR)/libmldsa44.a $(BUILD_DIR)/libmldsa65.a $(BUILD_DIR)/libmldsa87.a
 

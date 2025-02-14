@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+name: ML-DSA
+type: signature
+implementations:
+  - name: ML-DSA-44
+    claimed-nist-level: 2
+    length-public-key: 1312
+    length-secret-key: 2560
+    length-signature: 2420
+    kat-sha256: 9d4ae4ea0c1b56f96650838c7425cc2167a0754643b79a93bee28cb039ac2fc2
+    nistkat-sha256: 9a196e7fb32fbc93757dc2d8dc1924460eab66303c0c08aeb8b798fb8d8f8cf3
+  - name: ML-DSA-65
+    claimed-nist-level: 3
+    length-public-key: 1952
+    length-secret-key: 4032
+    length-signature: 3309
+    kat-sha256: b66d7de88a3bec2d7cf171a7a1198f6de47384e2a1dd3bf7d07432316a9a40f8
+    nistkat-sha256: 7cb96242eac9907a55b5c84c202f0ebd552419c50b2e986dc2e28f07ecebf072
+  - name: ML-DSA-87
+    claimed-nist-level: 5
+    length-public-key: 2592
+    length-secret-key: 4896
+    length-signature: 4627
+    kat-sha256: 93029142bf62f67ae3df0d31c2fccf8c9fa1e61ab388048e1b3faeb9451a61ce
+    nistkat-sha256: 4537905d2aabcf302fab2f242baed293459ecda7c230e6a67063b02c7e2840ed
