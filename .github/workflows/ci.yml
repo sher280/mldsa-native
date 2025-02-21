@@ -57,3 +57,33 @@ jobs:
       - name: make quickcheck
         run: |
           make quickcheck
+  cbmc_44:
+    name: CBMC (ML-DSA-44)
+    needs: [quickcheck, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/cbmc
+        with:
+          mldsa_mode: 2
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+  cbmc_65:
+    name: CBMC (ML-DSA-65)
+    needs: [quickcheck, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/cbmc
+        with:
+          mldsa_mode: 3
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+  cbmc_87:
+    name: CBMC (ML-DSA-87)
+    needs: [quickcheck, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/cbmc
+        with:
+          mldsa_mode: 5
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
