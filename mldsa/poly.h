@@ -6,6 +6,7 @@
 #define POLY_H
 
 #include <stdint.h>
+#include "cbmc.h"
 #include "params.h"
 
 typedef struct
@@ -19,7 +20,17 @@ void poly_reduce(poly *a);
 void poly_caddq(poly *a);
 
 #define poly_add DILITHIUM_NAMESPACE(poly_add)
-void poly_add(poly *c, const poly *a, const poly *b);
+void poly_add(poly *c, const poly *a, const poly *b)
+__contract__(
+  requires(memory_no_alias(c, sizeof(poly)))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(memory_no_alias(b, sizeof(poly)))
+  requires(forall(k0, 0, N, (int64_t) a->coeffs[k0] + b->coeffs[k0] <= INT32_MAX))
+  requires(forall(k1, 0, N, (int64_t) a->coeffs[k1] + b->coeffs[k1] >= INT32_MIN))
+  ensures(forall(k, 0, N, c->coeffs[k] == a->coeffs[k] + b->coeffs[k]))
+  assigns(memory_slice(c, sizeof(poly)))
+);
+
 #define poly_sub DILITHIUM_NAMESPACE(poly_sub)
 void poly_sub(poly *c, const poly *a, const poly *b);
 #define poly_shiftl DILITHIUM_NAMESPACE(poly_shiftl)
