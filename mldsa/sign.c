@@ -27,7 +27,8 @@
  *
  * Returns 0 (success)
  **************************************************/
-int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk, uint8_t *seed)
+int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
+                                 const uint8_t seed[SEEDBYTES])
 {
   uint8_t seedbuf[2 * SEEDBYTES + CRHBYTES];
   uint8_t tr[TRBYTES];
@@ -70,7 +71,6 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk, uint8_t *seed)
   /* Compute H(rho, t1) and write secret key */
   shake256(tr, TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
   pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
-
   return 0;
 }
 
