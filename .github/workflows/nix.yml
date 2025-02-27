@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: Apache-2.0
+
+name: Nix
+permissions:
+  contents: read
+on:
+  push:
+    branches: ["main"]
+    # Only run upon changes to nix files
+    paths:
+      - 'flake.lock'
+      - 'flake.nix'
+      - 'nix/**'
+  pull_request:
+    branches: ["main"]
+    # Only run upon changes to nix files
+    paths:
+      - 'flake.lock'
+      - 'flake.nix'
+      - 'nix/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_nix_cache:
+    permissions:
+      actions: 'write'
+      contents: 'read'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ ubuntu-24.04, ubuntu-24.04-arm, macos-latest ]
+    name: build nix cache (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/setup-nix
+        with:
+          cache: true
+          verbose: true
+          save_cache: true
+          devShell: ci
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            # NOTE: we're not running cross compilation tests on macOS currently
+            #       and building cross compilation toolchain on macOS runner took
+            #       extremely long time
+            if [[ ${{ runner.os }} != 'macOS' ]]; then
+              nix develop .#ci-cross --profile tmp-cross
+              # GH ubuntu-24.04 image tend to run outof space
+              if [[ ${{ matrix.runner }} == 'ubuntu-24.04' ]]; then
+                nix-collect-garbage
+              fi
+            fi
+            nix develop --profile tmp
+            nix-collect-garbage
+  develop_environment:
+    needs: [ build_nix_cache ]
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - runner: ubuntu-latest
+            container: nixos/nix:2.6.1
+            install: 'native'
+          - runner: ubuntu-22.04
+            container:
+            install: 'apt'
+          - runner: ubuntu-24.04
+            container:
+            install: 'apt'
+          - runner: macos-latest
+            container:
+            install: 'installer'
+          - runner: ubuntu-22.04
+            container:
+            install: 'installer'
+          - runner: ubuntu-24.04
+            container:
+            install: 'installer'
+    name: nix setup test (${{ matrix.target.container != '' && matrix.target.container || matrix.target.runner }}, nix via ${{ matrix.target.install }})
+    runs-on: ${{ matrix.target.runner }}
+    if: github.repository_owner == 'pq-code-package' && !github.event.pull_request.head.repo.fork
+    container:
+      ${{ matrix.target.container }}
+    steps:
+      - name: Install git
+        shell: bash
+        run: |
+          if ! which git 2>&1 >/dev/null; then
+            ${{ matrix.target.container == '' && 'sudo' || '' }} apt update
+            ${{ matrix.target.container == '' && 'sudo' || '' }} apt install git -y
+          fi
+      - name: Manual checkout
+        shell: bash
+        run: |
+          git init
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git remote add origin $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+          git fetch origin --depth 1 $GITHUB_SHA
+          git checkout FETCH_HEAD
+      - uses: ./.github/actions/setup-nix
+        if: ${{ matrix.target.container == '' }}
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          devShell: default
+          verbose: true
+          cache: true
+          install: ${{ matrix.target.install }}
+      - name: nix develop (in container)
+        if: ${{ matrix.target.container != '' }}
+        run: |
+          nix develop --experimental-features "nix-command flakes" --access-tokens "github.com=${{ secrets.GITHUB_TOKEN }}"
