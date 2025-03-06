@@ -12,7 +12,8 @@
 #include "polyvec.h"
 
 #define crypto_sign_keypair_internal DILITHIUM_NAMESPACE(keypair_internal)
-int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk, uint8_t *seed);
+int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
+                                 const uint8_t seed[SEEDBYTES]);
 
 #define crypto_sign_keypair DILITHIUM_NAMESPACE(keypair)
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
