@@ -560,10 +560,11 @@ void polyeta_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint8_t t[8];
-  DBENCH_START();
 
 #if ETA == 2
   for (i = 0; i < N / 8; ++i)
+  __loop__(
+    invariant(i <= N/8))
   {
     t[0] = ETA - a->coeffs[8 * i + 0];
     t[1] = ETA - a->coeffs[8 * i + 1];
@@ -580,14 +581,14 @@ void polyeta_pack(uint8_t *r, const poly *a)
   }
 #elif ETA == 4
   for (i = 0; i < N / 2; ++i)
+  __loop__(
+    invariant(i <= N/2))
   {
     t[0] = ETA - a->coeffs[2 * i + 0];
     t[1] = ETA - a->coeffs[2 * i + 1];
     r[i] = t[0] | (t[1] << 4);
   }
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
