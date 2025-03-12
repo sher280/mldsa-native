@@ -47,9 +47,10 @@ int main(void)
   size_t smlen, mlen1;
   uint8_t m[33];
   uint8_t sm[33 + CRYPTO_BYTES];
+  uint8_t i;
   int rc;
 
-  for (uint8_t i = 0; i < 48; i++)
+  for (i = 0; i < 48; i++)
   {
     entropy_input[i] = i;
   }

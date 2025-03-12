@@ -74,6 +74,7 @@ static int test_wrong_pk(void)
   size_t mlen;
   int rc;
   size_t idx;
+  size_t i;
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
@@ -95,7 +96,7 @@ static int test_wrong_pk(void)
     return 1;
   }
 
-  for (size_t i = 0; i < MLEN; i++)
+  for (i = 0; i < MLEN; i++)
   {
     if (m2[i] != 0)
     {
@@ -118,6 +119,7 @@ static int test_wrong_sig(void)
   size_t mlen;
   int rc;
   size_t idx;
+  size_t i;
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
@@ -139,7 +141,7 @@ static int test_wrong_sig(void)
     return 1;
   }
 
-  for (size_t i = 0; i < MLEN; i++)
+  for (i = 0; i < MLEN; i++)
   {
     if (m2[i] != 0)
     {
@@ -163,6 +165,7 @@ static int test_wrong_ctx(void)
   size_t mlen;
   int rc;
   size_t idx;
+  size_t i;
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
@@ -184,7 +187,7 @@ static int test_wrong_ctx(void)
     return 1;
   }
 
-  for (size_t i = 0; i < MLEN; i++)
+  for (i = 0; i < MLEN; i++)
   {
     if (m2[i] != 0)
     {
