@@ -106,9 +106,175 @@ jobs:
         run: |
           make clean
           ./scripts/tests bench --components -c NO
+  quickcheck-c90:
+    strategy:
+      fail-fast: false
+      matrix:
+        external:
+         - ${{ github.repository_owner != 'pq-code-package' }}
+        target:
+         - runner: pqcp-arm64
+           name: 'aarch64'
+         - runner: ubuntu-latest
+           name: 'x86_64'
+        exclude:
+          - {external: true,
+             target: {
+               runner: pqcp-arm64,
+               name: 'aarch64'
+             }}
+    name: Quickcheck C90 (${{ matrix.target.name }})
+    runs-on: ${{ matrix.target.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: make quickcheck
+        run: |
+          OPT=0 CFLAGS=-std=c90 make quickcheck
+          make clean >/dev/null
+          OPT=1 CFLAGS=-std=c90 make quickcheck
+      - uses: ./.github/actions/setup-apt
+      - name: tests func
+        run: |
+          ./scripts/tests func --cflags="-std=c90"
+      - name: tests bench
+        run: |
+          ./scripts/tests bench -c NO --cflags="-std=c90"
+      - name: tests bench components
+        run: |
+          ./scripts/tests bench --components -c NO --cflags="-std=c90"
+  compiler_tests:
+    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
+    name: Compiler tests  (${{ matrix.compiler.name }}, ${{ matrix.target.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+         - runner: pqcp-arm64
+           name: 'aarch64'
+         - runner: ubuntu-latest
+           name: 'x86_64'
+         - runner: macos-latest
+           name: 'macos'
+        compiler:
+         - name: gcc-4.8
+           shell: ci_gcc48
+           darwin: False
+           c17: False
+           c23: False
+         - name: gcc-4.9
+           shell: ci_gcc49
+           darwin: False
+           c17: False
+           c23: False
+         - name: gcc-7
+           shell: ci_gcc7
+           darwin: False
+           c17: False
+           c23: False
+         - name: gcc-11
+           shell: ci_gcc11
+           darwin: True
+           c17: True
+           c23: False
+         - name: gcc-13
+           shell: ci_gcc13
+           darwin: True
+           c17: True
+           c23: False
+         - name: gcc-14
+           shell: ci_gcc14
+           darwin: True
+           c17: True
+           c23: True
+         - name: clang-18
+           shell: ci_clang18
+           darwin: True
+           c17: True
+           c23: True
+         - name: clang-19
+           shell: ci_clang19
+           darwin: True
+           c17: True
+           c23: True
+    runs-on: ${{ matrix.target.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: native build+functest (default)
+        if: ${{ matrix.compiler.darwin || matrix.target.runner != 'macos-latest' }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+      - name: native build+functest (C90)
+        if: ${{ matrix.compiler.darwin || matrix.target.runner != 'macos-latest' }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+          cflags: "-std=c90"
+      - name: native build+functest (C99)
+        if: ${{ matrix.compiler.darwin || matrix.target.runner != 'macos-latest' }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+          cflags: "-std=c99"
+      - name: native build+functest (C11)
+        if: ${{ matrix.compiler.darwin || matrix.target.runner != 'macos-latest' }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+          cflags: "-std=c11"
+      - name: native build+functest (C17)
+        if: ${{ (matrix.compiler.darwin || matrix.target.runner != 'macos-latest') &&
+                matrix.compiler.c23 }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+          cflags: "-std=c17"
+      - name: native build+functest (C23)
+        if: ${{ (matrix.compiler.darwin || matrix.target.runner != 'macos-latest') &&
+                matrix.compiler.c23 }}
+        uses: ./.github/actions/multi-functest
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          compile_mode: native
+          func: true
+          nistkat: false
+          kat: false
+          acvp: false
+          nix-shell: ${{ matrix.compiler.shell }}
+          cflags: "-std=c23"
   cbmc_44:
     name: CBMC (ML-DSA-44)
-    needs: [quickcheck, lint]
+    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -118,7 +284,7 @@ jobs:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
   cbmc_65:
     name: CBMC (ML-DSA-65)
-    needs: [quickcheck, lint]
+    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -128,7 +294,7 @@ jobs:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
   cbmc_87:
     name: CBMC (ML-DSA-87)
-    needs: [quickcheck, lint]
+    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
