@@ -159,7 +159,7 @@ static int test_wrong_ctx(void)
   uint8_t sk[CRYPTO_SECRETKEYBYTES];
   uint8_t sm[MLEN + CRYPTO_BYTES];
   uint8_t m[MLEN];
-  uint8_t m2[MLEN] = {0};
+  uint8_t m2[MLEN + CRYPTO_BYTES] = {0};
   uint8_t ctx[CTXLEN];
   size_t smlen;
   size_t mlen;
