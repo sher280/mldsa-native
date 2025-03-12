@@ -64,7 +64,15 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[CRHBYTES], uint16_t nonce);
 void poly_challenge(poly *c, const uint8_t seed[CTILDEBYTES]);
 
 #define polyeta_pack DILITHIUM_NAMESPACE(polyeta_pack)
-void polyeta_pack(uint8_t *r, const poly *a);
+void polyeta_pack(uint8_t *r, const poly *a)
+__contract__(
+  requires(memory_no_alias(r, POLYETA_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(forall(k0, 0, N, a->coeffs[k0] <= ETA))
+  requires(forall(k1, 0, N, a->coeffs[k1] >= -ETA))
+  assigns(object_whole(r))
+);
+
 #define polyeta_unpack DILITHIUM_NAMESPACE(polyeta_unpack)
 void polyeta_unpack(poly *r, const uint8_t *a);
 
