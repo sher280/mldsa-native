@@ -114,12 +114,16 @@ void poly_sub(poly *c, const poly *a, const poly *b)
 void poly_shiftl(poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
-  for (i = 0; i < N; ++i)
-    a->coeffs[i] <<= D;
-
-  DBENCH_STOP(*tmul);
+  for (i = 0; i < N; i++)
+  __loop__(
+    invariant(i <= N)
+    invariant(forall(k0, i, N, a->coeffs[k0] == loop_entry(*a).coeffs[k0])))
+  {
+    /* Reference: uses a left shift by D which is undefined behaviour in C90/C99
+     */
+    a->coeffs[i] *= (1 << D);
+  }
 }
 
 /*************************************************

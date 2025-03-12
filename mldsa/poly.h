@@ -33,8 +33,14 @@ __contract__(
 
 #define poly_sub DILITHIUM_NAMESPACE(poly_sub)
 void poly_sub(poly *c, const poly *a, const poly *b);
+
 #define poly_shiftl DILITHIUM_NAMESPACE(poly_shiftl)
-void poly_shiftl(poly *a);
+void poly_shiftl(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_abs_bound(a->coeffs, 0, N, 1 << (31 - D) - 1))
+  assigns(memory_slice(a, sizeof(poly)))
+);
 
 #define poly_ntt DILITHIUM_NAMESPACE(poly_ntt)
 void poly_ntt(poly *a);
