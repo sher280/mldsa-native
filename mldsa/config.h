@@ -6,8 +6,6 @@
 #define CONFIG_H
 
 #define MLD_RANDOMIZED_SIGNING
-// #define USE_RDPMC
-// #define DBENCH
 
 #ifndef MLDSA_MODE
 #define MLDSA_MODE 2

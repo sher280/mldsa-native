@@ -140,7 +140,7 @@ static void acvp_mldsa_sigGen_AFT(const unsigned char *message, size_t mlen,
   unsigned char sig[CRYPTO_BYTES];
   size_t siglen;
 
-  // TODO: shouldn't this be moved to be in the internal function?
+  /* TODO: shouldn't this be moved to be in the internal function? */
   unsigned char pre[MAX_CTX_LENGTH + 2];
   pre[0] = 0;
   pre[1] = ctxlen;
