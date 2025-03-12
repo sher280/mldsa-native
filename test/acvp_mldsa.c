@@ -37,7 +37,7 @@ typedef enum
 {
   keyGen,
   sigGen,
-  sigVer,
+  sigVer
 } acvp_mode;
 
 /* Decode hex character [0-9A-Fa-f] into 0-15 */
