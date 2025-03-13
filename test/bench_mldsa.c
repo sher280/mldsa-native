@@ -13,8 +13,8 @@
 #include "hal.h"
 
 #define NWARMUP 10
-#define NITERATIONS 50
-#define NTESTS 1000
+#define NITERATIONS 25
+#define NTESTS 250
 #define MLEN 59
 #define CTXLEN 1
 
