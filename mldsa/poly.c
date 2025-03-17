@@ -619,10 +619,12 @@ void polyeta_pack(uint8_t *r, const poly *a)
 void polyeta_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_ETA == 2
   for (i = 0; i < MLDSA_N / 8; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/8)
+    invariant(array_bound(r->coeffs, 0, i*8, -5, MLDSA_ETA + 1)))
   {
     r->coeffs[8 * i + 0] = (a[3 * i + 0] >> 0) & 7;
     r->coeffs[8 * i + 1] = (a[3 * i + 0] >> 3) & 7;
@@ -644,15 +646,18 @@ void polyeta_unpack(poly *r, const uint8_t *a)
   }
 #elif MLDSA_ETA == 4
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2)
+    invariant(array_bound(r->coeffs, 0, i*2, -11, MLDSA_ETA + 1)))
   {
     r->coeffs[2 * i + 0] = a[i] & 0x0F;
     r->coeffs[2 * i + 1] = a[i] >> 4;
     r->coeffs[2 * i + 0] = MLDSA_ETA - r->coeffs[2 * i + 0];
     r->coeffs[2 * i + 1] = MLDSA_ETA - r->coeffs[2 * i + 1];
   }
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************

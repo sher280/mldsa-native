@@ -85,12 +85,33 @@ void polyeta_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA + 1))
   assigns(object_whole(r))
 );
 
 #define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
-void polyeta_unpack(poly *r, const uint8_t *a);
+void polyeta_unpack(poly *r, const uint8_t *a)
+/* The actual output bound for well-formed inputs (i.e. produced by
+ * polyeta_pack), is [-MLDSA_ETA,MLDSA_ETA].
+ * However, if arbitrary inputs are passed, the bounds are somewhat larger:
+ * MLDSA_ETA=2: [-5, MLDSA_ETA]
+ * MLDSA_ETA=4: [-11, MLDSA_ETA]
+ */
+#if MLDSA_ETA == 2
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)));
+#elif MLDSA_ETA == 4
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)));
+#else
+#error "Invalid value of MLDSA_ETA"
+#endif
 
 #define polyt1_pack MLD_NAMESPACE(polyt1_pack)
 void polyt1_pack(uint8_t *r, const poly *a);
