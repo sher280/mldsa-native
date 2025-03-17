@@ -904,10 +904,12 @@ void polyz_pack(uint8_t *r, const poly *a)
 void polyz_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_GAMMA1 == (1 << 17)
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4)
+    invariant(array_bound(r->coeffs, 0, i*4, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
   {
     r->coeffs[4 * i + 0] = a[9 * i + 0];
     r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 1] << 8;
@@ -936,6 +938,9 @@ void polyz_unpack(poly *r, const uint8_t *a)
   }
 #elif MLDSA_GAMMA1 == (1 << 19)
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2)
+    invariant(array_bound(r->coeffs, 0, i*2, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
   {
     r->coeffs[2 * i + 0] = a[5 * i + 0];
     r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8;
@@ -951,9 +956,9 @@ void polyz_unpack(poly *r, const uint8_t *a)
     r->coeffs[2 * i + 0] = MLDSA_GAMMA1 - r->coeffs[2 * i + 0];
     r->coeffs[2 * i + 1] = MLDSA_GAMMA1 - r->coeffs[2 * i + 1];
   }
+#else
+#error "Invalid value of MLDSA_GAMMA1"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
