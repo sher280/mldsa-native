@@ -848,45 +848,48 @@ void polyz_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint32_t t[4];
-  DBENCH_START();
 
 #if MLDSA_GAMMA1 == (1 << 17)
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
     t[0] = MLDSA_GAMMA1 - a->coeffs[4 * i + 0];
     t[1] = MLDSA_GAMMA1 - a->coeffs[4 * i + 1];
     t[2] = MLDSA_GAMMA1 - a->coeffs[4 * i + 2];
     t[3] = MLDSA_GAMMA1 - a->coeffs[4 * i + 3];
 
-    r[9 * i + 0] = t[0];
-    r[9 * i + 1] = t[0] >> 8;
-    r[9 * i + 2] = t[0] >> 16;
-    r[9 * i + 2] |= t[1] << 2;
-    r[9 * i + 3] = t[1] >> 6;
-    r[9 * i + 4] = t[1] >> 14;
-    r[9 * i + 4] |= t[2] << 4;
-    r[9 * i + 5] = t[2] >> 4;
-    r[9 * i + 6] = t[2] >> 12;
-    r[9 * i + 6] |= t[3] << 6;
-    r[9 * i + 7] = t[3] >> 2;
-    r[9 * i + 8] = t[3] >> 10;
+    r[9 * i + 0] = (t[0]) & 0xFF;
+    r[9 * i + 1] = (t[0] >> 8) & 0xFF;
+    r[9 * i + 2] = (t[0] >> 16) & 0xFF;
+    r[9 * i + 2] |= (t[1] << 2) & 0xFF;
+    r[9 * i + 3] = (t[1] >> 6) & 0xFF;
+    r[9 * i + 4] = (t[1] >> 14) & 0xFF;
+    r[9 * i + 4] |= (t[2] << 4) & 0xFF;
+    r[9 * i + 5] = (t[2] >> 4) & 0xFF;
+    r[9 * i + 6] = (t[2] >> 12) & 0xFF;
+    r[9 * i + 6] |= (t[3] << 6) & 0xFF;
+    r[9 * i + 7] = (t[3] >> 2) & 0xFF;
+    r[9 * i + 8] = (t[3] >> 10) & 0xFF;
   }
 #elif MLDSA_GAMMA1 == (1 << 19)
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2))
   {
     t[0] = MLDSA_GAMMA1 - a->coeffs[2 * i + 0];
     t[1] = MLDSA_GAMMA1 - a->coeffs[2 * i + 1];
 
-    r[5 * i + 0] = t[0];
-    r[5 * i + 1] = t[0] >> 8;
-    r[5 * i + 2] = t[0] >> 16;
-    r[5 * i + 2] |= t[1] << 4;
-    r[5 * i + 3] = t[1] >> 4;
-    r[5 * i + 4] = t[1] >> 12;
+    r[5 * i + 0] = (t[0]) & 0xFF;
+    r[5 * i + 1] = (t[0] >> 8) & 0xFF;
+    r[5 * i + 2] = (t[0] >> 16) & 0xFF;
+    r[5 * i + 2] |= (t[1] << 4) & 0xFF;
+    r[5 * i + 3] = (t[1] >> 4) & 0xFF;
+    r[5 * i + 4] = (t[1] >> 12) & 0xFF;
   }
+#else
+#error "Invalid value of MLDSA_GAMMA1"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************

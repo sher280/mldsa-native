@@ -150,9 +150,15 @@ __contract__(
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
 );
 
-
 #define polyz_pack MLD_NAMESPACE(polyz_pack)
-void polyz_pack(uint8_t *r, const poly *a);
+void polyz_pack(uint8_t *r, const poly *a)
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYZ_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+  assigns(object_whole(r))
+);
+
 #define polyz_unpack MLD_NAMESPACE(polyz_unpack)
 void polyz_unpack(poly *r, const uint8_t *a);
 
