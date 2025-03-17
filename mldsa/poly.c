@@ -673,18 +673,20 @@ void polyeta_unpack(poly *r, const uint8_t *a)
 void polyt1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
-    r[5 * i + 0] = (a->coeffs[4 * i + 0] >> 0);
-    r[5 * i + 1] = (a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2);
-    r[5 * i + 2] = (a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4);
-    r[5 * i + 3] = (a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6);
-    r[5 * i + 4] = (a->coeffs[4 * i + 3] >> 2);
+    r[5 * i + 0] = (a->coeffs[4 * i + 0] >> 0) & 0xFF;
+    r[5 * i + 1] =
+        ((a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2)) & 0xFF;
+    r[5 * i + 2] =
+        ((a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4)) & 0xFF;
+    r[5 * i + 3] =
+        ((a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6)) & 0xFF;
+    r[5 * i + 4] = (a->coeffs[4 * i + 3] >> 2) & 0xFF;
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
