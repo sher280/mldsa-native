@@ -781,9 +781,11 @@ void polyt0_pack(uint8_t *r, const poly *a)
 void polyt0_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 8; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/8)
+    invariant(array_bound(r->coeffs, 0, i*8, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1)))
   {
     r->coeffs[8 * i + 0] = a[13 * i + 0];
     r->coeffs[8 * i + 0] |= (uint32_t)a[13 * i + 1] << 8;
@@ -830,8 +832,6 @@ void polyt0_unpack(poly *r, const uint8_t *a)
     r->coeffs[8 * i + 6] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 6];
     r->coeffs[8 * i + 7] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 7];
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
