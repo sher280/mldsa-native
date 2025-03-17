@@ -123,7 +123,13 @@ __contract__(
 );
 
 #define polyt1_unpack MLD_NAMESPACE(polyt1_unpack)
-void polyt1_unpack(poly *r, const uint8_t *a);
+void polyt1_unpack(poly *r, const uint8_t *a)
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYT1_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, 0, 1 << 10))
+);
 
 #define polyt0_pack MLD_NAMESPACE(polyt0_pack)
 void polyt0_pack(uint8_t *r, const poly *a);

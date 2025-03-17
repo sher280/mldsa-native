@@ -701,9 +701,11 @@ void polyt1_pack(uint8_t *r, const poly *a)
 void polyt1_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4)
+    invariant(array_bound(r->coeffs, 0, i*4, 0, 1 << 10)))
   {
     r->coeffs[4 * i + 0] =
         ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF;
@@ -714,8 +716,6 @@ void polyt1_unpack(poly *r, const uint8_t *a)
     r->coeffs[4 * i + 3] =
         ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF;
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
