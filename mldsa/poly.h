@@ -170,6 +170,22 @@ __contract__(
 
 
 #define polyw1_pack MLD_NAMESPACE(polyw1_pack)
-void polyw1_pack(uint8_t *r, const poly *a);
+void polyw1_pack(uint8_t *r, const poly *a)
+#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 16))
+  assigns(object_whole(r)));
+#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 44))
+  assigns(object_whole(r)));
+#else
+#error "Invalid value of MLDSA_GAMMA2"
+#endif
+
 
 #endif

@@ -974,22 +974,27 @@ void polyz_unpack(poly *r, const uint8_t *a)
 void polyw1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
-    r[3 * i + 0] = a->coeffs[4 * i + 0];
-    r[3 * i + 0] |= a->coeffs[4 * i + 1] << 6;
-    r[3 * i + 1] = a->coeffs[4 * i + 1] >> 2;
-    r[3 * i + 1] |= a->coeffs[4 * i + 2] << 4;
-    r[3 * i + 2] = a->coeffs[4 * i + 2] >> 4;
-    r[3 * i + 2] |= a->coeffs[4 * i + 3] << 2;
+    r[3 * i + 0] = (a->coeffs[4 * i + 0]) & 0xFF;
+    r[3 * i + 0] |= (a->coeffs[4 * i + 1] << 6) & 0xFF;
+    r[3 * i + 1] = (a->coeffs[4 * i + 1] >> 2) & 0xFF;
+    r[3 * i + 1] |= (a->coeffs[4 * i + 2] << 4) & 0xFF;
+    r[3 * i + 2] = (a->coeffs[4 * i + 2] >> 4) & 0xFF;
+    r[3 * i + 2] |= (a->coeffs[4 * i + 3] << 2) & 0xFF;
   }
 #elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2))
+  {
     r[i] = a->coeffs[2 * i + 0] | (a->coeffs[2 * i + 1] << 4);
+  }
+#else
+#error "Invalid value of MLDSA_GAMMA2"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
