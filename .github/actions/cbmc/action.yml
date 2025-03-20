@@ -43,7 +43,7 @@ runs:
               - Cadical Version $(cadical --version)
               - $(bash --version | grep -m1 "")
             EOF
-      - name: Run CBMC proofs (DILITHIUM_MODE=${{ inputs.mldsa_mode }})
+      - name: Run CBMC proofs (MLDSA_MODE=${{ inputs.mldsa_mode }})
         shell: ${{ env.SHELL }}
         run: |
           echo "::group::cbmc_${{ inputs.mlkem_k }}"

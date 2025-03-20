@@ -121,7 +121,7 @@ static void print_hex(const char *name, const unsigned char *raw, size_t len)
   printf("\n");
 }
 
-static void acvp_mldsa_keyGen_AFT(const unsigned char seed[RNDBYTES])
+static void acvp_mldsa_keyGen_AFT(const unsigned char seed[MLDSA_RNDBYTES])
 {
   unsigned char pk[CRYPTO_PUBLICKEYBYTES];
   unsigned char sk[CRYPTO_SECRETKEYBYTES];
@@ -133,7 +133,7 @@ static void acvp_mldsa_keyGen_AFT(const unsigned char seed[RNDBYTES])
 }
 
 static void acvp_mldsa_sigGen_AFT(const unsigned char *message, size_t mlen,
-                                  const unsigned char rnd[SEEDBYTES],
+                                  const unsigned char rnd[MLDSA_SEEDBYTES],
                                   const unsigned char sk[CRYPTO_SECRETKEYBYTES],
                                   const unsigned char *context, size_t ctxlen)
 {
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
   {
     case keyGen:
     {
-      unsigned char seed[SEEDBYTES];
+      unsigned char seed[MLDSA_SEEDBYTES];
       /* Parse seed */
       if (argc == 0 || decode_hex("seed", seed, sizeof(seed), *argv) != 0)
       {
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
     case sigGen:
     {
       unsigned char message[MAX_MSG_LENGTH];
-      unsigned char rnd[RNDBYTES];
+      unsigned char rnd[MLDSA_RNDBYTES];
       unsigned char context[MAX_CTX_LENGTH];
       unsigned char sk[CRYPTO_SECRETKEYBYTES];
       size_t mlen, ctxlen;

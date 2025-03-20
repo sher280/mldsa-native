@@ -23,35 +23,37 @@
  *                               array of CRYPTO_PUBLICKEYBYTES bytes)
  *              - uint8_t *sk:   pointer to output private key (allocated
  *                               array of CRYPTO_SECRETKEYBYTES bytes)
- *              - uint8_t *seed: pointer to input random seed (SEEDBYTES bytes)
+ *              - uint8_t *seed: pointer to input random seed (MLDSA_SEEDBYTES
+ *bytes)
  *
  * Returns 0 (success)
  **************************************************/
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
-                                 const uint8_t seed[SEEDBYTES])
+                                 const uint8_t seed[MLDSA_SEEDBYTES])
 {
-  uint8_t seedbuf[2 * SEEDBYTES + CRHBYTES];
-  uint8_t tr[TRBYTES];
+  uint8_t seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_CRHBYTES];
+  uint8_t tr[MLDSA_TRBYTES];
   const uint8_t *rho, *rhoprime, *key;
-  polyvecl mat[K];
+  polyvecl mat[MLDSA_K];
   polyvecl s1, s1hat;
   polyveck s2, t1, t0;
 
   /* Get randomness for rho, rhoprime and key */
-  memcpy(seedbuf, seed, SEEDBYTES);
-  seedbuf[SEEDBYTES + 0] = K;
-  seedbuf[SEEDBYTES + 1] = L;
-  shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES + 2);
+  memcpy(seedbuf, seed, MLDSA_SEEDBYTES);
+  seedbuf[MLDSA_SEEDBYTES + 0] = MLDSA_K;
+  seedbuf[MLDSA_SEEDBYTES + 1] = MLDSA_L;
+  shake256(seedbuf, 2 * MLDSA_SEEDBYTES + MLDSA_CRHBYTES, seedbuf,
+           MLDSA_SEEDBYTES + 2);
   rho = seedbuf;
-  rhoprime = rho + SEEDBYTES;
-  key = rhoprime + CRHBYTES;
+  rhoprime = rho + MLDSA_SEEDBYTES;
+  key = rhoprime + MLDSA_CRHBYTES;
 
   /* Expand matrix */
   polyvec_matrix_expand(mat, rho);
 
   /* Sample short vectors s1 and s2 */
   polyvecl_uniform_eta(&s1, rhoprime, 0);
-  polyveck_uniform_eta(&s2, rhoprime, L);
+  polyveck_uniform_eta(&s2, rhoprime, MLDSA_L);
 
   /* Matrix-vector multiplication */
   s1hat = s1;
@@ -69,7 +71,7 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   pack_pk(pk, rho, &t1);
 
   /* Compute H(rho, t1) and write secret key */
-  shake256(tr, TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
+  shake256(tr, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
   pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
   return 0;
 }
@@ -89,8 +91,8 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
  **************************************************/
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
-  uint8_t seed[SEEDBYTES];
-  randombytes(seed, SEEDBYTES);
+  uint8_t seed[MLDSA_SEEDBYTES];
+  randombytes(seed, MLDSA_SEEDBYTES);
   return crypto_sign_keypair_internal(pk, sk, seed);
 }
 
@@ -115,48 +117,48 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
                                    const uint8_t *m, size_t mlen,
                                    const uint8_t *pre, size_t prelen,
-                                   const uint8_t rnd[RNDBYTES],
+                                   const uint8_t rnd[MLDSA_RNDBYTES],
                                    const uint8_t *sk, int externalmu)
 {
   unsigned int n;
-  uint8_t seedbuf[2 * SEEDBYTES + TRBYTES + 2 * CRHBYTES];
+  uint8_t seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_TRBYTES + 2 * MLDSA_CRHBYTES];
   uint8_t *rho, *tr, *key, *mu, *rhoprime;
   uint16_t nonce = 0;
-  polyvecl mat[K], s1, y, z;
+  polyvecl mat[MLDSA_K], s1, y, z;
   polyveck t0, s2, w1, w0, h;
   poly cp;
   keccak_state state;
 
   rho = seedbuf;
-  tr = rho + SEEDBYTES;
-  key = tr + TRBYTES;
-  mu = key + SEEDBYTES;
-  rhoprime = mu + CRHBYTES;
+  tr = rho + MLDSA_SEEDBYTES;
+  key = tr + MLDSA_TRBYTES;
+  mu = key + MLDSA_SEEDBYTES;
+  rhoprime = mu + MLDSA_CRHBYTES;
   unpack_sk(rho, tr, key, &t0, &s1, &s2, sk);
 
   if (!externalmu)
   {
     /* Compute mu = CRH(tr, pre, msg) */
     shake256_init(&state);
-    shake256_absorb(&state, tr, TRBYTES);
+    shake256_absorb(&state, tr, MLDSA_TRBYTES);
     shake256_absorb(&state, pre, prelen);
     shake256_absorb(&state, m, mlen);
     shake256_finalize(&state);
-    shake256_squeeze(mu, CRHBYTES, &state);
+    shake256_squeeze(mu, MLDSA_CRHBYTES, &state);
   }
   else
   {
     /* mu has been provided directly */
-    memcpy(mu, m, CRHBYTES);
+    memcpy(mu, m, MLDSA_CRHBYTES);
   }
 
   /* Compute rhoprime = CRH(key, rnd, mu) */
   shake256_init(&state);
-  shake256_absorb(&state, key, SEEDBYTES);
-  shake256_absorb(&state, rnd, RNDBYTES);
-  shake256_absorb(&state, mu, CRHBYTES);
+  shake256_absorb(&state, key, MLDSA_SEEDBYTES);
+  shake256_absorb(&state, rnd, MLDSA_RNDBYTES);
+  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
   shake256_finalize(&state);
-  shake256_squeeze(rhoprime, CRHBYTES, &state);
+  shake256_squeeze(rhoprime, MLDSA_CRHBYTES, &state);
 
   /* Expand matrix and transform vectors */
   polyvec_matrix_expand(mat, rho);
@@ -181,10 +183,10 @@ rej:
   polyveck_pack_w1(sig, &w1);
 
   shake256_init(&state);
-  shake256_absorb(&state, mu, CRHBYTES);
-  shake256_absorb(&state, sig, K * POLYW1_PACKEDBYTES);
+  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
+  shake256_absorb(&state, sig, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
   shake256_finalize(&state);
-  shake256_squeeze(sig, CTILDEBYTES, &state);
+  shake256_squeeze(sig, MLDSA_CTILDEBYTES, &state);
   poly_challenge(&cp, sig);
   poly_ntt(&cp);
 
@@ -193,7 +195,7 @@ rej:
   polyvecl_invntt_tomont(&z);
   polyvecl_add(&z, &z, &y);
   polyvecl_reduce(&z);
-  if (polyvecl_chknorm(&z, GAMMA1 - BETA))
+  if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
     goto rej;
 
   /* Check that subtracting cs2 does not change high bits of w and low bits
@@ -202,19 +204,19 @@ rej:
   polyveck_invntt_tomont(&h);
   polyveck_sub(&w0, &w0, &h);
   polyveck_reduce(&w0);
-  if (polyveck_chknorm(&w0, GAMMA2 - BETA))
+  if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
     goto rej;
 
   /* Compute hints for w1 */
   polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
   polyveck_invntt_tomont(&h);
   polyveck_reduce(&h);
-  if (polyveck_chknorm(&h, GAMMA2))
+  if (polyveck_chknorm(&h, MLDSA_GAMMA2))
     goto rej;
 
   polyveck_add(&w0, &w0, &h);
   n = polyveck_make_hint(&h, &w0, &w1);
-  if (n > OMEGA)
+  if (n > MLDSA_OMEGA)
     goto rej;
 
   /* Write signature */
@@ -246,7 +248,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
 {
   size_t i;
   uint8_t pre[257];
-  uint8_t rnd[RNDBYTES];
+  uint8_t rnd[MLDSA_RNDBYTES];
 
   if (ctxlen > 255)
     return -1;
@@ -257,10 +259,10 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   for (i = 0; i < ctxlen; i++)
     pre[2 + i] = ctx[i];
 
-#ifdef DILITHIUM_RANDOMIZED_SIGNING
-  randombytes(rnd, RNDBYTES);
+#ifdef MLD_RANDOMIZED_SIGNING
+  randombytes(rnd, MLDSA_RNDBYTES);
 #else
-  for (i = 0; i < RNDBYTES; i++)
+  for (i = 0; i < MLDSA_RNDBYTES; i++)
     rnd[i] = 0;
 #endif
 
@@ -278,21 +280,22 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
  * Arguments:   - uint8_t *sig:   pointer to output signature (of length
  *CRYPTO_BYTES)
  *              - size_t *siglen: pointer to output length of signature
- *              - uint8_t mu:     input mu to be signed of size CRHBYTES
+ *              - uint8_t mu:     input mu to be signed of size MLDSA_CRHBYTES
  *              - uint8_t *sk:    pointer to bit-packed secret key
  *
  * Returns 0 (success) or -1 (context string too long)
  **************************************************/
 int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
-                                const uint8_t mu[CRHBYTES], const uint8_t *sk)
+                                const uint8_t mu[MLDSA_CRHBYTES],
+                                const uint8_t *sk)
 {
-  uint8_t rnd[RNDBYTES];
+  uint8_t rnd[MLDSA_RNDBYTES];
 
-#ifdef DILITHIUM_RANDOMIZED_SIGNING
-  randombytes(rnd, RNDBYTES);
+#ifdef MLD_RANDOMIZED_SIGNING
+  randombytes(rnd, MLDSA_RNDBYTES);
 #else
   size_t i;
-  for (i = 0; i < RNDBYTES; i++)
+  for (i = 0; i < MLDSA_RNDBYTES; i++)
     rnd[i] = 0;
 #endif
 
@@ -354,13 +357,13 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
                                 const uint8_t *pk, int externalmu)
 {
   unsigned int i;
-  uint8_t buf[K * POLYW1_PACKEDBYTES];
-  uint8_t rho[SEEDBYTES];
-  uint8_t mu[CRHBYTES];
-  uint8_t c[CTILDEBYTES];
-  uint8_t c2[CTILDEBYTES];
+  uint8_t buf[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES];
+  uint8_t rho[MLDSA_SEEDBYTES];
+  uint8_t mu[MLDSA_CRHBYTES];
+  uint8_t c[MLDSA_CTILDEBYTES];
+  uint8_t c2[MLDSA_CTILDEBYTES];
   poly cp;
-  polyvecl mat[K], z;
+  polyvecl mat[MLDSA_K], z;
   polyveck t1, w1, h;
   keccak_state state;
 
@@ -370,24 +373,24 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   unpack_pk(rho, &t1, pk);
   if (unpack_sig(c, &z, &h, sig))
     return -1;
-  if (polyvecl_chknorm(&z, GAMMA1 - BETA))
+  if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
     return -1;
 
   if (!externalmu)
   {
     /* Compute CRH(H(rho, t1), pre, msg) */
-    shake256(mu, TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
+    shake256(mu, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
     shake256_init(&state);
-    shake256_absorb(&state, mu, TRBYTES);
+    shake256_absorb(&state, mu, MLDSA_TRBYTES);
     shake256_absorb(&state, pre, prelen);
     shake256_absorb(&state, m, mlen);
     shake256_finalize(&state);
-    shake256_squeeze(mu, CRHBYTES, &state);
+    shake256_squeeze(mu, MLDSA_CRHBYTES, &state);
   }
   else
   {
     /* mu has been provided directly */
-    memcpy(mu, m, CRHBYTES);
+    memcpy(mu, m, MLDSA_CRHBYTES);
   }
 
   /* Matrix-vector multiplication; compute Az - c2^dt1 */
@@ -413,11 +416,11 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
 
   /* Call random oracle and verify challenge */
   shake256_init(&state);
-  shake256_absorb(&state, mu, CRHBYTES);
-  shake256_absorb(&state, buf, K * POLYW1_PACKEDBYTES);
+  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
+  shake256_absorb(&state, buf, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
   shake256_finalize(&state);
-  shake256_squeeze(c2, CTILDEBYTES, &state);
-  for (i = 0; i < CTILDEBYTES; ++i)
+  shake256_squeeze(c2, MLDSA_CTILDEBYTES, &state);
+  for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
     if (c[i] != c2[i])
       return -1;
 
@@ -467,13 +470,14 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
  *
  * Arguments:   - uint8_t *m: pointer to input signature
  *              - size_t siglen: length of signature
- *              - const uint8_t mu: input mu of size CRHBYTES
+ *              - const uint8_t mu: input mu of size MLDSA_CRHBYTES
  *              - const uint8_t *pk: pointer to bit-packed public key
  *
  * Returns 0 if signature could be verified correctly and -1 otherwise
  **************************************************/
 int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,
-                             const uint8_t mu[CRHBYTES], const uint8_t *pk)
+                             const uint8_t mu[MLDSA_CRHBYTES],
+                             const uint8_t *pk)
 {
   return crypto_sign_verify_internal(sig, siglen, mu, 0, NULL, 0, pk, 1);
 }

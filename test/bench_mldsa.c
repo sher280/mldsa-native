@@ -67,7 +67,7 @@ static int bench(void)
   uint8_t sig[CRYPTO_BYTES];
   uint8_t m[MLEN];
   uint8_t ctx[CTXLEN];
-  unsigned char kg_rand[SEEDBYTES], sig_rand[SEEDBYTES];
+  unsigned char kg_rand[MLDSA_SEEDBYTES], sig_rand[MLDSA_SEEDBYTES];
   size_t siglen;
 
   unsigned i, j;

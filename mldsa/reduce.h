@@ -9,27 +9,27 @@
 #include "cbmc.h"
 #include "params.h"
 
-#define MONT -4186625  // 2^32 % Q
+#define MONT -4186625  // 2^32 % MLDSA_Q
 #define QINV 58728449  // q^(-1) mod 2^32
 #define REDUCE_DOMAIN_MAX (INT32_MAX - (1 << 22))
 #define REDUCE_RANGE_MAX 6283009
 
-#define montgomery_reduce DILITHIUM_NAMESPACE(montgomery_reduce)
+#define montgomery_reduce MLD_NAMESPACE(montgomery_reduce)
 int32_t montgomery_reduce(int64_t a);
 
-#define reduce32 DILITHIUM_NAMESPACE(reduce32)
+#define reduce32 MLD_NAMESPACE(reduce32)
 int32_t reduce32(int32_t a)
 __contract__(
   requires(a <= REDUCE_DOMAIN_MAX)
   ensures(return_value >= -REDUCE_RANGE_MAX)
   ensures(return_value <   REDUCE_RANGE_MAX)
-  ensures((return_value - a) % Q == 0)
+  ensures((return_value - a) % MLDSA_Q == 0)
 );
 
-#define caddq DILITHIUM_NAMESPACE(caddq)
+#define caddq MLD_NAMESPACE(caddq)
 int32_t caddq(int32_t a);
 
-#define freeze DILITHIUM_NAMESPACE(freeze)
+#define freeze MLD_NAMESPACE(freeze)
 int32_t freeze(int32_t a);
 
 #endif
