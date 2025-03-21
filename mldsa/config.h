@@ -5,27 +5,26 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// #define DILITHIUM_MODE 2
-#define DILITHIUM_RANDOMIZED_SIGNING
+#define MLD_RANDOMIZED_SIGNING
 // #define USE_RDPMC
 // #define DBENCH
 
-#ifndef DILITHIUM_MODE
-#define DILITHIUM_MODE 2
+#ifndef MLDSA_MODE
+#define MLDSA_MODE 2
 #endif
 
-#if DILITHIUM_MODE == 2
+#if MLDSA_MODE == 2
 #define CRYPTO_ALGNAME "Dilithium2"
-#define DILITHIUM_NAMESPACETOP pqcrystals_dilithium2_ref
-#define DILITHIUM_NAMESPACE(s) pqcrystals_dilithium2_ref_##s
-#elif DILITHIUM_MODE == 3
+#define MLD_NAMESPACETOP MLD_44_ref
+#define MLD_NAMESPACE(s) MLD_44_ref_##s
+#elif MLDSA_MODE == 3
 #define CRYPTO_ALGNAME "Dilithium3"
-#define DILITHIUM_NAMESPACETOP pqcrystals_dilithium3_ref
-#define DILITHIUM_NAMESPACE(s) pqcrystals_dilithium3_ref_##s
-#elif DILITHIUM_MODE == 5
+#define MLD_NAMESPACETOP MLD_65_ref
+#define MLD_NAMESPACE(s) MLD_65_ref_##s
+#elif MLDSA_MODE == 5
 #define CRYPTO_ALGNAME "Dilithium5"
-#define DILITHIUM_NAMESPACETOP pqcrystals_dilithium5_ref
-#define DILITHIUM_NAMESPACE(s) pqcrystals_dilithium5_ref_##s
+#define MLD_NAMESPACETOP MLD_87_ref
+#define MLD_NAMESPACE(s) MLD_87_ref_##s
 #endif
 
 #endif

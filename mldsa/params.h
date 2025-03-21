@@ -7,77 +7,78 @@
 
 #include "config.h"
 
-#define SEEDBYTES 32
-#define CRHBYTES 64
-#define TRBYTES 64
-#define RNDBYTES 32
-#define N 256
-#define Q 8380417
-#define D 13
-#define ROOT_OF_UNITY 1753
+#define MLDSA_SEEDBYTES 32
+#define MLDSA_CRHBYTES 64
+#define MLDSA_TRBYTES 64
+#define MLDSA_RNDBYTES 32
+#define MLDSA_N 256
+#define MLDSA_Q 8380417
+#define MLDSA_D 13
 
-#if DILITHIUM_MODE == 2
-#define K 4
-#define L 4
-#define ETA 2
-#define TAU 39
-#define BETA 78
-#define GAMMA1 (1 << 17)
-#define GAMMA2 ((Q - 1) / 88)
-#define OMEGA 80
-#define CTILDEBYTES 32
+#if MLDSA_MODE == 2
+#define MLDSA_K 4
+#define MLDSA_L 4
+#define MLDSA_ETA 2
+#define MLDSA_TAU 39
+#define MLDSA_BETA 78
+#define MLDSA_GAMMA1 (1 << 17)
+#define MLDSA_GAMMA2 ((MLDSA_Q - 1) / 88)
+#define MLDSA_OMEGA 80
+#define MLDSA_CTILDEBYTES 32
 
-#elif DILITHIUM_MODE == 3
-#define K 6
-#define L 5
-#define ETA 4
-#define TAU 49
-#define BETA 196
-#define GAMMA1 (1 << 19)
-#define GAMMA2 ((Q - 1) / 32)
-#define OMEGA 55
-#define CTILDEBYTES 48
+#elif MLDSA_MODE == 3
+#define MLDSA_K 6
+#define MLDSA_L 5
+#define MLDSA_ETA 4
+#define MLDSA_TAU 49
+#define MLDSA_BETA 196
+#define MLDSA_GAMMA1 (1 << 19)
+#define MLDSA_GAMMA2 ((MLDSA_Q - 1) / 32)
+#define MLDSA_OMEGA 55
+#define MLDSA_CTILDEBYTES 48
 
-#elif DILITHIUM_MODE == 5
-#define K 8
-#define L 7
-#define ETA 2
-#define TAU 60
-#define BETA 120
-#define GAMMA1 (1 << 19)
-#define GAMMA2 ((Q - 1) / 32)
-#define OMEGA 75
-#define CTILDEBYTES 64
+#elif MLDSA_MODE == 5
+#define MLDSA_K 8
+#define MLDSA_L 7
+#define MLDSA_ETA 2
+#define MLDSA_TAU 60
+#define MLDSA_BETA 120
+#define MLDSA_GAMMA1 (1 << 19)
+#define MLDSA_GAMMA2 ((MLDSA_Q - 1) / 32)
+#define MLDSA_OMEGA 75
+#define MLDSA_CTILDEBYTES 64
 
 #endif
 
-#define POLYT1_PACKEDBYTES 320
-#define POLYT0_PACKEDBYTES 416
-#define POLYVECH_PACKEDBYTES (OMEGA + K)
+#define MLDSA_POLYT1_PACKEDBYTES 320
+#define MLDSA_POLYT0_PACKEDBYTES 416
+#define MLDSA_POLYVECH_PACKEDBYTES (MLDSA_OMEGA + MLDSA_K)
 
-#if GAMMA1 == (1 << 17)
-#define POLYZ_PACKEDBYTES 576
-#elif GAMMA1 == (1 << 19)
-#define POLYZ_PACKEDBYTES 640
+#if MLDSA_GAMMA1 == (1 << 17)
+#define MLDSA_POLYZ_PACKEDBYTES 576
+#elif MLDSA_GAMMA1 == (1 << 19)
+#define MLDSA_POLYZ_PACKEDBYTES 640
 #endif
 
-#if GAMMA2 == (Q - 1) / 88
-#define POLYW1_PACKEDBYTES 192
-#elif GAMMA2 == (Q - 1) / 32
-#define POLYW1_PACKEDBYTES 128
+#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+#define MLDSA_POLYW1_PACKEDBYTES 192
+#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
+#define MLDSA_POLYW1_PACKEDBYTES 128
 #endif
 
-#if ETA == 2
-#define POLYETA_PACKEDBYTES 96
-#elif ETA == 4
-#define POLYETA_PACKEDBYTES 128
+#if MLDSA_ETA == 2
+#define MLDSA_POLYETA_PACKEDBYTES 96
+#elif MLDSA_ETA == 4
+#define MLDSA_POLYETA_PACKEDBYTES 128
 #endif
 
-#define CRYPTO_PUBLICKEYBYTES (SEEDBYTES + K * POLYT1_PACKEDBYTES)
-#define CRYPTO_SECRETKEYBYTES                          \
-  (2 * SEEDBYTES + TRBYTES + L * POLYETA_PACKEDBYTES + \
-   K * POLYETA_PACKEDBYTES + K * POLYT0_PACKEDBYTES)
-#define CRYPTO_BYTES \
-  (CTILDEBYTES + L * POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES)
+#define CRYPTO_PUBLICKEYBYTES \
+  (MLDSA_SEEDBYTES + MLDSA_K * MLDSA_POLYT1_PACKEDBYTES)
+#define CRYPTO_SECRETKEYBYTES                                                  \
+  (2 * MLDSA_SEEDBYTES + MLDSA_TRBYTES + MLDSA_L * MLDSA_POLYETA_PACKEDBYTES + \
+   MLDSA_K * MLDSA_POLYETA_PACKEDBYTES + MLDSA_K * MLDSA_POLYT0_PACKEDBYTES)
+#define CRYPTO_BYTES                                       \
+  (MLDSA_CTILDEBYTES + MLDSA_L * MLDSA_POLYZ_PACKEDBYTES + \
+   MLDSA_POLYVECH_PACKEDBYTES)
 
 #endif

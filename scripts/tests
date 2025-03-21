@@ -647,7 +647,7 @@ class Tests:
             exit(0)
 
         def run_cbmc_single_step(mldsa_mode, proofs):
-            envvars = {"DILITHIUM_MODE": mldsa_mode}
+            envvars = {"MLDSA_MODE": mldsa_mode}
             scheme = SCHEME.from_mode(mldsa_mode)
             num_proofs = len(proofs)
             for i, func in enumerate(proofs):
@@ -713,7 +713,7 @@ class Tests:
             if self.args.single_step:
                 run_cbmc_single_step(mldsa_mode, proofs)
                 return
-            envvars = {"DILITHIUM_MODE": mldsa_mode}
+            envvars = {"MLDSA_MODE": mldsa_mode}
             p = subprocess.run(
                 ["python3", "run-cbmc-proofs.py", "--summarize", "--no-coverage", "-p"]
                 + proofs
@@ -926,7 +926,7 @@ def cli():
 
     cbmc_parser.add_argument(
         "--mode",
-        help="MLDSA parameter set (DILITHIUM_MODE)",
+        help="MLDSA parameter set (MLDSA_MODE)",
         choices=["2", "3", "5", "ALL"],
         type=str.upper,
         default="ALL",

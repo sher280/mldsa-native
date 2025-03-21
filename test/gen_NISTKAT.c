@@ -13,11 +13,11 @@
 
 
 
-#if DILITHIUM_MODE == 2
+#if MLDSA_MODE == 2
 #define CRYPTO_ALGNAME "Dilithium2"
-#elif DILITHIUM_MODE == 3
+#elif MLDSA_MODE == 3
 #define CRYPTO_ALGNAME "Dilithium3"
-#elif DILITHIUM_MODE == 5
+#elif MLDSA_MODE == 5
 #define CRYPTO_ALGNAME "Dilithium5"
 #endif
 
