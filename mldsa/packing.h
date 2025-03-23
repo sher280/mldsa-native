@@ -11,7 +11,16 @@
 
 #define pack_pk MLD_NAMESPACE(pack_pk)
 void pack_pk(uint8_t pk[CRYPTO_PUBLICKEYBYTES],
-             const uint8_t rho[MLDSA_SEEDBYTES], const polyveck *t1);
+             const uint8_t rho[MLDSA_SEEDBYTES], const polyveck *t1)
+__contract__(
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  requires(memory_no_alias(rho, MLDSA_SEEDBYTES))
+  requires(memory_no_alias(t1, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_bound(t1->vec[k0].coeffs, 0, MLDSA_N, 0, 1 << 10)))
+  assigns(object_whole(pk))
+);
+
 
 #define pack_sk MLD_NAMESPACE(pack_sk)
 void pack_sk(uint8_t sk[CRYPTO_SECRETKEYBYTES],

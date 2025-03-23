@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "packing.h"
+#include <string.h>
 #include "params.h"
 #include "poly.h"
 #include "polyvec.h"
@@ -21,12 +22,13 @@ void pack_pk(uint8_t pk[CRYPTO_PUBLICKEYBYTES],
 {
   unsigned int i;
 
-  for (i = 0; i < MLDSA_SEEDBYTES; ++i)
-    pk[i] = rho[i];
+  memcpy(pk, rho, MLDSA_SEEDBYTES);
   pk += MLDSA_SEEDBYTES;
 
   for (i = 0; i < MLDSA_K; ++i)
+  {
     polyt1_pack(pk + i * MLDSA_POLYT1_PACKEDBYTES, &t1->vec[i]);
+  }
 }
 
 /*************************************************
