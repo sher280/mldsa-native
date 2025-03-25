@@ -107,6 +107,39 @@ void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h);
 void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
                       const polyveck *w1);
 
+#define polyveck_pack_eta MLD_NAMESPACE(polyveck_pack_eta)
+void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
+                       const polyveck *p)
+__contract__(                 
+  requires(memory_no_alias(r,  MLDSA_K * MLDSA_POLYETA_PACKEDBYTES))
+  requires(memory_no_alias(p, sizeof(polyveck)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_abs_bound(p->vec[k1].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
+  assigns(object_whole(r))
+);
+
+#define polyvecl_pack_eta MLD_NAMESPACE(polyvecl_pack_eta)
+void polyvecl_pack_eta(uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES],
+                       const polyvecl *p)
+__contract__(                 
+  requires(memory_no_alias(r,  MLDSA_L * MLDSA_POLYETA_PACKEDBYTES))
+  requires(memory_no_alias(p, sizeof(polyvecl)))
+  requires(forall(k1, 0, MLDSA_L,
+    array_abs_bound(p->vec[k1].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
+  assigns(object_whole(r))
+);
+
+#define polyveck_pack_t0 MLD_NAMESPACE(polyveck_pack_t0)
+void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
+                      const polyveck *p)
+__contract__(                 
+  requires(memory_no_alias(r,  MLDSA_K * MLDSA_POLYT0_PACKEDBYTES))
+  requires(memory_no_alias(p, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_bound(p->vec[k0].coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1)))
+  assigns(object_whole(r))
+);
+
 #define polyvec_matrix_expand MLD_NAMESPACE(polyvec_matrix_expand)
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
                            const uint8_t rho[MLDSA_SEEDBYTES]);

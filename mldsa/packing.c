@@ -71,30 +71,22 @@ void pack_sk(uint8_t sk[CRYPTO_SECRETKEYBYTES],
              const uint8_t key[MLDSA_SEEDBYTES], const polyveck *t0,
              const polyvecl *s1, const polyveck *s2)
 {
-  unsigned int i;
-
-  for (i = 0; i < MLDSA_SEEDBYTES; ++i)
-    sk[i] = rho[i];
+  memcpy(sk, rho, MLDSA_SEEDBYTES);
   sk += MLDSA_SEEDBYTES;
 
-  for (i = 0; i < MLDSA_SEEDBYTES; ++i)
-    sk[i] = key[i];
+  memcpy(sk, key, MLDSA_SEEDBYTES);
   sk += MLDSA_SEEDBYTES;
 
-  for (i = 0; i < MLDSA_TRBYTES; ++i)
-    sk[i] = tr[i];
+  memcpy(sk, tr, MLDSA_TRBYTES);
   sk += MLDSA_TRBYTES;
 
-  for (i = 0; i < MLDSA_L; ++i)
-    polyeta_pack(sk + i * MLDSA_POLYETA_PACKEDBYTES, &s1->vec[i]);
+  polyvecl_pack_eta(sk, s1);
   sk += MLDSA_L * MLDSA_POLYETA_PACKEDBYTES;
 
-  for (i = 0; i < MLDSA_K; ++i)
-    polyeta_pack(sk + i * MLDSA_POLYETA_PACKEDBYTES, &s2->vec[i]);
+  polyveck_pack_eta(sk, s2);
   sk += MLDSA_K * MLDSA_POLYETA_PACKEDBYTES;
 
-  for (i = 0; i < MLDSA_K; ++i)
-    polyt0_pack(sk + i * MLDSA_POLYT0_PACKEDBYTES, &t0->vec[i]);
+  polyveck_pack_t0(sk, t0);
 }
 
 /*************************************************

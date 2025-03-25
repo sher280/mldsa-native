@@ -86,7 +86,7 @@ __contract__(
   requires(memory_no_alias(r, MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA + 1))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, MLDSA_POLYETA_PACKEDBYTES))
 );
 
 #define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
@@ -137,7 +137,7 @@ __contract__(
   requires(memory_no_alias(r, MLDSA_POLYT0_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, MLDSA_POLYT0_PACKEDBYTES))
 );
 
 
