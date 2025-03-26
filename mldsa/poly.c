@@ -250,9 +250,14 @@ unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(s <= i)
+  )
   {
-    h->coeffs[i] = make_hint(a0->coeffs[i], a1->coeffs[i]);
-    s += h->coeffs[i];
+    const unsigned int hint_bit = make_hint(a0->coeffs[i], a1->coeffs[i]);
+    h->coeffs[i] = hint_bit;
+    s += hint_bit;
   }
 
   DBENCH_STOP(*tround);

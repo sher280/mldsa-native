@@ -393,7 +393,14 @@ unsigned int polyveck_make_hint(polyveck *h, const polyveck *v0,
   unsigned int i, s = 0;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, s, object_whole(h))
+    invariant(i <= MLDSA_K)
+    invariant(s <= i * MLDSA_N)
+  )
+  {
     s += poly_make_hint(&h->vec[i], &v0->vec[i], &v1->vec[i]);
+  }
 
   return s;
 }

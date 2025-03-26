@@ -53,8 +53,17 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
 void poly_power2round(poly *a1, poly *a0, const poly *a);
 #define poly_decompose MLD_NAMESPACE(poly_decompose)
 void poly_decompose(poly *a1, poly *a0, const poly *a);
+
 #define poly_make_hint MLD_NAMESPACE(poly_make_hint)
-unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1);
+unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1)
+__contract__(
+  requires(memory_no_alias(h,  sizeof(poly)))
+  requires(memory_no_alias(a0, sizeof(poly)))
+  requires(memory_no_alias(a1, sizeof(poly)))
+  assigns(memory_slice(h, sizeof(poly)))
+  ensures(return_value <= MLDSA_N)
+);
+
 #define poly_use_hint MLD_NAMESPACE(poly_use_hint)
 void poly_use_hint(poly *b, const poly *a, const poly *h);
 
