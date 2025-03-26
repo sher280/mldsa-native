@@ -129,6 +129,17 @@ __contract__(
   assigns(object_whole(r))
 );
 
+#define polyvecl_pack_z MLD_NAMESPACE(polyvecl_pack_z)
+void polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
+                     const polyvecl *p)
+__contract__(                 
+  requires(memory_no_alias(r,  MLDSA_L * MLDSA_POLYZ_PACKEDBYTES))
+  requires(memory_no_alias(p, sizeof(polyvecl)))
+  requires(forall(k1, 0, MLDSA_L,
+                  array_bound(p->vec[k1].coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
+  assigns(object_whole(r))
+);
+
 #define polyveck_pack_t0 MLD_NAMESPACE(polyveck_pack_t0)
 void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
                       const polyveck *p)

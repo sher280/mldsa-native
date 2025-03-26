@@ -130,35 +130,82 @@ void unpack_sk(uint8_t rho[MLDSA_SEEDBYTES], uint8_t tr[MLDSA_TRBYTES],
  * Description: Bit-pack signature sig = (c, z, h).
  *
  * Arguments:   - uint8_t sig[]: output byte array
- *              - const uint8_t *c: pointer to challenge hash length
- *MLDSA_SEEDBYTES
+ *              - const uint8_t *c:  pointer to challenge hash length
+ *                                   MLDSA_SEEDBYTES
  *              - const polyvecl *z: pointer to vector z
  *              - const polyveck *h: pointer to hint vector h
+ *              - const unsigned int number_of_hints: total
+ *                                   hints in *h
+ *
+ * Note that the number_of_hints argument is not present
+ * in the reference implementation. It is added here to ease
+ * proof of type safety.
  **************************************************/
 void pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
-              const polyvecl *z, const polyveck *h)
+              const polyvecl *z, const polyveck *h,
+              const unsigned int number_of_hints)
 {
   unsigned int i, j, k;
 
-  for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
-    sig[i] = c[i];
+  memcpy(sig, c, MLDSA_CTILDEBYTES);
   sig += MLDSA_CTILDEBYTES;
 
-  for (i = 0; i < MLDSA_L; ++i)
-    polyz_pack(sig + i * MLDSA_POLYZ_PACKEDBYTES, &z->vec[i]);
+  polyvecl_pack_z(sig, z);
   sig += MLDSA_L * MLDSA_POLYZ_PACKEDBYTES;
 
-  /* Encode h */
-  for (i = 0; i < MLDSA_OMEGA + MLDSA_K; ++i)
-    sig[i] = 0;
+  /* Encode hints h */
+
+  /* The final section of sig[] is MLDSA_POLYVECH_PACKEDBYTES long, where
+   * MLDSA_POLYVECH_PACKEDBYTES = MLDSA_OMEGA + MLDSA_K
+   *
+   * The first OMEGA bytes record the index numbers of the coefficients
+   * that are not equal to 0
+   *
+   * The final K bytes record a running tally of the number of hints
+   * coming from each of the K polynomials in h.
+   *
+   * The pre-condition tells us that number_of_hints <= OMEGA, so some
+   * bytes may not be written, so we initialize all of them to zero
+   * to start.
+   */
+  memset(sig, 0, MLDSA_POLYVECH_PACKEDBYTES);
 
   k = 0;
+  /* For each polynomial in h... */
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, j, k, memory_slice(sig, MLDSA_POLYVECH_PACKEDBYTES))
+    invariant(i <= MLDSA_K)
+    invariant(k <= number_of_hints)
+    invariant(number_of_hints <= MLDSA_OMEGA)
+  )
   {
+    /* For each coefficient in that polynomial, record it as as hint */
+    /* if its value is not zero */
     for (j = 0; j < MLDSA_N; ++j)
-      if (h->vec[i].coeffs[j] != 0)
+    __loop__(
+      assigns(j, k, memory_slice(sig, MLDSA_POLYVECH_PACKEDBYTES))
+      invariant(i <= MLDSA_K)
+      invariant(j <= MLDSA_N)
+      invariant(k <= number_of_hints)
+      invariant(number_of_hints <= MLDSA_OMEGA)
+    )
+    {
+      /* The reference implementation implicitly relies on the total */
+      /* number of hints being less than OMEGA, assuming h is valid. */
+      /* In mldsa-native, we check this explicitly to ease proof of  */
+      /* type safety.                                                */
+      if (h->vec[i].coeffs[j] != 0 && k < number_of_hints)
+      {
+        /* The enclosing if condition AND the loop invariant infer  */
+        /* that k < MLDSA_OMEGA, so writing to sig[k] is safe and k */
+        /* can be incremented.                                      */
         sig[k++] = j;
-
+      }
+    }
+    /* Having recorded all the hints for this polynomial, also   */
+    /* record the running tally into the correct "slot" for that */
+    /* coefficient in the final K bytes                          */
     sig[MLDSA_OMEGA + i] = k;
   }
 }
