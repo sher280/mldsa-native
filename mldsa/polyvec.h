@@ -6,6 +6,7 @@
 #define POLYVEC_H
 
 #include <stdint.h>
+#include "cbmc.h"
 #include "params.h"
 #include "poly.h"
 
@@ -86,9 +87,19 @@ int polyveck_chknorm(const polyveck *v, int32_t B);
 void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v);
 #define polyveck_decompose MLD_NAMESPACE(polyveck_decompose)
 void polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v);
+
+
 #define polyveck_make_hint MLD_NAMESPACE(polyveck_make_hint)
 unsigned int polyveck_make_hint(polyveck *h, const polyveck *v0,
-                                const polyveck *v1);
+                                const polyveck *v1)
+__contract__(
+  requires(memory_no_alias(h,  sizeof(polyveck)))
+  requires(memory_no_alias(v0, sizeof(polyveck)))
+  requires(memory_no_alias(v1, sizeof(polyveck)))
+  assigns(object_whole(h))
+  ensures(return_value <= MLDSA_N * MLDSA_K)
+);
+
 #define polyveck_use_hint MLD_NAMESPACE(polyveck_use_hint)
 void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h);
 
