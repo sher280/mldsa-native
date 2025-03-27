@@ -35,7 +35,17 @@ void pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
 
 #define unpack_pk MLD_NAMESPACE(unpack_pk)
 void unpack_pk(uint8_t rho[MLDSA_SEEDBYTES], polyveck *t1,
-               const uint8_t pk[CRYPTO_PUBLICKEYBYTES]);
+               const uint8_t pk[CRYPTO_PUBLICKEYBYTES])
+__contract__(
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  requires(memory_no_alias(rho, MLDSA_SEEDBYTES))
+  requires(memory_no_alias(t1, sizeof(polyveck)))
+  assigns(object_whole(rho))
+  assigns(object_whole(t1))
+  ensures(forall(k0, 0, MLDSA_K,
+    array_bound(t1->vec[k0].coeffs, 0, MLDSA_N, 0, 1 << 10)))
+);
+
 
 #define unpack_sk MLD_NAMESPACE(unpack_sk)
 void unpack_sk(uint8_t rho[MLDSA_SEEDBYTES], uint8_t tr[MLDSA_TRBYTES],

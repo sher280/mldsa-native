@@ -45,8 +45,7 @@ void unpack_pk(uint8_t rho[MLDSA_SEEDBYTES], polyveck *t1,
 {
   unsigned int i;
 
-  for (i = 0; i < MLDSA_SEEDBYTES; ++i)
-    rho[i] = pk[i];
+  memcpy(rho, pk, MLDSA_SEEDBYTES);
   pk += MLDSA_SEEDBYTES;
 
   for (i = 0; i < MLDSA_K; ++i)
