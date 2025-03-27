@@ -443,6 +443,8 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
       a[ctr++] = 4 - t0;
     if (t1 < 9 && ctr < len)
       a[ctr++] = 4 - t1;
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
   }
 
@@ -468,6 +470,8 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
 #elif MLDSA_ETA == 4
 #define POLY_UNIFORM_ETA_NBLOCKS \
   ((227 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
 void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                       uint16_t nonce)
@@ -605,6 +609,8 @@ void polyeta_pack(uint8_t *r, const poly *a)
     t[1] = MLDSA_ETA - a->coeffs[2 * i + 1];
     r[i] = t[0] | (t[1] << 4);
   }
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
 }
 
@@ -619,10 +625,12 @@ void polyeta_pack(uint8_t *r, const poly *a)
 void polyeta_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_ETA == 2
   for (i = 0; i < MLDSA_N / 8; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/8)
+    invariant(array_bound(r->coeffs, 0, i*8, -5, MLDSA_ETA + 1)))
   {
     r->coeffs[8 * i + 0] = (a[3 * i + 0] >> 0) & 7;
     r->coeffs[8 * i + 1] = (a[3 * i + 0] >> 3) & 7;
@@ -644,15 +652,18 @@ void polyeta_unpack(poly *r, const uint8_t *a)
   }
 #elif MLDSA_ETA == 4
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2)
+    invariant(array_bound(r->coeffs, 0, i*2, -11, MLDSA_ETA + 1)))
   {
     r->coeffs[2 * i + 0] = a[i] & 0x0F;
     r->coeffs[2 * i + 1] = a[i] >> 4;
     r->coeffs[2 * i + 0] = MLDSA_ETA - r->coeffs[2 * i + 0];
     r->coeffs[2 * i + 1] = MLDSA_ETA - r->coeffs[2 * i + 1];
   }
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -668,18 +679,20 @@ void polyeta_unpack(poly *r, const uint8_t *a)
 void polyt1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
-    r[5 * i + 0] = (a->coeffs[4 * i + 0] >> 0);
-    r[5 * i + 1] = (a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2);
-    r[5 * i + 2] = (a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4);
-    r[5 * i + 3] = (a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6);
-    r[5 * i + 4] = (a->coeffs[4 * i + 3] >> 2);
+    r[5 * i + 0] = (a->coeffs[4 * i + 0] >> 0) & 0xFF;
+    r[5 * i + 1] =
+        ((a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2)) & 0xFF;
+    r[5 * i + 2] =
+        ((a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4)) & 0xFF;
+    r[5 * i + 3] =
+        ((a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6)) & 0xFF;
+    r[5 * i + 4] = (a->coeffs[4 * i + 3] >> 2) & 0xFF;
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -694,9 +707,11 @@ void polyt1_pack(uint8_t *r, const poly *a)
 void polyt1_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4)
+    invariant(array_bound(r->coeffs, 0, i*4, 0, 1 << 10)))
   {
     r->coeffs[4 * i + 0] =
         ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF;
@@ -707,8 +722,6 @@ void polyt1_unpack(poly *r, const uint8_t *a)
     r->coeffs[4 * i + 3] =
         ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF;
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -725,9 +738,10 @@ void polyt0_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint32_t t[8];
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 8; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/8))
   {
     t[0] = (1 << (MLDSA_D - 1)) - a->coeffs[8 * i + 0];
     t[1] = (1 << (MLDSA_D - 1)) - a->coeffs[8 * i + 1];
@@ -738,29 +752,27 @@ void polyt0_pack(uint8_t *r, const poly *a)
     t[6] = (1 << (MLDSA_D - 1)) - a->coeffs[8 * i + 6];
     t[7] = (1 << (MLDSA_D - 1)) - a->coeffs[8 * i + 7];
 
-    r[13 * i + 0] = t[0];
-    r[13 * i + 1] = t[0] >> 8;
-    r[13 * i + 1] |= t[1] << 5;
-    r[13 * i + 2] = t[1] >> 3;
-    r[13 * i + 3] = t[1] >> 11;
-    r[13 * i + 3] |= t[2] << 2;
-    r[13 * i + 4] = t[2] >> 6;
-    r[13 * i + 4] |= t[3] << 7;
-    r[13 * i + 5] = t[3] >> 1;
-    r[13 * i + 6] = t[3] >> 9;
-    r[13 * i + 6] |= t[4] << 4;
-    r[13 * i + 7] = t[4] >> 4;
-    r[13 * i + 8] = t[4] >> 12;
-    r[13 * i + 8] |= t[5] << 1;
-    r[13 * i + 9] = t[5] >> 7;
-    r[13 * i + 9] |= t[6] << 6;
-    r[13 * i + 10] = t[6] >> 2;
-    r[13 * i + 11] = t[6] >> 10;
-    r[13 * i + 11] |= t[7] << 3;
-    r[13 * i + 12] = t[7] >> 5;
+    r[13 * i + 0] = (t[0]) & 0xFF;
+    r[13 * i + 1] = (t[0] >> 8) & 0xFF;
+    r[13 * i + 1] |= (t[1] << 5) & 0xFF;
+    r[13 * i + 2] = (t[1] >> 3) & 0xFF;
+    r[13 * i + 3] = (t[1] >> 11) & 0xFF;
+    r[13 * i + 3] |= (t[2] << 2) & 0xFF;
+    r[13 * i + 4] = (t[2] >> 6) & 0xFF;
+    r[13 * i + 4] |= (t[3] << 7) & 0xFF;
+    r[13 * i + 5] = (t[3] >> 1) & 0xFF;
+    r[13 * i + 6] = (t[3] >> 9) & 0xFF;
+    r[13 * i + 6] |= (t[4] << 4) & 0xFF;
+    r[13 * i + 7] = (t[4] >> 4) & 0xFF;
+    r[13 * i + 8] = (t[4] >> 12) & 0xFF;
+    r[13 * i + 8] |= (t[5] << 1) & 0xFF;
+    r[13 * i + 9] = (t[5] >> 7) & 0xFF;
+    r[13 * i + 9] |= (t[6] << 6) & 0xFF;
+    r[13 * i + 10] = (t[6] >> 2) & 0xFF;
+    r[13 * i + 11] = (t[6] >> 10) & 0xFF;
+    r[13 * i + 11] |= (t[7] << 3) & 0xFF;
+    r[13 * i + 12] = (t[7] >> 5) & 0xFF;
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -775,9 +787,11 @@ void polyt0_pack(uint8_t *r, const poly *a)
 void polyt0_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N / 8; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/8)
+    invariant(array_bound(r->coeffs, 0, i*8, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1)))
   {
     r->coeffs[8 * i + 0] = a[13 * i + 0];
     r->coeffs[8 * i + 0] |= (uint32_t)a[13 * i + 1] << 8;
@@ -824,8 +838,6 @@ void polyt0_unpack(poly *r, const uint8_t *a)
     r->coeffs[8 * i + 6] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 6];
     r->coeffs[8 * i + 7] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 7];
   }
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -842,45 +854,48 @@ void polyz_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint32_t t[4];
-  DBENCH_START();
 
 #if MLDSA_GAMMA1 == (1 << 17)
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
     t[0] = MLDSA_GAMMA1 - a->coeffs[4 * i + 0];
     t[1] = MLDSA_GAMMA1 - a->coeffs[4 * i + 1];
     t[2] = MLDSA_GAMMA1 - a->coeffs[4 * i + 2];
     t[3] = MLDSA_GAMMA1 - a->coeffs[4 * i + 3];
 
-    r[9 * i + 0] = t[0];
-    r[9 * i + 1] = t[0] >> 8;
-    r[9 * i + 2] = t[0] >> 16;
-    r[9 * i + 2] |= t[1] << 2;
-    r[9 * i + 3] = t[1] >> 6;
-    r[9 * i + 4] = t[1] >> 14;
-    r[9 * i + 4] |= t[2] << 4;
-    r[9 * i + 5] = t[2] >> 4;
-    r[9 * i + 6] = t[2] >> 12;
-    r[9 * i + 6] |= t[3] << 6;
-    r[9 * i + 7] = t[3] >> 2;
-    r[9 * i + 8] = t[3] >> 10;
+    r[9 * i + 0] = (t[0]) & 0xFF;
+    r[9 * i + 1] = (t[0] >> 8) & 0xFF;
+    r[9 * i + 2] = (t[0] >> 16) & 0xFF;
+    r[9 * i + 2] |= (t[1] << 2) & 0xFF;
+    r[9 * i + 3] = (t[1] >> 6) & 0xFF;
+    r[9 * i + 4] = (t[1] >> 14) & 0xFF;
+    r[9 * i + 4] |= (t[2] << 4) & 0xFF;
+    r[9 * i + 5] = (t[2] >> 4) & 0xFF;
+    r[9 * i + 6] = (t[2] >> 12) & 0xFF;
+    r[9 * i + 6] |= (t[3] << 6) & 0xFF;
+    r[9 * i + 7] = (t[3] >> 2) & 0xFF;
+    r[9 * i + 8] = (t[3] >> 10) & 0xFF;
   }
 #elif MLDSA_GAMMA1 == (1 << 19)
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2))
   {
     t[0] = MLDSA_GAMMA1 - a->coeffs[2 * i + 0];
     t[1] = MLDSA_GAMMA1 - a->coeffs[2 * i + 1];
 
-    r[5 * i + 0] = t[0];
-    r[5 * i + 1] = t[0] >> 8;
-    r[5 * i + 2] = t[0] >> 16;
-    r[5 * i + 2] |= t[1] << 4;
-    r[5 * i + 3] = t[1] >> 4;
-    r[5 * i + 4] = t[1] >> 12;
+    r[5 * i + 0] = (t[0]) & 0xFF;
+    r[5 * i + 1] = (t[0] >> 8) & 0xFF;
+    r[5 * i + 2] = (t[0] >> 16) & 0xFF;
+    r[5 * i + 2] |= (t[1] << 4) & 0xFF;
+    r[5 * i + 3] = (t[1] >> 4) & 0xFF;
+    r[5 * i + 4] = (t[1] >> 12) & 0xFF;
   }
+#else
+#error "Invalid value of MLDSA_GAMMA1"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -895,10 +910,12 @@ void polyz_pack(uint8_t *r, const poly *a)
 void polyz_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_GAMMA1 == (1 << 17)
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4)
+    invariant(array_bound(r->coeffs, 0, i*4, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
   {
     r->coeffs[4 * i + 0] = a[9 * i + 0];
     r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 1] << 8;
@@ -927,6 +944,9 @@ void polyz_unpack(poly *r, const uint8_t *a)
   }
 #elif MLDSA_GAMMA1 == (1 << 19)
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2)
+    invariant(array_bound(r->coeffs, 0, i*2, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
   {
     r->coeffs[2 * i + 0] = a[5 * i + 0];
     r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8;
@@ -942,9 +962,9 @@ void polyz_unpack(poly *r, const uint8_t *a)
     r->coeffs[2 * i + 0] = MLDSA_GAMMA1 - r->coeffs[2 * i + 0];
     r->coeffs[2 * i + 1] = MLDSA_GAMMA1 - r->coeffs[2 * i + 1];
   }
+#else
+#error "Invalid value of MLDSA_GAMMA1"
 #endif
-
-  DBENCH_STOP(*tpack);
 }
 
 /*************************************************
@@ -960,22 +980,27 @@ void polyz_unpack(poly *r, const uint8_t *a)
 void polyw1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
 #if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
   for (i = 0; i < MLDSA_N / 4; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/4))
   {
-    r[3 * i + 0] = a->coeffs[4 * i + 0];
-    r[3 * i + 0] |= a->coeffs[4 * i + 1] << 6;
-    r[3 * i + 1] = a->coeffs[4 * i + 1] >> 2;
-    r[3 * i + 1] |= a->coeffs[4 * i + 2] << 4;
-    r[3 * i + 2] = a->coeffs[4 * i + 2] >> 4;
-    r[3 * i + 2] |= a->coeffs[4 * i + 3] << 2;
+    r[3 * i + 0] = (a->coeffs[4 * i + 0]) & 0xFF;
+    r[3 * i + 0] |= (a->coeffs[4 * i + 1] << 6) & 0xFF;
+    r[3 * i + 1] = (a->coeffs[4 * i + 1] >> 2) & 0xFF;
+    r[3 * i + 1] |= (a->coeffs[4 * i + 2] << 4) & 0xFF;
+    r[3 * i + 2] = (a->coeffs[4 * i + 2] >> 4) & 0xFF;
+    r[3 * i + 2] |= (a->coeffs[4 * i + 3] << 2) & 0xFF;
   }
 #elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
   for (i = 0; i < MLDSA_N / 2; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N/2))
+  {
     r[i] = a->coeffs[2 * i + 0] | (a->coeffs[2 * i + 1] << 4);
+  }
+#else
+#error "Invalid value of MLDSA_GAMMA2"
 #endif
-
-  DBENCH_STOP(*tpack);
 }

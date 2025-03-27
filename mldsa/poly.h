@@ -85,29 +85,107 @@ void polyeta_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA + 1))
   assigns(object_whole(r))
 );
 
 #define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
-void polyeta_unpack(poly *r, const uint8_t *a);
+void polyeta_unpack(poly *r, const uint8_t *a)
+/* The actual output bound for well-formed inputs (i.e. produced by
+ * polyeta_pack), is [-MLDSA_ETA,MLDSA_ETA].
+ * However, if arbitrary inputs are passed, the bounds are somewhat larger:
+ * MLDSA_ETA=2: [-5, MLDSA_ETA]
+ * MLDSA_ETA=4: [-11, MLDSA_ETA]
+ */
+#if MLDSA_ETA == 2
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)));
+#elif MLDSA_ETA == 4
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)));
+#else
+#error "Invalid value of MLDSA_ETA"
+#endif
 
 #define polyt1_pack MLD_NAMESPACE(polyt1_pack)
-void polyt1_pack(uint8_t *r, const poly *a);
+void polyt1_pack(uint8_t *r, const poly *a)
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYT1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 1 << 10))
+  assigns(object_whole(r))
+);
+
 #define polyt1_unpack MLD_NAMESPACE(polyt1_unpack)
-void polyt1_unpack(poly *r, const uint8_t *a);
+void polyt1_unpack(poly *r, const uint8_t *a)
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYT1_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, 0, 1 << 10))
+);
 
 #define polyt0_pack MLD_NAMESPACE(polyt0_pack)
-void polyt0_pack(uint8_t *r, const poly *a);
+void polyt0_pack(uint8_t *r, const poly *a)
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYT0_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
+  assigns(object_whole(r))
+);
+
+
 #define polyt0_unpack MLD_NAMESPACE(polyt0_unpack)
-void polyt0_unpack(poly *r, const uint8_t *a);
+void polyt0_unpack(poly *r, const uint8_t *a)
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYT0_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
+);
 
 #define polyz_pack MLD_NAMESPACE(polyz_pack)
-void polyz_pack(uint8_t *r, const poly *a);
+void polyz_pack(uint8_t *r, const poly *a)
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYZ_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+  assigns(object_whole(r))
+);
+
 #define polyz_unpack MLD_NAMESPACE(polyz_unpack)
-void polyz_unpack(poly *r, const uint8_t *a);
+void polyz_unpack(poly *r, const uint8_t *a)
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYZ_PACKEDBYTES))
+  assigns(object_whole(r))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+);
+
 
 #define polyw1_pack MLD_NAMESPACE(polyw1_pack)
-void polyw1_pack(uint8_t *r, const poly *a);
+void polyw1_pack(uint8_t *r, const poly *a)
+#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 16))
+  assigns(object_whole(r)));
+#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 44))
+  assigns(object_whole(r)));
+#else
+#error "Invalid value of MLDSA_GAMMA2"
+#endif
+
 
 #endif
