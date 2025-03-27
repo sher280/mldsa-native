@@ -25,7 +25,7 @@
           util = pkgs.callPackage ./nix/util.nix {
             cbmc = pkgs.cbmc;
             bitwuzla = pkgs-unstable.bitwuzla;
-            z3 = pkgs-unstable.z3;
+            z3 = pkgs-unstable.z3_4_14;
           };
         in
         {
@@ -35,7 +35,8 @@
               (_:_: {
                 gcc48 = pkgs-2405.gcc48;
                 gcc49 = pkgs-2405.gcc49;
-                qemu = pkgs-unstable.qemu; # 9.2.0
+                qemu = pkgs-unstable.qemu; # 9.2.2
+                clang_20 = pkgs-unstable.clang_20;
               })
             ];
           };
@@ -45,13 +46,14 @@
           packages.hol_light = util.hol_light';
           packages.s2n_bignum = util.s2n_bignum;
           packages.valgrind_varlat = util.valgrind_varlat;
+          packages.slothy = util.slothy;
           packages.toolchains = util.toolchains;
           packages.toolchains_native = util.toolchains_native;
 
           devShells.default = util.mkShell {
             packages = builtins.attrValues
               {
-                inherit (config.packages) linters cbmc hol_light s2n_bignum toolchains_native;
+                inherit (config.packages) linters cbmc hol_light s2n_bignum slothy toolchains_native;
                 inherit (pkgs)
                   direnv
                   nix-direnv;
@@ -72,6 +74,9 @@
           devShells.ci-cbmc = util.mkShell {
             packages = builtins.attrValues { inherit (config.packages) cbmc toolchains_native; };
           };
+          devShells.ci-slothy = util.mkShell {
+            packages = builtins.attrValues { inherit (config.packages) slothy linters toolchains_native; };
+          };
           devShells.ci-cross = util.mkShell {
             packages = builtins.attrValues { inherit (config.packages) linters toolchains; };
           };
@@ -84,6 +89,8 @@
           devShells.ci_clang17 = util.mkShellWithCC' pkgs.clang_17;
           devShells.ci_clang18 = util.mkShellWithCC' pkgs.clang_18;
           devShells.ci_clang19 = util.mkShellWithCC' pkgs.clang_19;
+          devShells.ci_clang20 = util.mkShellWithCC' pkgs.clang_20;
+
           devShells.ci_gcc48 = util.mkShellWithCC' pkgs.gcc48;
           devShells.ci_gcc49 = util.mkShellWithCC' pkgs.gcc49;
           devShells.ci_gcc7 = util.mkShellWithCC' pkgs.gcc7;
@@ -99,6 +106,7 @@
           devShells.ci_valgrind-varlat_clang17 = util.mkShellWithCC_valgrind' pkgs.clang_17;
           devShells.ci_valgrind-varlat_clang18 = util.mkShellWithCC_valgrind' pkgs.clang_18;
           devShells.ci_valgrind-varlat_clang19 = util.mkShellWithCC_valgrind' pkgs.clang_19;
+          devShells.ci_valgrind-varlat_clang20 = util.mkShellWithCC_valgrind' pkgs.clang_20;
           devShells.ci_valgrind-varlat_gcc48 = util.mkShellWithCC_valgrind' pkgs.gcc48;
           devShells.ci_valgrind-varlat_gcc49 = util.mkShellWithCC_valgrind' pkgs.gcc49;
           devShells.ci_valgrind-varlat_gcc7 = util.mkShellWithCC_valgrind' pkgs.gcc7;
@@ -116,7 +124,7 @@
               inherit pkgs;
               cbmc = pkgs.cbmc;
               bitwuzla = pkgs-unstable.bitwuzla;
-              z3 = pkgs-unstable.z3;
+              z3 = pkgs-unstable.z3_4_14;
             };
           in
           util.mkShell {
