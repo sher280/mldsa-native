@@ -443,6 +443,8 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
       a[ctr++] = 4 - t0;
     if (t1 < 9 && ctr < len)
       a[ctr++] = 4 - t1;
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
   }
 
@@ -468,6 +470,8 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
 #elif MLDSA_ETA == 4
 #define POLY_UNIFORM_ETA_NBLOCKS \
   ((227 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
 void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                       uint16_t nonce)
@@ -605,6 +609,8 @@ void polyeta_pack(uint8_t *r, const poly *a)
     t[1] = MLDSA_ETA - a->coeffs[2 * i + 1];
     r[i] = t[0] | (t[1] << 4);
   }
+#else
+#error "Invalid value of MLDSA_ETA"
 #endif
 }
 
