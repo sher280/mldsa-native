@@ -461,3 +461,33 @@ void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
     polyt0_pack(r + i * MLDSA_POLYT0_PACKEDBYTES, &p->vec[i]);
   }
 }
+
+void polyvecl_unpack_eta(polyvecl *p,
+                         const uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES])
+{
+  unsigned int i;
+  for (i = 0; i < MLDSA_L; ++i)
+  {
+    polyeta_unpack(&p->vec[i], r + i * MLDSA_POLYETA_PACKEDBYTES);
+  }
+}
+
+void polyveck_unpack_eta(polyveck *p,
+                         const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
+{
+  unsigned int i;
+  for (i = 0; i < MLDSA_K; ++i)
+  {
+    polyeta_unpack(&p->vec[i], r + i * MLDSA_POLYETA_PACKEDBYTES);
+  }
+}
+
+void polyveck_unpack_t0(polyveck *p,
+                        const uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES])
+{
+  unsigned int i;
+  for (i = 0; i < MLDSA_K; ++i)
+  {
+    polyt0_unpack(&p->vec[i], r + i * MLDSA_POLYT0_PACKEDBYTES);
+  }
+}

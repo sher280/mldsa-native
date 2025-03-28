@@ -101,13 +101,13 @@ void polyeta_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)));
 #elif MLDSA_ETA == 4
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)));
 #else
 #error "Invalid value of MLDSA_ETA"
@@ -146,7 +146,7 @@ void polyt0_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYT0_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
 );
 
