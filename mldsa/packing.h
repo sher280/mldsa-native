@@ -68,10 +68,6 @@ __contract__(
 void unpack_sk(uint8_t rho[MLDSA_SEEDBYTES], uint8_t tr[MLDSA_TRBYTES],
                uint8_t key[MLDSA_SEEDBYTES], polyveck *t0, polyvecl *s1,
                polyveck *s2, const uint8_t sk[CRYPTO_SECRETKEYBYTES])
-/* TODO: define a macro for the lower bound of polyeta_unpack so we don't
- * always have to write two contracts
- */
-#if MLDSA_ETA == 2
 __contract__(
   requires(memory_no_alias(rho, MLDSA_SEEDBYTES))
   requires(memory_no_alias(tr, MLDSA_TRBYTES))
@@ -89,35 +85,10 @@ __contract__(
   ensures(forall(k0, 0, MLDSA_K,
     array_bound(t0->vec[k0].coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1)))
   ensures(forall(k1, 0, MLDSA_L,
-    array_bound(s1->vec[k1].coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)))
+    array_bound(s1->vec[k1].coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1)))
   ensures(forall(k2, 0, MLDSA_K,
-    array_bound(s2->vec[k2].coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)))
+    array_bound(s2->vec[k2].coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1)))
 );
-#elif MLDSA_ETA == 4
-__contract__(
-  requires(memory_no_alias(rho, MLDSA_SEEDBYTES))
-  requires(memory_no_alias(tr, MLDSA_TRBYTES))
-  requires(memory_no_alias(key, MLDSA_SEEDBYTES))
-  requires(memory_no_alias(t0, sizeof(polyveck)))
-  requires(memory_no_alias(s1, sizeof(polyvecl)))
-  requires(memory_no_alias(s2, sizeof(polyveck)))
-  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
-  assigns(object_whole(rho))
-  assigns(object_whole(tr))
-  assigns(object_whole(key))
-  assigns(object_whole(t0))
-  assigns(object_whole(s1))
-  assigns(object_whole(s2))
-  ensures(forall(k0, 0, MLDSA_K,
-    array_bound(t0->vec[k0].coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1)))
-  ensures(forall(k1, 0, MLDSA_L,
-    array_bound(s1->vec[k1].coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)))
-  ensures(forall(k2, 0, MLDSA_K,
-    array_bound(s2->vec[k2].coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)))
-);
-#else
-#error "Invalid value of MLDSA_ETA"
-#endif
 
 #define unpack_sig MLD_NAMESPACE(unpack_sig)
 int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,

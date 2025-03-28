@@ -143,55 +143,24 @@ __contract__(
 #define polyvecl_unpack_eta MLD_NAMESPACE(polyvecl_unpack_eta)
 void polyvecl_unpack_eta(polyvecl *p,
                          const uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES])
-/* TODO: define a macro for the lower bound of polyeta_unpack so we don't
- * always have to write two contracts
- */
-#if MLDSA_ETA == 2
 __contract__(                 
   requires(memory_no_alias(r,  MLDSA_L * MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(p, sizeof(polyvecl)))
   assigns(object_whole(p))
   ensures(forall(k1, 0, MLDSA_L,
-    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)))
+    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1)))
 );
-#elif MLDSA_ETA == 4
-__contract__(                 
-  requires(memory_no_alias(r,  MLDSA_L * MLDSA_POLYETA_PACKEDBYTES))
-  requires(memory_no_alias(p, sizeof(polyvecl)))
-  assigns(object_whole(p))
-  ensures(forall(k1, 0, MLDSA_L,
-    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)))
-);
-#else
-#error "Invalid value of MLDSA_ETA"
-#endif
 
 #define polyveck_unpack_eta MLD_NAMESPACE(polyveck_unpack_eta)
 void polyveck_unpack_eta(polyveck *p,
                          const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
-/* TODO: define a macro for the lower bound of polyeta_unpack so we don't
- * always have to write two contracts
- */
-#if MLDSA_ETA == 2
 __contract__(                 
   requires(memory_no_alias(r,  MLDSA_K * MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(p, sizeof(polyveck)))
   assigns(object_whole(p))
   ensures(forall(k1, 0, MLDSA_K,
-    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)))
+    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1)))
 );
-#elif MLDSA_ETA == 4
-__contract__(                 
-  requires(memory_no_alias(r,  MLDSA_K * MLDSA_POLYETA_PACKEDBYTES))
-  requires(memory_no_alias(p, sizeof(polyveck)))
-  assigns(object_whole(p))
-  ensures(forall(k1, 0, MLDSA_K,
-    array_bound(p->vec[k1].coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)))
-);
-#else
-#error "Invalid value of MLDSA_ETA"
-#endif
-
 
 #define polyveck_unpack_t0 MLD_NAMESPACE(polyveck_unpack_t0)
 void polyveck_unpack_t0(polyveck *p,
