@@ -86,32 +86,33 @@ __contract__(
   requires(memory_no_alias(r, MLDSA_POLYETA_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA + 1))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, MLDSA_POLYETA_PACKEDBYTES))
 );
 
-#define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
-void polyeta_unpack(poly *r, const uint8_t *a)
-/* The actual output bound for well-formed inputs (i.e. produced by
- * polyeta_pack), is [-MLDSA_ETA,MLDSA_ETA].
- * However, if arbitrary inputs are passed, the bounds are somewhat larger:
- * MLDSA_ETA=2: [-5, MLDSA_ETA]
- * MLDSA_ETA=4: [-11, MLDSA_ETA]
+/*
+ * polyeta_unpack produces coefficients in [-MLDSA_ETA,MLDSA_ETA] for
+ * well-formed inputs (i.e., those produced by polyeta_pack).
+ * However, when passed an arbitrary byte array, it may produce smaller values,
+ * i.e, values in [MLD_POLYETA_UNPACK_LOWER_BOUND,MLDSA_ETA]
+ * Even though this should never happen, we use use the bound for arbitrary
+ * inputs in the CBMC proofs.
  */
 #if MLDSA_ETA == 2
-__contract__(
-  requires(memory_no_alias(r, sizeof(poly)))
-  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
-  assigns(object_whole(r))
-  ensures(array_bound(r->coeffs, 0, MLDSA_N, -5, MLDSA_ETA + 1)));
+#define MLD_POLYETA_UNPACK_LOWER_BOUND (-5)
 #elif MLDSA_ETA == 4
-__contract__(
-  requires(memory_no_alias(r, sizeof(poly)))
-  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
-  assigns(object_whole(r))
-  ensures(array_bound(r->coeffs, 0, MLDSA_N, -11, MLDSA_ETA + 1)));
+#define MLD_POLYETA_UNPACK_LOWER_BOUND (-11)
 #else
 #error "Invalid value of MLDSA_ETA"
 #endif
+
+#define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
+void polyeta_unpack(poly *r, const uint8_t *a)
+__contract__(
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(memory_no_alias(a, MLDSA_POLYETA_PACKEDBYTES))
+  assigns(memory_slice(r, sizeof(poly)))
+  ensures(array_bound(r->coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1))
+);
 
 #define polyt1_pack MLD_NAMESPACE(polyt1_pack)
 void polyt1_pack(uint8_t *r, const poly *a)
@@ -127,7 +128,7 @@ void polyt1_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYT1_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, 0, 1 << 10))
 );
 
@@ -137,7 +138,7 @@ __contract__(
   requires(memory_no_alias(r, MLDSA_POLYT0_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, MLDSA_POLYT0_PACKEDBYTES))
 );
 
 
@@ -146,7 +147,7 @@ void polyt0_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYT0_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -(1<<(MLDSA_D-1)) + 1, (1<<(MLDSA_D-1)) + 1))
 );
 
