@@ -5,6 +5,7 @@
 #include "sign.h"
 #include <stdint.h>
 #include <string.h>
+#include "cbmc.h"
 #include "fips202/fips202.h"
 #include "packing.h"
 #include "params.h"
@@ -220,7 +221,7 @@ rej:
     goto rej;
 
   /* Write signature */
-  pack_sig(sig, sig, &z, &h);
+  pack_sig(sig, sig, &z, &h, n);
   *siglen = CRYPTO_BYTES;
   return 0;
 }
