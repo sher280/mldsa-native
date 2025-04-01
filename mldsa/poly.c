@@ -13,7 +13,7 @@
 #ifdef DBENCH
 #include "test/cpucycles.h"
 extern const uint64_t timing_overhead;
-extern uint64_t *tred, *tadd, *tmul, *tround, *tsample, *tpack;
+extern uint64_t *tred, *tadd, *tsub, *tmul, *tround, *tsample, *tpack;
 #define DBENCH_START() uint64_t time = cpucycles()
 #define DBENCH_STOP(t) t += cpucycles() - time - timing_overhead
 #else
@@ -98,9 +98,12 @@ void poly_sub(poly *c, const poly *a, const poly *b)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
-    c->coeffs[i] = a->coeffs[i] - b->coeffs[i];
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(forall(k1, 0, i, c->coeffs[k1] == a->coeffs[k1] - b->coeffs[k1])))
+  c->coeffs[i] = a->coeffs[i] - b->coeffs[i];
 
-  DBENCH_STOP(*tadd);
+  DBENCH_STOP(*tsub);
 }
 
 /*************************************************
