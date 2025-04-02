@@ -238,7 +238,7 @@ void poly_decompose(poly *a1, poly *a0, const poly *a)
 
   for (i = 0; i < MLDSA_N; ++i)
   {
-    a1->coeffs[i] = decompose(&a0->coeffs[i], a->coeffs[i]);
+    decompose(&a0->coeffs[i], &a1->coeffs[i],  a->coeffs[i]);
   }
 
   DBENCH_STOP(*tround);
