@@ -91,7 +91,7 @@ void invntt_tomont(int32_t a[MLDSA_N])
 {
   unsigned int start, len, j, k;
   int32_t t, zeta;
-  const int32_t f = 41978;  // mont^2/256
+  const int32_t f = 41978; /* mont^2/256 */
 
   k = 256;
   for (len = 1; len < MLDSA_N; len <<= 1)

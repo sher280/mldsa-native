@@ -74,6 +74,7 @@ static int bench(void)
   uint64_t t0, t1;
 
   uint64_t cycles_kg[NTESTS], cycles_sign[NTESTS], cycles_verify[NTESTS];
+  unsigned char pre[CTXLEN + 2];
 
   for (i = 0; i < NTESTS; i++)
   {
@@ -101,8 +102,7 @@ static int bench(void)
     randombytes(ctx, CTXLEN);
     randombytes(m, MLEN);
 
-    // TODO: shouldn't this be moved to be in the internal function?
-    unsigned char pre[CTXLEN + 2];
+    /* TODO: shouldn't this be moved to be in the internal function? */
     pre[0] = 0;
     pre[1] = CTXLEN;
     memcpy(pre + 2, ctx, CTXLEN);

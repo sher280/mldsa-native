@@ -9,8 +9,8 @@
 #include "cbmc.h"
 #include "params.h"
 
-#define MONT -4186625  // 2^32 % MLDSA_Q
-#define QINV 58728449  // q^(-1) mod 2^32
+#define MONT -4186625 /* 2^32 % MLDSA_Q */
+#define QINV 58728449 /* q^(-1) mod 2^32 */
 #define REDUCE_DOMAIN_MAX (INT32_MAX - (1 << 22))
 #define REDUCE_RANGE_MAX 6283009
 

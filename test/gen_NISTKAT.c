@@ -47,9 +47,10 @@ int main(void)
   size_t smlen, mlen1;
   uint8_t m[33];
   uint8_t sm[33 + CRYPTO_BYTES];
+  uint8_t i;
   int rc;
 
-  for (uint8_t i = 0; i < 48; i++)
+  for (i = 0; i < 48; i++)
   {
     entropy_input[i] = i;
   }
@@ -84,7 +85,7 @@ int main(void)
             CRYPTO_ALGNAME);
     return -2;
   }
-  fprintf(fh, "smlen = %zu\n", smlen);
+  fprintf(fh, "smlen = %lu\n", (unsigned long)smlen);
   fprintBstr(fh, "sm = ", sm, smlen);
 
   rc = crypto_sign_open(sm, &mlen1, sm, smlen, NULL, 0, public_key);
@@ -97,8 +98,8 @@ int main(void)
 
   if (mlen != mlen1)
   {
-    printf("crypto_sign_open returned bad 'mlen': got <%zu>, expected <%zu>\n",
-           mlen1, mlen);
+    printf("crypto_sign_open returned bad 'mlen': got <%lu>, expected <%lu>\n",
+           (unsigned long)mlen1, (unsigned long)mlen);
     return -4;
   }
   if (memcmp(m, sm, mlen))
