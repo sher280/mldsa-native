@@ -46,6 +46,6 @@ runs:
       - name: Run CBMC proofs (MLDSA_MODE=${{ inputs.mldsa_mode }})
         shell: ${{ env.SHELL }}
         run: |
-          echo "::group::cbmc_${{ inputs.mlkem_k }}"
+          echo "::group::cbmc_${{ inputs.mldsa_mode }}"
           tests cbmc --mode ${{ inputs.mldsa_mode }};
           echo "::endgroup::"
