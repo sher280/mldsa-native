@@ -73,7 +73,9 @@ unsigned int make_hint(int32_t a0, int32_t a1)
 {
   if (a0 > MLDSA_GAMMA2 || a0 < -MLDSA_GAMMA2 ||
       (a0 == -MLDSA_GAMMA2 && a1 != 0))
+  {
     return 1;
+  }
 
   return 0;
 }
@@ -94,17 +96,27 @@ int32_t use_hint(int32_t a, unsigned int hint)
 
   a1 = decompose(&a0, a);
   if (hint == 0)
+  {
     return a1;
+  }
 
 #if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
   if (a0 > 0)
+  {
     return (a1 + 1) & 15;
+  }
   else
+  {
     return (a1 - 1) & 15;
+  }
 #elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
   if (a0 > 0)
+  {
     return (a1 == 43) ? 0 : a1 + 1;
+  }
   else
+  {
     return (a1 == 0) ? 43 : a1 - 1;
+  }
 #endif
 }

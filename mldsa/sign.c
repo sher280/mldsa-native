@@ -197,7 +197,9 @@ rej:
   polyvecl_add(&z, &z, &y);
   polyvecl_reduce(&z);
   if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+  {
     goto rej;
+  }
 
   /* Check that subtracting cs2 does not change high bits of w and low bits
    * do not reveal secret information */
@@ -206,19 +208,25 @@ rej:
   polyveck_sub(&w0, &w0, &h);
   polyveck_reduce(&w0);
   if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
+  {
     goto rej;
+  }
 
   /* Compute hints for w1 */
   polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
   polyveck_invntt_tomont(&h);
   polyveck_reduce(&h);
   if (polyveck_chknorm(&h, MLDSA_GAMMA2))
+  {
     goto rej;
+  }
 
   polyveck_add(&w0, &w0, &h);
   n = polyveck_make_hint(&h, &w0, &w1);
   if (n > MLDSA_OMEGA)
+  {
     goto rej;
+  }
 
   /* Write signature */
   pack_sig(sig, sig, &z, &h, n);
@@ -252,19 +260,25 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   uint8_t rnd[MLDSA_RNDBYTES];
 
   if (ctxlen > 255)
+  {
     return -1;
+  }
 
   /* Prepare pre = (0, ctxlen, ctx) */
   pre[0] = 0;
   pre[1] = ctxlen;
   for (i = 0; i < ctxlen; i++)
+  {
     pre[2 + i] = ctx[i];
+  }
 
 #ifdef MLD_RANDOMIZED_SIGNING
   randombytes(rnd, MLDSA_RNDBYTES);
 #else
   for (i = 0; i < MLDSA_RNDBYTES; i++)
+  {
     rnd[i] = 0;
+  }
 #endif
 
   crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, rnd, sk,
@@ -297,7 +311,9 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
 #else
   size_t i;
   for (i = 0; i < MLDSA_RNDBYTES; i++)
+  {
     rnd[i] = 0;
+  }
 #endif
 
   crypto_sign_signature_internal(sig, siglen, mu, 0, NULL, 0, rnd, sk, 1);
@@ -329,7 +345,9 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
   size_t i;
 
   for (i = 0; i < mlen; ++i)
+  {
     sm[CRYPTO_BYTES + mlen - 1 - i] = m[mlen - 1 - i];
+  }
   ret = crypto_sign_signature(sm, smlen, sm + CRYPTO_BYTES, mlen, ctx, ctxlen,
                               sk);
   *smlen += mlen;
@@ -369,13 +387,19 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   keccak_state state;
 
   if (siglen != CRYPTO_BYTES)
+  {
     return -1;
+  }
 
   unpack_pk(rho, &t1, pk);
   if (unpack_sig(c, &z, &h, sig))
+  {
     return -1;
+  }
   if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+  {
     return -1;
+  }
 
   if (!externalmu)
   {
@@ -422,8 +446,12 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   shake256_finalize(&state);
   shake256_squeeze(c2, MLDSA_CTILDEBYTES, &state);
   for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
+  {
     if (c[i] != c2[i])
+    {
       return -1;
+    }
+  }
 
   return 0;
 }
@@ -452,12 +480,16 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
   uint8_t pre[257];
 
   if (ctxlen > 255)
+  {
     return -1;
+  }
 
   pre[0] = 0;
   pre[1] = ctxlen;
   for (i = 0; i < ctxlen; i++)
+  {
     pre[2 + i] = ctx[i];
+  }
 
   return crypto_sign_verify_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, pk,
                                      0);
@@ -505,17 +537,23 @@ int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
   size_t i;
 
   if (smlen < CRYPTO_BYTES)
+  {
     goto badsig;
+  }
 
   *mlen = smlen - CRYPTO_BYTES;
   if (crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, ctx,
                          ctxlen, pk))
+  {
     goto badsig;
+  }
   else
   {
     /* All good, copy msg, return 0 */
     for (i = 0; i < *mlen; ++i)
+    {
       m[i] = sm[CRYPTO_BYTES + i];
+    }
     return 0;
   }
 
@@ -523,7 +561,9 @@ badsig:
   /* Signature verification failed */
   *mlen = 0;
   for (i = 0; i < smlen; ++i)
+  {
     m[i] = 0;
+  }
 
   return -1;
 }

@@ -221,7 +221,9 @@ int main(int argc, char *argv[])
 
       /* Parse message */
       if (argc == 0)
+      {
         goto siggen_usage;
+      }
       mlen = (strlen(*argv) - strlen("message=")) / 2;
       if (mlen > MAX_MSG_LENGTH ||
           decode_hex("message", message, mlen, *argv) != 0)
@@ -246,7 +248,9 @@ int main(int argc, char *argv[])
 
       /* Parse context */
       if (argc == 0)
+      {
         goto siggen_usage;
+      }
       ctxlen = (strlen(*argv) - strlen("context=")) / 2;
       if (mlen > MAX_MSG_LENGTH ||
           decode_hex("context", context, ctxlen, *argv) != 0)
@@ -270,7 +274,9 @@ int main(int argc, char *argv[])
 
       /* Parse message */
       if (argc == 0)
+      {
         goto sigver_usage;
+      }
       mlen = (strlen(*argv) - strlen("message=")) / 2;
       if (mlen > MAX_MSG_LENGTH ||
           decode_hex("message", message, mlen, *argv) != 0)
@@ -281,7 +287,9 @@ int main(int argc, char *argv[])
 
       /* Parse context */
       if (argc == 0)
+      {
         goto sigver_usage;
+      }
       ctxlen = (strlen(*argv) - strlen("context=")) / 2;
       if (mlen > MAX_MSG_LENGTH ||
           decode_hex("context", context, ctxlen, *argv) != 0)
