@@ -9,6 +9,8 @@
 #include "cbmc.h"
 #include "params.h"
 
+#define MLD_2_POW_D (1 << MLDSA_D)
+
 #define power2round MLD_NAMESPACE(power2round)
 /*************************************************
  * Name:        power2round
@@ -23,7 +25,18 @@
  *
  * Reference: a1 is passed as a return value instead
  **************************************************/
-void power2round(int32_t *a0, int32_t *a1, int32_t a);
+void power2round(int32_t *a0, int32_t *a1, int32_t a)
+__contract__(
+  requires(memory_no_alias(a0, sizeof(int32_t)))
+  requires(memory_no_alias(a1, sizeof(int32_t)))
+  requires(a >= 0 && a < MLDSA_Q)
+  assigns(memory_slice(a0, sizeof(int32_t)))
+  assigns(memory_slice(a1, sizeof(int32_t)))
+  ensures(*a0 > -(MLD_2_POW_D/2) && *a0 <= (MLD_2_POW_D/2))
+  ensures(*a1 >= 0 && *a1 <= (MLDSA_Q - 1) / MLD_2_POW_D)
+  ensures((*a1 * MLD_2_POW_D + *a0 - a) % MLDSA_Q == 0)
+);
+
 
 #define decompose MLD_NAMESPACE(decompose)
 int32_t decompose(int32_t *a0, int32_t a);

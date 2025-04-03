@@ -7,7 +7,7 @@
 #include "params.h"
 
 
-void power2round(int32_t *a0, int32_t *a1, int32_t a)
+void power2round(int32_t *a0, int32_t *a1, const int32_t a)
 {
   *a1 = (a + (1 << (MLDSA_D - 1)) - 1) >> MLDSA_D;
   *a0 = a - (*a1 << MLDSA_D);
