@@ -10,7 +10,20 @@
 #include "params.h"
 
 #define power2round MLD_NAMESPACE(power2round)
-int32_t power2round(int32_t *a0, int32_t a);
+/*************************************************
+ * Name:        power2round
+ *
+ * Description: For finite field element a, compute a0, a1 such that
+ *              a mod^+ MLDSA_Q = a1*2^MLDSA_D + a0 with -2^{MLDSA_D-1} < a0 <=
+ *              2^{MLDSA_D-1}. Assumes a to be standard representative.
+ *
+ * Arguments:   - int32_t a: input element
+ *              - int32_t *a0: pointer to output element a0
+ *              - int32_t *a1: pointer to output element a1
+ *
+ * Reference: a1 is passed as a return value instead
+ **************************************************/
+void power2round(int32_t *a0, int32_t *a1, int32_t a);
 
 #define decompose MLD_NAMESPACE(decompose)
 int32_t decompose(int32_t *a0, int32_t a);

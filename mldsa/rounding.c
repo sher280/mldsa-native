@@ -6,25 +6,11 @@
 #include <stdint.h>
 #include "params.h"
 
-/*************************************************
- * Name:        power2round
- *
- * Description: For finite field element a, compute a0, a1 such that
- *              a mod^+ MLDSA_Q = a1*2^MLDSA_D + a0 with -2^{MLDSA_D-1} < a0 <=
- *2^{MLDSA_D-1}. Assumes a to be standard representative.
- *
- * Arguments:   - int32_t a: input element
- *              - int32_t *a0: pointer to output element a0
- *
- * Returns a1.
- **************************************************/
-int32_t power2round(int32_t *a0, int32_t a)
-{
-  int32_t a1;
 
-  a1 = (a + (1 << (MLDSA_D - 1)) - 1) >> MLDSA_D;
-  *a0 = a - (a1 << MLDSA_D);
-  return a1;
+void power2round(int32_t *a0, int32_t *a1, int32_t a)
+{
+  *a1 = (a + (1 << (MLDSA_D - 1)) - 1) >> MLDSA_D;
+  *a0 = a - (*a1 << MLDSA_D);
 }
 
 /*************************************************
