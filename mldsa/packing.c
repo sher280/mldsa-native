@@ -49,7 +49,9 @@ void unpack_pk(uint8_t rho[MLDSA_SEEDBYTES], polyveck *t1,
   pk += MLDSA_SEEDBYTES;
 
   for (i = 0; i < MLDSA_K; ++i)
+  {
     polyt1_unpack(&t1->vec[i], pk + i * MLDSA_POLYT1_PACKEDBYTES);
+  }
 }
 
 /*************************************************
@@ -229,11 +231,15 @@ int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
   unsigned int i, j, k;
 
   for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
+  {
     c[i] = sig[i];
+  }
   sig += MLDSA_CTILDEBYTES;
 
   for (i = 0; i < MLDSA_L; ++i)
+  {
     polyz_unpack(&z->vec[i], sig + i * MLDSA_POLYZ_PACKEDBYTES);
+  }
   sig += MLDSA_L * MLDSA_POLYZ_PACKEDBYTES;
 
   /* Decode h */
@@ -241,16 +247,22 @@ int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
   for (i = 0; i < MLDSA_K; ++i)
   {
     for (j = 0; j < MLDSA_N; ++j)
+    {
       h->vec[i].coeffs[j] = 0;
+    }
 
     if (sig[MLDSA_OMEGA + i] < k || sig[MLDSA_OMEGA + i] > MLDSA_OMEGA)
+    {
       return 1;
+    }
 
     for (j = k; j < sig[MLDSA_OMEGA + i]; ++j)
     {
       /* Coefficients are ordered for strong unforgeability */
       if (j > k && sig[j] <= sig[j - 1])
+      {
         return 1;
+      }
       h->vec[i].coeffs[sig[j]] = 1;
     }
 
@@ -259,8 +271,12 @@ int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
 
   /* Extra indices are zero for strong unforgeability */
   for (j = k; j < MLDSA_OMEGA; ++j)
+  {
     if (sig[j])
+    {
       return 1;
+    }
+  }
 
   return 0;
 }

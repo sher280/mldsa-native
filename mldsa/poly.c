@@ -35,7 +35,9 @@ void poly_reduce(poly *a)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     a->coeffs[i] = reduce32(a->coeffs[i]);
+  }
 
   DBENCH_STOP(*tred);
 }
@@ -54,7 +56,9 @@ void poly_caddq(poly *a)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     a->coeffs[i] = caddq(a->coeffs[i]);
+  }
 
   DBENCH_STOP(*tred);
 }
@@ -182,7 +186,9 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     c->coeffs[i] = montgomery_reduce((int64_t)a->coeffs[i] * b->coeffs[i]);
+  }
 
   DBENCH_STOP(*tmul);
 }
@@ -205,7 +211,9 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     a1->coeffs[i] = power2round(&a0->coeffs[i], a->coeffs[i]);
+  }
 
   DBENCH_STOP(*tround);
 }
@@ -229,7 +237,9 @@ void poly_decompose(poly *a1, poly *a0, const poly *a)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     a1->coeffs[i] = decompose(&a0->coeffs[i], a->coeffs[i]);
+  }
 
   DBENCH_STOP(*tround);
 }
@@ -282,7 +292,9 @@ void poly_use_hint(poly *b, const poly *a, const poly *h)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     b->coeffs[i] = use_hint(a->coeffs[i], h->coeffs[i]);
+  }
 
   DBENCH_STOP(*tround);
 }
@@ -306,7 +318,9 @@ int poly_chknorm(const poly *a, int32_t B)
   DBENCH_START();
 
   if (B > (MLDSA_Q - 1) / 8)
+  {
     return 1;
+  }
 
   /* It is ok to leak which coefficient violates the bound since
      the probability for each coefficient is independent of secret
@@ -358,7 +372,9 @@ static unsigned int rej_uniform(int32_t *a, unsigned int len,
     t &= 0x7FFFFF;
 
     if (t < MLDSA_Q)
+    {
       a[ctr++] = t;
+    }
   }
 
   DBENCH_STOP(*tsample);
@@ -395,7 +411,9 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
   {
     off = buflen % 3;
     for (i = 0; i < off; ++i)
+    {
       buf[i] = buf[buflen - off + i];
+    }
 
     stream128_squeezeblocks(buf + off, 1, &state);
     buflen = STREAM128_BLOCKBYTES + off;
@@ -443,9 +461,13 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
     }
 #elif MLDSA_ETA == 4
     if (t0 < 9)
+    {
       a[ctr++] = 4 - t0;
+    }
     if (t1 < 9 && ctr < len)
+    {
       a[ctr++] = 4 - t1;
+    }
 #else
 #error "Invalid value of MLDSA_ETA"
 #endif
@@ -546,11 +568,15 @@ void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
 
   signs = 0;
   for (i = 0; i < 8; ++i)
+  {
     signs |= (uint64_t)buf[i] << 8 * i;
+  }
   pos = 8;
 
   for (i = 0; i < MLDSA_N; ++i)
+  {
     c->coeffs[i] = 0;
+  }
   for (i = MLDSA_N - MLDSA_TAU; i < MLDSA_N; ++i)
   {
     do
