@@ -7,23 +7,56 @@
 #include "params.h"
 
 /*************************************************
- * Name:        montgomery_reduce
+ * Name:        mlk_cast_uint32_to_int32
  *
- * Description: For finite field element a with -2^{31}MLDSA_Q <= a <=
- *MLDSA_Q*2^31, compute r \equiv a*2^{-32} (mod MLDSA_Q) such that -MLDSA_Q < r
- *< MLDSA_Q.
+ * Description: Cast uint32 value to int32
  *
- * Arguments:   - int64_t: finite field element a
- *
- * Returns r.
+ * Returns:
+ *   input x in     0 .. 2^31-1: returns value unchanged
+ *   input x in  2^31 .. 2^32-1: returns (x - 2^32)
  **************************************************/
+#ifdef CBMC
+#pragma CPROVER check push
+#pragma CPROVER check disable "conversion"
+#endif
+static int32_t mld_cast_uint32_to_int32(uint32_t x)
+{
+  /*
+   * PORTABILITY: This relies on uint32_t -> int32_t
+   * being implemented as the inverse of int32_t -> uint32_t,
+   * which is implementation-defined (C99 6.3.1.3 (3))
+   * CBMC (correctly) fails to prove this conversion is OK,
+   * so we have to suppress that check here
+   */
+  return (int32_t)x;
+}
+#ifdef CBMC
+#pragma CPROVER check pop
+#endif
+
 int32_t montgomery_reduce(int64_t a)
 {
-  int32_t t;
+  /* check-magic: 58728449 == unsigned_mod(pow(MLDSA_Q, -1, 2^32), 2^32) */
+  const uint64_t QINV = 58728449;
 
-  t = (int64_t)(int32_t)a * QINV;
-  t = (a - (int64_t)t * MLDSA_Q) >> 32;
-  return t;
+  /*  Compute a*q^{-1} mod 2^32 in unsigned representatives */
+  const uint32_t a_reduced = a & UINT32_MAX;
+  const uint32_t a_inverted = (a_reduced * QINV) & UINT32_MAX;
+
+  /* Lift to signed canonical representative mod 2^16. */
+  const int32_t t = mld_cast_uint32_to_int32(a_inverted);
+
+  int64_t r;
+
+  r = a - ((int64_t)t * MLDSA_Q);
+
+  /*
+   * PORTABILITY: Right-shift on a signed integer is, strictly-speaking,
+   * implementation-defined for negative left argument. Here,
+   * we assume it's sign-preserving "arithmetic" shift right. (C99 6.5.7 (5))
+   */
+  r = r >> 32;
+  return (int32_t)r;
 }
 
 /*************************************************
