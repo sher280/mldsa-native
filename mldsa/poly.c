@@ -457,14 +457,14 @@ __contract__(
 )
 {
   unsigned int ctr, pos;
-  int32_t t0, t1;
+  uint32_t t0, t1;
   DBENCH_START();
 
   ctr = pos = 0;
   while (ctr < len && pos < buflen)
   __loop__(
     invariant(0 <= ctr && ctr <= len && pos <= buflen)
-    invariant(ctr > 0 ==> array_abs_bound(a, 0, ctr, MLDSA_ETA + 1))
+    invariant(array_abs_bound(a, 0, ctr, MLDSA_ETA + 1))
   )
   {
     t0 = buf[pos] & 0x0F;
@@ -474,21 +474,21 @@ __contract__(
     if (t0 < 15)
     {
       t0 = t0 - (205 * t0 >> 10) * 5;
-      a[ctr++] = 2 - t0;
+      a[ctr++] = 2 - (int32_t)t0;
     }
     if (t1 < 15 && ctr < len)
     {
       t1 = t1 - (205 * t1 >> 10) * 5;
-      a[ctr++] = 2 - t1;
+      a[ctr++] = 2 - (int32_t)t1;
     }
 #elif MLDSA_ETA == 4
     if (t0 < 9)
     {
-      a[ctr++] = 4 - t0;
+      a[ctr++] = 4 - (int32_t)t0;
     }
     if (t1 < 9 && ctr < len)
     {
-      a[ctr++] = 4 - t1;
+      a[ctr++] = 4 - (int32_t)t1;
     }
 #else
 #error "Invalid value of MLDSA_ETA"
