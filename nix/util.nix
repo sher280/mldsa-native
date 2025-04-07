@@ -17,7 +17,7 @@ rec {
 
   native-gcc =
     if pkgs.stdenv.isDarwin
-    then pkgs.clang_15
+    then pkgs.clang_16
     else wrap-gcc pkgs;
 
   # cross is for determining whether to install the cross toolchain dependencies or not
@@ -74,10 +74,10 @@ rec {
     name = "pqcp-linters";
     paths = builtins.attrValues {
       clang-tools = pkgs.clang-tools.overrideAttrs {
-        unwrapped = pkgs.llvmPackages_17.clang-unwrapped;
+        unwrapped = pkgs.llvmPackages_18.clang-unwrapped;
       };
 
-      inherit (pkgs.llvmPackages_17)
+      inherit (pkgs.llvmPackages_18)
         bintools;
 
       inherit (pkgs)
@@ -85,7 +85,7 @@ rec {
         shfmt;
 
       inherit (pkgs.python3Packages)
-        mpmath sympy black;
+        mpmath sympy black pyparsing;
     };
   };
 
@@ -96,6 +96,7 @@ rec {
   valgrind_varlat = pkgs.callPackage ./valgrind { };
   hol_light' = pkgs.callPackage ./hol_light { };
   s2n_bignum = pkgs.callPackage ./s2n_bignum { };
+  slothy = pkgs.callPackage ./slothy { };
 
   toolchains = pkgs.symlinkJoin {
     name = "toolchains";
