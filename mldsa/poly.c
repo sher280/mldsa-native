@@ -234,14 +234,17 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
 void poly_decompose(poly *a1, poly *a0, const poly *a)
 {
   unsigned int i;
-  DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    assigns(i, memory_slice(a0, sizeof(poly)), memory_slice(a1, sizeof(poly)))
+    invariant(i <= MLDSA_N)
+    invariant(array_bound(a1->coeffs, 0, i, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)))
+    invariant(array_abs_bound(a0->coeffs, 0, i, MLDSA_GAMMA2+1))
+  )
   {
-    a1->coeffs[i] = decompose(&a0->coeffs[i], a->coeffs[i]);
+    decompose(&a0->coeffs[i], &a1->coeffs[i], a->coeffs[i]);
   }
-
-  DBENCH_STOP(*tround);
 }
 
 /*************************************************
