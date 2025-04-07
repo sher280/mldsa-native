@@ -84,18 +84,31 @@ __contract__(
 );
 
 #define poly_use_hint MLD_NAMESPACE(poly_use_hint)
-void poly_use_hint(poly *b, const poly *a, const poly *h);
+void poly_use_hint(poly *b, const poly *a, const poly *h)
+__contract__(
+  requires(memory_no_alias(a,  sizeof(poly)))
+  requires(memory_no_alias(b, sizeof(poly)))
+  requires(memory_no_alias(h, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  requires(array_bound(h->coeffs, 0, MLDSA_N, 0, 2))
+  assigns(memory_slice(b, sizeof(poly)))
+  ensures(array_bound(b->coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)))
+);
 
 #define poly_chknorm MLD_NAMESPACE(poly_chknorm)
 int poly_chknorm(const poly *a, int32_t B);
+
 #define poly_uniform MLD_NAMESPACE(poly_uniform)
 void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce);
+
 #define poly_uniform_eta MLD_NAMESPACE(poly_uniform_eta)
 void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                       uint16_t nonce);
+
 #define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
 void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                          uint16_t nonce);
+
 #define poly_challenge MLD_NAMESPACE(poly_challenge)
 void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES]);
 

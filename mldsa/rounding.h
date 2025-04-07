@@ -62,7 +62,7 @@ __contract__(
   requires(a >= 0 && a < MLDSA_Q)
   assigns(memory_slice(a0, sizeof(int32_t)))
   assigns(memory_slice(a1, sizeof(int32_t)))
-  /* a0 = -MLDSA_GAMMA2 can only occur when (q-1) = a - (a mod MLDSA_GAMMA2), 
+  /* a0 = -MLDSA_GAMMA2 can only occur when (q-1) = a - (a mod MLDSA_GAMMA2),
    * then a1=1; and a0 = a - (a mod MLDSA_GAMMA2) - 1 (See Alg. 36, FIPS204) */
   ensures(*a0 >= -MLDSA_GAMMA2  && *a0 <= MLDSA_GAMMA2)
   ensures(*a1 >= 0 && *a1 < (MLDSA_Q-1)/(2*MLDSA_GAMMA2))
@@ -76,6 +76,11 @@ __contract__(
 );
 
 #define use_hint MLD_NAMESPACE(use_hint)
-int32_t use_hint(int32_t a, unsigned int hint);
+int32_t use_hint(int32_t a, unsigned int hint)
+__contract__(
+  requires(hint >= 0 && hint <= 1)
+  requires(a >= 0 && a < MLDSA_Q)
+  ensures(return_value >= 0 && return_value < (MLDSA_Q-1)/(2*MLDSA_GAMMA2))
+);
 
 #endif
