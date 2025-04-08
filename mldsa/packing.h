@@ -10,6 +10,15 @@
 #include "polyvec.h"
 
 #define pack_pk MLD_NAMESPACE(pack_pk)
+/*************************************************
+ * Name:        pack_pk
+ *
+ * Description: Bit-pack public key pk = (rho, t1).
+ *
+ * Arguments:   - uint8_t pk[]: output byte array
+ *              - const uint8_t rho[]: byte array containing rho
+ *              - const polyveck *t1: pointer to vector t1
+ **************************************************/
 void pack_pk(uint8_t pk[CRYPTO_PUBLICKEYBYTES],
              const uint8_t rho[MLDSA_SEEDBYTES], const polyveck *t1)
 __contract__(
@@ -23,6 +32,19 @@ __contract__(
 
 
 #define pack_sk MLD_NAMESPACE(pack_sk)
+/*************************************************
+ * Name:        pack_sk
+ *
+ * Description: Bit-pack secret key sk = (rho, tr, key, t0, s1, s2).
+ *
+ * Arguments:   - uint8_t sk[]: output byte array
+ *              - const uint8_t rho[]: byte array containing rho
+ *              - const uint8_t tr[]: byte array containing tr
+ *              - const uint8_t key[]: byte array containing key
+ *              - const polyveck *t0: pointer to vector t0
+ *              - const polyvecl *s1: pointer to vector s1
+ *              - const polyveck *s2: pointer to vector s2
+ **************************************************/
 void pack_sk(uint8_t sk[CRYPTO_SECRETKEYBYTES],
              const uint8_t rho[MLDSA_SEEDBYTES],
              const uint8_t tr[MLDSA_TRBYTES],
@@ -47,6 +69,23 @@ __contract__(
 
 
 #define pack_sig MLD_NAMESPACE(pack_sig)
+/*************************************************
+ * Name:        pack_sig
+ *
+ * Description: Bit-pack signature sig = (c, z, h).
+ *
+ * Arguments:   - uint8_t sig[]: output byte array
+ *              - const uint8_t *c:  pointer to challenge hash length
+ *                                   MLDSA_SEEDBYTES
+ *              - const polyvecl *z: pointer to vector z
+ *              - const polyveck *h: pointer to hint vector h
+ *              - const unsigned int number_of_hints: total
+ *                                   hints in *h
+ *
+ * Note that the number_of_hints argument is not present
+ * in the reference implementation. It is added here to ease
+ * proof of type safety.
+ **************************************************/
 void pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
               const polyvecl *z, const polyveck *h,
               const unsigned int number_of_hints)
@@ -64,6 +103,15 @@ __contract__(
 );
 
 #define unpack_pk MLD_NAMESPACE(unpack_pk)
+/*************************************************
+ * Name:        unpack_pk
+ *
+ * Description: Unpack public key pk = (rho, t1).
+ *
+ * Arguments:   - const uint8_t rho[]: output byte array for rho
+ *              - const polyveck *t1: pointer to output vector t1
+ *              - uint8_t pk[]: byte array containing bit-packed pk
+ **************************************************/
 void unpack_pk(uint8_t rho[MLDSA_SEEDBYTES], polyveck *t1,
                const uint8_t pk[CRYPTO_PUBLICKEYBYTES])
 __contract__(
@@ -78,6 +126,19 @@ __contract__(
 
 
 #define unpack_sk MLD_NAMESPACE(unpack_sk)
+/*************************************************
+ * Name:        unpack_sk
+ *
+ * Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
+ *
+ * Arguments:   - const uint8_t rho[]: output byte array for rho
+ *              - const uint8_t tr[]: output byte array for tr
+ *              - const uint8_t key[]: output byte array for key
+ *              - const polyveck *t0: pointer to output vector t0
+ *              - const polyvecl *s1: pointer to output vector s1
+ *              - const polyveck *s2: pointer to output vector s2
+ *              - uint8_t sk[]: byte array containing bit-packed sk
+ **************************************************/
 void unpack_sk(uint8_t rho[MLDSA_SEEDBYTES], uint8_t tr[MLDSA_TRBYTES],
                uint8_t key[MLDSA_SEEDBYTES], polyveck *t0, polyvecl *s1,
                polyveck *s2, const uint8_t sk[CRYPTO_SECRETKEYBYTES])
@@ -104,6 +165,19 @@ __contract__(
 );
 
 #define unpack_sig MLD_NAMESPACE(unpack_sig)
+/*************************************************
+ * Name:        unpack_sig
+ *
+ * Description: Unpack signature sig = (c, z, h).
+ *
+ * Arguments:   - uint8_t *c: pointer to output challenge hash
+ *              - polyvecl *z: pointer to output vector z
+ *              - polyveck *h: pointer to output hint vector h
+ *              - const uint8_t sig[]: byte array containing
+ *                bit-packed signature
+ *
+ * Returns 1 in case of malformed signature; otherwise 0.
+ **************************************************/
 int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
                const uint8_t sig[CRYPTO_BYTES]);
 
