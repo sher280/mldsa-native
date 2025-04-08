@@ -295,6 +295,10 @@ void poly_use_hint(poly *b, const poly *a, const poly *h)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(array_bound(b->coeffs, 0, i, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)))
+  )
   {
     b->coeffs[i] = use_hint(a->coeffs[i], h->coeffs[i]);
   }
