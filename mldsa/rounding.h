@@ -23,7 +23,7 @@
  *              - int32_t *a0: pointer to output element a0
  *              - int32_t *a1: pointer to output element a1
  *
- * In the reference implementation, a1 is passed as a
+ * Reference: In the reference implementation, a1 is passed as a
  * return value instead.
  **************************************************/
 void power2round(int32_t *a0, int32_t *a1, int32_t a)
