@@ -363,15 +363,32 @@ int poly_chknorm(const poly *a, int32_t B)
  * Returns number of sampled coefficients. Can be smaller than len if not enough
  * random bytes were given.
  **************************************************/
+#define POLY_UNIFORM_NBLOCKS \
+  ((768 + STREAM128_BLOCKBYTES - 1) / STREAM128_BLOCKBYTES)
 static unsigned int rej_uniform(int32_t *a, unsigned int len,
                                 const uint8_t *buf, unsigned int buflen)
+__contract__(
+  requires(len <= buflen && len <= MLDSA_N)
+  requires(buflen <= (POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES) && buflen % 3 == 0)
+  requires(memory_no_alias(a, sizeof(int32_t) * len))
+  requires(memory_no_alias(buf, buflen))
+  assigns(memory_slice(a, sizeof(int32_t) * len))
+  ensures(return_value <= len)
+  ensures(array_bound(a, 0, return_value, 0, MLDSA_Q))
+)
 {
   unsigned int ctr, pos;
   uint32_t t;
   DBENCH_START();
 
   ctr = pos = 0;
+  /* pos + 3 cannot overflow due to the assumption
+  buflen <= (POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES) */
   while (ctr < len && pos + 3 <= buflen)
+  __loop__(
+    invariant(ctr <= len && pos <= buflen)
+    invariant(array_bound(a, 0, ctr, 0, MLDSA_Q))
+  )
   {
     t = buf[pos++];
     t |= (uint32_t)buf[pos++] << 8;
@@ -400,8 +417,6 @@ static unsigned int rej_uniform(int32_t *a, unsigned int len,
  *MLDSA_SEEDBYTES
  *              - uint16_t nonce: 2-byte nonce
  **************************************************/
-#define POLY_UNIFORM_NBLOCKS \
-  ((768 + STREAM128_BLOCKBYTES - 1) / STREAM128_BLOCKBYTES)
 void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
 {
   unsigned int i, ctr, off;
