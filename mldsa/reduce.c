@@ -59,17 +59,6 @@ int32_t montgomery_reduce(int64_t a)
   return (int32_t)r;
 }
 
-/*************************************************
- * Name:        reduce32
- *
- * Description: For finite field element a with a <= 2^{31} - 2^{22} - 1,
- *              compute r \equiv a (mod MLDSA_Q) such that -6283008 <= r <=
- *6283008.
- *
- * Arguments:   - int32_t: finite field element a
- *
- * Returns r.
- **************************************************/
 int32_t reduce32(int32_t a)
 {
   int32_t t;
@@ -80,34 +69,8 @@ int32_t reduce32(int32_t a)
   return t;
 }
 
-/*************************************************
- * Name:        caddq
- *
- * Description: Add MLDSA_Q if input coefficient is negative.
- *
- * Arguments:   - int32_t: finite field element a
- *
- * Returns r.
- **************************************************/
 int32_t caddq(int32_t a)
 {
   a += (a >> 31) & MLDSA_Q;
-  return a;
-}
-
-/*************************************************
- * Name:        freeze
- *
- * Description: For finite field element a, compute standard
- *              representative r = a mod^+ MLDSA_Q.
- *
- * Arguments:   - int32_t: finite field element a
- *
- * Returns r.
- **************************************************/
-int32_t freeze(int32_t a)
-{
-  a = reduce32(a);
-  a = caddq(a);
   return a;
 }

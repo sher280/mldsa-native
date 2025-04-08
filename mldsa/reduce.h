@@ -33,6 +33,17 @@ __contract__(
 );
 
 #define reduce32 MLD_NAMESPACE(reduce32)
+/*************************************************
+ * Name:        reduce32
+ *
+ * Description: For finite field element a with a <= 2^{31} - 2^{22} - 1,
+ *              compute r \equiv a (mod MLDSA_Q) such that
+ *              -REDUCE_RANGE_MAX <= r < REDUCE_RANGE_MAX.
+ *
+ * Arguments:   - int32_t: finite field element a
+ *
+ * Returns r.
+ **************************************************/
 int32_t reduce32(int32_t a)
 __contract__(
   requires(a <= REDUCE_DOMAIN_MAX)
@@ -41,9 +52,23 @@ __contract__(
 );
 
 #define caddq MLD_NAMESPACE(caddq)
-int32_t caddq(int32_t a);
+/*************************************************
+ * Name:        caddq
+ *
+ * Description: Add MLDSA_Q if input coefficient is negative.
+ *
+ * Arguments:   - int32_t: finite field element a
+ *
+ * Returns r.
+ **************************************************/
+int32_t caddq(int32_t a)
+__contract__(
+  requires(a > -MLDSA_Q)
+  requires(a < MLDSA_Q)
+  ensures(return_value >= 0)
+  ensures(return_value < MLDSA_Q)
+  ensures(return_value == (a >= 0) ? a : (a + MLDSA_Q))
+);
 
-#define freeze MLD_NAMESPACE(freeze)
-int32_t freeze(int32_t a);
 
 #endif
