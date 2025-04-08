@@ -35,6 +35,10 @@ void poly_reduce(poly *a)
   DBENCH_START();
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(forall(k0, i, MLDSA_N, a->coeffs[k0] == loop_entry(*a).coeffs[k0]))
+    invariant(array_bound(a->coeffs, 0, i, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
   {
     a->coeffs[i] = reduce32(a->coeffs[i]);
   }
