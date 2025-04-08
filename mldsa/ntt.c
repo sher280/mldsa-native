@@ -7,6 +7,16 @@
 #include "params.h"
 #include "reduce.h"
 
+static int32_t mld_fqmul(int32_t a, int32_t b)
+__contract__(
+  requires(b > -MLDSA_Q_HALF && b < MLDSA_Q_HALF)
+  ensures(return_value > -MLDSA_Q && return_value < MLDSA_Q)
+)
+{
+  return montgomery_reduce((int64_t)a * (int64_t)b);
+  /* TODO: reason about bounds */
+}
+
 static const int32_t zetas[MLDSA_N] = {
     0,        25847,    -2608894, -518909,  237124,   -777960,  -876248,
     466468,   1826347,  2353451,  -359251,  -2091905, 3119733,  -2884855,
@@ -68,7 +78,7 @@ void ntt(int32_t a[MLDSA_N])
       zeta = zetas[++k];
       for (j = start; j < start + len; ++j)
       {
-        t = montgomery_reduce((int64_t)zeta * a[j + len]);
+        t = mld_fqmul(a[j + len], zeta);
         a[j + len] = a[j] - t;
         a[j] = a[j] + t;
       }
@@ -104,13 +114,13 @@ void invntt_tomont(int32_t a[MLDSA_N])
         t = a[j];
         a[j] = t + a[j + len];
         a[j + len] = t - a[j + len];
-        a[j + len] = montgomery_reduce((int64_t)zeta * a[j + len]);
+        a[j + len] = mld_fqmul(a[j + len], zeta);
       }
     }
   }
 
   for (j = 0; j < MLDSA_N; ++j)
   {
-    a[j] = montgomery_reduce((int64_t)f * a[j]);
+    a[j] = mld_fqmul(a[j], f);
   }
 }
