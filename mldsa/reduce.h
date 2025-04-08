@@ -38,7 +38,6 @@ __contract__(
   requires(a <= REDUCE_DOMAIN_MAX)
   ensures(return_value >= -REDUCE_RANGE_MAX)
   ensures(return_value <   REDUCE_RANGE_MAX)
-  ensures((return_value - a) % MLDSA_Q == 0)
 );
 
 #define caddq MLD_NAMESPACE(caddq)

@@ -76,6 +76,7 @@ int32_t reduce32(int32_t a)
 
   t = (a + (1 << 22)) >> 23;
   t = a - t * MLDSA_Q;
+  cassert((t - a) % MLDSA_Q == 0);
   return t;
 }
 

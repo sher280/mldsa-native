@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "cbmc.h"
 #include "params.h"
+#include "reduce.h"
 
 typedef struct
 {
@@ -15,7 +16,14 @@ typedef struct
 } poly;
 
 #define poly_reduce MLD_NAMESPACE(poly_reduce)
-void poly_reduce(poly *a);
+void poly_reduce(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(forall(k0, 0, MLDSA_N, a->coeffs[k0] <= REDUCE_DOMAIN_MAX)) 
+  assigns(memory_slice(a, sizeof(poly)))
+  ensures(array_bound(a->coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))
+);
+
 #define poly_caddq MLD_NAMESPACE(poly_caddq)
 void poly_caddq(poly *a);
 
