@@ -38,17 +38,6 @@ void decompose(int32_t *a0, int32_t *a1, int32_t a)
   *a0 -= (((MLDSA_Q - 1) / 2 - *a0) >> 31) & MLDSA_Q;
 }
 
-/*************************************************
- * Name:        make_hint
- *
- * Description: Compute hint bit indicating whether the low bits of the
- *              input element overflow into the high bits.
- *
- * Arguments:   - int32_t a0: low bits of input element
- *              - int32_t a1: high bits of input element
- *
- * Returns 1 if overflow.
- **************************************************/
 unsigned int make_hint(int32_t a0, int32_t a1)
 {
   if (a0 > MLDSA_GAMMA2 || a0 < -MLDSA_GAMMA2 ||
@@ -60,16 +49,6 @@ unsigned int make_hint(int32_t a0, int32_t a1)
   return 0;
 }
 
-/*************************************************
- * Name:        use_hint
- *
- * Description: Correct high bits according to hint.
- *
- * Arguments:   - int32_t a: input element
- *              - unsigned int hint: hint bit
- *
- * Returns corrected high bits.
- **************************************************/
 int32_t use_hint(int32_t a, unsigned int hint)
 {
   int32_t a0, a1;

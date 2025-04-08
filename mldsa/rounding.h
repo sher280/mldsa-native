@@ -23,7 +23,8 @@
  *              - int32_t *a0: pointer to output element a0
  *              - int32_t *a1: pointer to output element a1
  *
- * Reference: a1 is passed as a return value instead
+ * In the reference implementation, a1 is passed as a
+ * return value instead.
  **************************************************/
 void power2round(int32_t *a0, int32_t *a1, int32_t a)
 __contract__(
@@ -70,12 +71,33 @@ __contract__(
 );
 
 #define make_hint MLD_NAMESPACE(make_hint)
+/*************************************************
+ * Name:        make_hint
+ *
+ * Description: Compute hint bit indicating whether the low bits of the
+ *              input element overflow into the high bits.
+ *
+ * Arguments:   - int32_t a0: low bits of input element
+ *              - int32_t a1: high bits of input element
+ *
+ * Returns 1 if overflow, 0 otherwise
+ **************************************************/
 unsigned int make_hint(int32_t a0, int32_t a1)
 __contract__(
   ensures(return_value >= 0 && return_value <= 1)
 );
 
 #define use_hint MLD_NAMESPACE(use_hint)
+/*************************************************
+ * Name:        use_hint
+ *
+ * Description: Correct high bits according to hint.
+ *
+ * Arguments:   - int32_t a: input element
+ *              - unsigned int hint: hint bit
+ *
+ * Returns corrected high bits.
+ **************************************************/
 int32_t use_hint(int32_t a, unsigned int hint)
 __contract__(
   requires(hint >= 0 && hint <= 1)
