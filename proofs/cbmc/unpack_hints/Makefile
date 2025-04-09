@@ -3,31 +3,31 @@
 include ../Makefile_params.common
 
 HARNESS_ENTRY = harness
-HARNESS_FILE = polyveck_pack_w1_harness
+HARNESS_FILE = unpack_hints_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = polyveck_pack_w1
+PROOF_UID = unpack_hints
 
 DEFINES +=
 INCLUDES +=
 
 REMOVE_FUNCTION_BODY +=
-UNWINDSET += $(MLD_NAMESPACE)polyveck_pack_w1.0:8 # Largest value of MLDSA_K
 
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
-PROJECT_SOURCES += $(SRCDIR)/mldsa/polyvec.c
+PROJECT_SOURCES += $(SRCDIR)/mldsa/packing.c
 
-CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyveck_pack_w1
-USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyw1_pack
+CHECK_FUNCTION_CONTRACTS=unpack_hints
+USE_FUNCTION_CONTRACTS=
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
 # Disable any setting of EXTERNAL_SAT_SOLVER, and choose SMT backend instead
 EXTERNAL_SAT_SOLVER=
 CBMCFLAGS=--smt2
+CBMCFLAGS+=--slice-formula
 
-FUNCTION_NAME = polyveck_pack_w1
+FUNCTION_NAME = unpack_hints
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will

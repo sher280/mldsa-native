@@ -436,6 +436,17 @@ __contract__(
     array_bound(p->vec[k1].coeffs, 0, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND, MLDSA_ETA + 1)))
 );
 
+#define polyvecl_unpack_z MLD_NAMESPACE(polyvecl_unpack_z)
+void polyvecl_unpack_z(polyvecl *z,
+                       const uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES])
+__contract__(
+  requires(memory_no_alias(r,  MLDSA_L * MLDSA_POLYZ_PACKEDBYTES))
+  requires(memory_no_alias(z, sizeof(polyvecl)))
+  assigns(object_whole(z))
+  ensures(forall(k1, 0, MLDSA_L,
+    array_bound(z->vec[k1].coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
+);
+
 #define polyveck_unpack_eta MLD_NAMESPACE(polyveck_unpack_eta)
 void polyveck_unpack_eta(polyveck *p,
                          const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])

@@ -178,6 +178,19 @@ __contract__(
  * Returns 1 in case of malformed signature; otherwise 0.
  **************************************************/
 int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
-               const uint8_t sig[CRYPTO_BYTES]);
-
+               const uint8_t sig[CRYPTO_BYTES])
+__contract__(
+  requires(memory_no_alias(sig, CRYPTO_BYTES))
+  requires(memory_no_alias(c, MLDSA_CTILDEBYTES))
+  requires(memory_no_alias(z, sizeof(polyvecl)))
+  requires(memory_no_alias(h, sizeof(polyveck)))
+  assigns(object_whole(c))
+  assigns(object_whole(z))
+  assigns(object_whole(h))
+  ensures(forall(k0, 0, MLDSA_L,
+    array_bound(z->vec[k0].coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1)))
+  ensures(forall(k1, 0, MLDSA_K,
+    array_bound(h->vec[k1].coeffs, 0, MLDSA_N, 0, 2)))
+  ensures(return_value >= 0 && return_value <= 1)
+);
 #endif /* !MLD_PACKING_H */

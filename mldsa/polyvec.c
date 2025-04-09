@@ -428,6 +428,16 @@ void polyvecl_unpack_eta(polyvecl *p,
   }
 }
 
+void polyvecl_unpack_z(polyvecl *z,
+                       const uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES])
+{
+  unsigned int i;
+  for (i = 0; i < MLDSA_L; ++i)
+  {
+    polyz_unpack(&z->vec[i], r + i * MLDSA_POLYZ_PACKEDBYTES);
+  }
+}
+
 void polyveck_unpack_eta(polyveck *p,
                          const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
 {
