@@ -267,8 +267,23 @@ void polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v)
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, object_whole(v0), object_whole(v1))
+    invariant(i <= MLDSA_K)
+    invariant(forall(k1, 0, i,
+                     array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)) &&
+                     array_abs_bound(v0->vec[k1].coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1)))
+  )
   {
-    poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);
+    poly c0, c1;
+
+    poly_decompose(&c1, &c0, &v->vec[i]);
+
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    v0->vec[i] = c0;
+    v1->vec[i] = c1;
   }
 }
 

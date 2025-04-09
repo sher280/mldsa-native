@@ -27,7 +27,7 @@ typedef struct
 void poly_reduce(poly *a)
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(forall(k0, 0, MLDSA_N, a->coeffs[k0] <= REDUCE_DOMAIN_MAX)) 
+  requires(forall(k0, 0, MLDSA_N, a->coeffs[k0] <= REDUCE_DOMAIN_MAX))
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))
 );
@@ -175,8 +175,8 @@ __contract__(
   requires(memory_no_alias(a0, sizeof(poly)))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
-  assigns(memory_slice(a1, sizeof(poly)))
-  assigns(memory_slice(a0, sizeof(poly)))
+  assigns(object_whole(a1))
+  assigns(object_whole(a0))
   ensures(array_bound(a1->coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)))
   ensures(array_abs_bound(a0->coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1))
 );
