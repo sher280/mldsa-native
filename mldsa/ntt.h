@@ -42,6 +42,17 @@ __contract__(
 );
 
 #define invntt_tomont MLD_NAMESPACE(invntt_tomont)
+/*************************************************
+ * Name:        invntt_tomont
+ *
+ * Description: Inverse NTT and multiplication by Montgomery factor 2^32.
+ *              In-place. No modular reductions after additions or
+ *              subtractions; input coefficients need to be smaller than
+ *              MLDSA_Q in absolute value. Output coefficient are smaller than
+ *              MLDSA_Q in absolute value.
+ *
+ * Arguments:   - uint32_t p[MLDSA_N]: input/output coefficient array
+ **************************************************/
 void invntt_tomont(int32_t a[MLDSA_N]);
 
 #endif

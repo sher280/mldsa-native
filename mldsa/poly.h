@@ -16,6 +16,14 @@ typedef struct
 } poly;
 
 #define poly_reduce MLD_NAMESPACE(poly_reduce)
+/*************************************************
+ * Name:        poly_reduce
+ *
+ * Description: Inplace reduction of all coefficients of polynomial to
+ *              representative in [-6283008,6283008].
+ *
+ * Arguments:   - poly *a: pointer to input/output polynomial
+ **************************************************/
 void poly_reduce(poly *a)
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
@@ -25,9 +33,26 @@ __contract__(
 );
 
 #define poly_caddq MLD_NAMESPACE(poly_caddq)
+/*************************************************
+ * Name:        poly_caddq
+ *
+ * Description: For all coefficients of in/out polynomial add MLDSA_Q if
+ *              coefficient is negative.
+ *
+ * Arguments:   - poly *a: pointer to input/output polynomial
+ **************************************************/
 void poly_caddq(poly *a);
 
 #define poly_add MLD_NAMESPACE(poly_add)
+/*************************************************
+ * Name:        poly_add
+ *
+ * Description: Add polynomials. No modular reduction is performed.
+ *
+ * Arguments:   - poly *c: pointer to output polynomial
+ *              - const poly *a: pointer to first summand
+ *              - const poly *b: pointer to second summand
+ **************************************************/
 void poly_add(poly *c, const poly *a, const poly *b)
 __contract__(
   requires(memory_no_alias(c, sizeof(poly)))
@@ -40,6 +65,17 @@ __contract__(
 );
 
 #define poly_sub MLD_NAMESPACE(poly_sub)
+/*************************************************
+ * Name:        poly_sub
+ *
+ * Description: Subtract polynomials. No modular reduction is
+ *              performed.
+ *
+ * Arguments:   - poly *c: pointer to output polynomial
+ *              - const poly *a: pointer to first input polynomial
+ *              - const poly *b: pointer to second input polynomial to be
+ *                               subtraced from first input polynomial
+ **************************************************/
 void poly_sub(poly *c, const poly *a, const poly *b)
 __contract__(
   requires(memory_no_alias(c, sizeof(poly)))
@@ -51,6 +87,14 @@ __contract__(
   assigns(memory_slice(c, sizeof(poly))));
 
 #define poly_shiftl MLD_NAMESPACE(poly_shiftl)
+/*************************************************
+ * Name:        poly_shiftl
+ *
+ * Description: Multiply polynomial by 2^MLDSA_D without modular reduction.
+ *Assumes input coefficients to be less than 2^{31-MLDSA_D} in absolute value.
+ *
+ * Arguments:   - poly *a: pointer to input/output polynomial
+ **************************************************/
 void poly_shiftl(poly *a)
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
@@ -59,16 +103,72 @@ __contract__(
 );
 
 #define poly_ntt MLD_NAMESPACE(poly_ntt)
+/*************************************************
+ * Name:        poly_ntt
+ *
+ * Description: Inplace forward NTT. Coefficients can grow by
+ *              8*MLDSA_Q in absolute value.
+ *
+ * Arguments:   - poly *a: pointer to input/output polynomial
+ **************************************************/
 void poly_ntt(poly *a);
+
 #define poly_invntt_tomont MLD_NAMESPACE(poly_invntt_tomont)
+/*************************************************
+ * Name:        poly_invntt_tomont
+ *
+ * Description: Inplace inverse NTT and multiplication by 2^{32}.
+ *              Input coefficients need to be less than MLDSA_Q in absolute
+ *              value and output coefficients are again bounded by MLDSA_Q.
+ *
+ * Arguments:   - poly *a: pointer to input/output polynomial
+ **************************************************/
 void poly_invntt_tomont(poly *a);
+
 #define poly_pointwise_montgomery MLD_NAMESPACE(poly_pointwise_montgomery)
+/*************************************************
+ * Name:        poly_pointwise_montgomery
+ *
+ * Description: Pointwise multiplication of polynomials in NTT domain
+ *              representation and multiplication of resulting polynomial
+ *              by 2^{-32}.
+ *
+ * Arguments:   - poly *c: pointer to output polynomial
+ *              - const poly *a: pointer to first input polynomial
+ *              - const poly *b: pointer to second input polynomial
+ **************************************************/
 void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
 
 #define poly_power2round MLD_NAMESPACE(poly_power2round)
+/*************************************************
+ * Name:        poly_power2round
+ *
+ * Description: For all coefficients c of the input polynomial,
+ *              compute c0, c1 such that c mod MLDSA_Q = c1*2^MLDSA_D + c0
+ *              with -2^{MLDSA_D-1} < c0 <= 2^{MLDSA_D-1}. Assumes coefficients
+ *to be standard representatives.
+ *
+ * Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
+ *              - poly *a0: pointer to output polynomial with coefficients c0
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void poly_power2round(poly *a1, poly *a0, const poly *a);
 
 #define poly_decompose MLD_NAMESPACE(poly_decompose)
+/*************************************************
+ * Name:        poly_decompose
+ *
+ * Description: For all coefficients c of the input polynomial,
+ *              compute high and low bits c0, c1 such c mod MLDSA_Q = c1*ALPHA +
+ *              c0 with -ALPHA/2 < c0 <= ALPHA/2 except
+ *              c1 = (MLDSA_Q-1)/ALPHA where we set
+ *              c1 = 0 and -ALPHA/2 <= c0 = c mod MLDSA_Q - MLDSA_Q < 0.
+ *              Assumes coefficients to be standard representatives.
+ *
+ * Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
+ *              - poly *a0: pointer to output polynomial with coefficients c0
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void poly_decompose(poly *a1, poly *a0, const poly *a)
 __contract__(
   requires(memory_no_alias(a1,  sizeof(poly)))
@@ -82,6 +182,19 @@ __contract__(
 );
 
 #define poly_make_hint MLD_NAMESPACE(poly_make_hint)
+/*************************************************
+ * Name:        poly_make_hint
+ *
+ * Description: Compute hint polynomial. The coefficients of which indicate
+ *              whether the low bits of the corresponding coefficient of
+ *              the input polynomial overflow into the high bits.
+ *
+ * Arguments:   - poly *h: pointer to output hint polynomial
+ *              - const poly *a0: pointer to low part of input polynomial
+ *              - const poly *a1: pointer to high part of input polynomial
+ *
+ * Returns number of 1 bits.
+ **************************************************/
 unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1)
 __contract__(
   requires(memory_no_alias(h,  sizeof(poly)))
@@ -92,6 +205,15 @@ __contract__(
 );
 
 #define poly_use_hint MLD_NAMESPACE(poly_use_hint)
+/*************************************************
+ * Name:        poly_use_hint
+ *
+ * Description: Use hint polynomial to correct the high bits of a polynomial.
+ *
+ * Arguments:   - poly *b: pointer to output polynomial with corrected high bits
+ *              - const poly *a: pointer to input polynomial
+ *              - const poly *h: pointer to input hint polynomial
+ **************************************************/
 void poly_use_hint(poly *b, const poly *a, const poly *h)
 __contract__(
   requires(memory_no_alias(a,  sizeof(poly)))
@@ -104,23 +226,91 @@ __contract__(
 );
 
 #define poly_chknorm MLD_NAMESPACE(poly_chknorm)
+/*************************************************
+ * Name:        poly_chknorm
+ *
+ * Description: Check infinity norm of polynomial against given bound.
+ *              Assumes input coefficients were reduced by reduce32().
+ *
+ * Arguments:   - const poly *a: pointer to polynomial
+ *              - int32_t B: norm bound
+ *
+ * Returns 0 if norm is strictly smaller than B <= (MLDSA_Q-1)/8 and 1
+ *otherwise.
+ **************************************************/
 int poly_chknorm(const poly *a, int32_t B);
 
 #define poly_uniform MLD_NAMESPACE(poly_uniform)
+/*************************************************
+ * Name:        poly_uniform
+ *
+ * Description: Sample polynomial with uniformly random coefficients
+ *              in [0,MLDSA_Q-1] by performing rejection sampling on the
+ *              output stream of SHAKE128(seed|nonce)
+ *
+ * Arguments:   - poly *a: pointer to output polynomial
+ *              - const uint8_t seed[]: byte array with seed of length
+ *                MLDSA_SEEDBYTES
+ *              - uint16_t nonce: 2-byte nonce
+ **************************************************/
 void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce);
 
 #define poly_uniform_eta MLD_NAMESPACE(poly_uniform_eta)
+/*************************************************
+ * Name:        poly_uniform_eta
+ *
+ * Description: Sample polynomial with uniformly random coefficients
+ *              in [-MLDSA_ETA,MLDSA_ETA] by performing rejection sampling on
+ *              the output stream from SHAKE256(seed|nonce)
+ *
+ * Arguments:   - poly *a: pointer to output polynomial
+ *              - const uint8_t seed[]: byte array with seed of length
+ *                MLDSA_CRHBYTES
+ *              - uint16_t nonce: 2-byte nonce
+ **************************************************/
 void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                       uint16_t nonce);
 
 #define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
+/*************************************************
+ * Name:        poly_uniform_gamma1m1
+ *
+ * Description: Sample polynomial with uniformly random coefficients
+ *              in [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1] by unpacking output
+ *              stream of SHAKE256(seed|nonce)
+ *
+ * Arguments:   - poly *a: pointer to output polynomial
+ *              - const uint8_t seed[]: byte array with seed of length
+ *                MLDSA_CRHBYTES
+ *              - uint16_t nonce: 16-bit nonce
+ **************************************************/
 void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                          uint16_t nonce);
 
 #define poly_challenge MLD_NAMESPACE(poly_challenge)
+/*************************************************
+ * Name:        poly_challenge
+ *
+ * Description: Implementation of H. Samples polynomial with MLDSA_TAU nonzero
+ *              coefficients in {-1,1} using the output stream of
+ *              SHAKE256(seed).
+ *
+ * Arguments:   - poly *c: pointer to output polynomial
+ *              - const uint8_t mu[]: byte array containing seed of length
+ *                MLDSA_CTILDEBYTES
+ **************************************************/
 void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES]);
 
 #define polyeta_pack MLD_NAMESPACE(polyeta_pack)
+/*************************************************
+ * Name:        polyeta_pack
+ *
+ * Description: Bit-pack polynomial with coefficients in [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_POLYETA_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void polyeta_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYETA_PACKEDBYTES))
@@ -146,6 +336,14 @@ __contract__(
 #endif
 
 #define polyeta_unpack MLD_NAMESPACE(polyeta_unpack)
+/*************************************************
+ * Name:        polyeta_unpack
+ *
+ * Description: Unpack polynomial with coefficients in [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
 void polyeta_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
@@ -155,6 +353,16 @@ __contract__(
 );
 
 #define polyt1_pack MLD_NAMESPACE(polyt1_pack)
+/*************************************************
+ * Name:        polyt1_pack
+ *
+ * Description: Bit-pack polynomial t1 with coefficients fitting in 10 bits.
+ *              Input coefficients are assumed to be standard representatives.
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_POLYT1_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void polyt1_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYT1_PACKEDBYTES))
@@ -164,6 +372,15 @@ __contract__(
 );
 
 #define polyt1_unpack MLD_NAMESPACE(polyt1_unpack)
+/*************************************************
+ * Name:        polyt1_unpack
+ *
+ * Description: Unpack polynomial t1 with 10-bit coefficients.
+ *              Output coefficients are standard representatives.
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
 void polyt1_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
@@ -173,6 +390,16 @@ __contract__(
 );
 
 #define polyt0_pack MLD_NAMESPACE(polyt0_pack)
+/*************************************************
+ * Name:        polyt0_pack
+ *
+ * Description: Bit-pack polynomial t0 with coefficients in ]-2^{MLDSA_D-1},
+ *              2^{MLDSA_D-1}].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_POLYT0_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void polyt0_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYT0_PACKEDBYTES))
@@ -183,6 +410,15 @@ __contract__(
 
 
 #define polyt0_unpack MLD_NAMESPACE(polyt0_unpack)
+/*************************************************
+ * Name:        polyt0_unpack
+ *
+ * Description: Unpack polynomial t0 with coefficients in ]-2^{MLDSA_D-1},
+ *2^{MLDSA_D-1}].
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
 void polyt0_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
@@ -192,6 +428,16 @@ __contract__(
 );
 
 #define polyz_pack MLD_NAMESPACE(polyz_pack)
+/*************************************************
+ * Name:        polyz_pack
+ *
+ * Description: Bit-pack polynomial with coefficients
+ *              in [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_POLYZ_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void polyz_pack(uint8_t *r, const poly *a)
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYZ_PACKEDBYTES))
@@ -201,6 +447,15 @@ __contract__(
 );
 
 #define polyz_unpack MLD_NAMESPACE(polyz_unpack)
+/*************************************************
+ * Name:        polyz_unpack
+ *
+ * Description: Unpack polynomial z with coefficients
+ *              in [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1].
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
 void polyz_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
@@ -211,6 +466,16 @@ __contract__(
 
 
 #define polyw1_pack MLD_NAMESPACE(polyw1_pack)
+/*************************************************
+ * Name:        polyw1_pack
+ *
+ * Description: Bit-pack polynomial w1 with coefficients in [0,15] or [0,43].
+ *              Input coefficients are assumed to be standard representatives.
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_POLYW1_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
 void polyw1_pack(uint8_t *r, const poly *a)
 #if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
 __contract__(
