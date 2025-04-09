@@ -56,35 +56,128 @@ static const int32_t zetas[MLDSA_N] = {
     -976891,  1612842,  -3545687, -554416,  3919660,  -48306,   -1362209,
     3937738,  1400424,  -846154,  1976782};
 
-/*************************************************
- * Name:        ntt
- *
- * Description: Forward NTT, in-place. No modular reduction is performed after
- *              additions or subtractions. Output vector is in bitreversed
- *order.
- *
- * Arguments:   - uint32_t p[MLDSA_N]: input/output coefficient array
- **************************************************/
-void ntt(int32_t a[MLDSA_N])
-{
-  unsigned int len, start, j, k;
-  int32_t zeta, t;
 
-  k = 0;
-  for (len = 128; len > 0; len >>= 1)
+/* mld_ntt_butterfly_block()
+ *
+ * Computes a block CT butterflies with a fixed twiddle factor,
+ * using Montgomery multiplication.
+ *
+ * Parameters:
+ * - r: Pointer to base of polynomial (_not_ the base of butterfly block)
+ * - zeta: Twiddle factor to use for the butterfly. This must be in
+ *         Montgomery form and signed canonical.
+ * - start: Offset to the beginning of the butterfly block
+ * - len: Index difference between coefficients subject to a butterfly
+ * - bound: Ghost variable describing coefficient bound: Prior to `start`,
+ *          coefficients must be bound by `bound + MLDSA_Q`. Post `start`,
+ *          they must be bound by `bound`.
+ * When this function returns, output coefficients in the index range
+ * [start, start+2*len) have bound bumped to `bound + MLDSA_Q`.
+ * Example:
+ * - start=8, len=4
+ *   This would compute the following four butterflies
+ *          8     --    12
+ *             9    --     13
+ *                10   --     14
+ *                   11   --     15
+ * - start=4, len=2
+ *   This would compute the following two butterflies
+ *          4 -- 6
+ *             5 -- 7
+ */
+
+/* Reference: Embedded in `ntt()` in the reference implementation. */
+static void mld_ntt_butterfly_block(int32_t r[MLDSA_N], const int32_t zeta,
+                                    const unsigned start, const unsigned len,
+                                    const int32_t bound)
+__contract__(
+  requires(start < MLDSA_N)
+  requires(1 <= len && len <= MLDSA_N / 2 && start + 2 * len <= MLDSA_N)
+  requires(0 <= bound && bound < INT32_MAX - MLDSA_Q)
+  requires(-MLDSA_Q_HALF < zeta && zeta < MLDSA_Q_HALF)
+  requires(memory_no_alias(r, sizeof(int32_t) * MLDSA_N))
+  requires(array_abs_bound(r, 0, start, bound + MLDSA_Q))
+  requires(array_abs_bound(r, start, MLDSA_N, bound))
+  assigns(memory_slice(r, sizeof(int32_t) * MLDSA_N))
+  ensures(array_abs_bound(r, 0, start + 2*len, bound + MLDSA_Q))
+  ensures(array_abs_bound(r, start + 2 * len, MLDSA_N, bound)))
+{
+  /* `bound` is a ghost variable only needed in the CBMC specification */
+  unsigned j;
+  ((void)bound);
+  for (j = start; j < start + len; j++)
+  __loop__(
+    invariant(start <= j && j <= start + len)
+    /*
+     * Coefficients are updated in strided pairs, so the bounds for the
+     * intermediate states alternate twice between the old and new bound
+     */
+    invariant(array_abs_bound(r, 0,           j,           bound + MLDSA_Q))
+    invariant(array_abs_bound(r, j,           start + len, bound))
+    invariant(array_abs_bound(r, start + len, j + len,     bound + MLDSA_Q))
+    invariant(array_abs_bound(r, j + len,     MLDSA_N,     bound)))
   {
-    for (start = 0; start < MLDSA_N; start = j + len)
-    {
-      zeta = zetas[++k];
-      for (j = start; j < start + len; ++j)
-      {
-        t = mld_fqmul(a[j + len], zeta);
-        a[j + len] = a[j] - t;
-        a[j] = a[j] + t;
-      }
-    }
+    int32_t t;
+    t = mld_fqmul(r[j + len], zeta);
+    r[j + len] = r[j] - t;
+    r[j] = r[j] + t;
   }
 }
+
+/* mld_ntt_layer()
+ *
+ * Compute one layer of forward NTT
+ *
+ * Parameters:
+ * - r:     Pointer to base of polynomial
+ * - layer: Indicates which layer is being applied.
+ */
+
+/* Reference: Embedded in `ntt()` in the reference implementation. */
+static void mld_ntt_layer(int32_t r[MLDSA_N], const unsigned layer)
+__contract__(
+  requires(memory_no_alias(r, sizeof(int32_t) * MLDSA_N))
+  requires(1 <= layer && layer <= 8)
+  requires(array_abs_bound(r, 0, MLDSA_N, layer * MLDSA_Q))
+  assigns(memory_slice(r, sizeof(int32_t) * MLDSA_N))
+  ensures(array_abs_bound(r, 0, MLDSA_N, (layer + 1) * MLDSA_Q)))
+{
+  unsigned start, k, len;
+  /* Twiddle factors for layer n are at indices 2^(n-1)..2^n-1. */
+  k = 1u << (layer - 1);
+  len = MLDSA_N >> layer;
+  for (start = 0; start < MLDSA_N; start += 2 * len)
+  __loop__(
+    invariant(start < MLDSA_N + 2 * len)
+    invariant(k <= MLDSA_N)
+    invariant(2 * len * k == start + MLDSA_N)
+    invariant(array_abs_bound(r, 0, start, layer * MLDSA_Q + MLDSA_Q))
+    invariant(array_abs_bound(r, start, MLDSA_N, layer * MLDSA_Q)))
+  {
+    int32_t zeta = zetas[k++];
+    mld_ntt_butterfly_block(r, zeta, start, len, layer * MLDSA_Q);
+  }
+}
+
+
+void ntt(int32_t a[MLDSA_N])
+{
+  unsigned int layer;
+
+  for (layer = 1; layer < 9; layer++)
+  __loop__(
+    invariant(1 <= layer && layer <= 9)
+    invariant(array_abs_bound(a, 0, MLDSA_N, layer * MLDSA_Q))
+  )
+  {
+    mld_ntt_layer(a, layer);
+  }
+
+  /* When the loop exits, layer == 9, so the loop invariant  */
+  /* directly implies the postcondition in that coefficients */
+  /* are bounded in magnitude by 9 * MLDSA_Q                 */
+}
+
 
 /*************************************************
  * Name:        invntt_tomont
