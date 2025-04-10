@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-name: Bench mlkem-native
+name: Bench mldsa-native
 description: Run benchmarking script
 
 inputs:
