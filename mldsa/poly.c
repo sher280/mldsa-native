@@ -89,6 +89,8 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
   unsigned int i;
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N))
   {
     c->coeffs[i] = montgomery_reduce((int64_t)a->coeffs[i] * b->coeffs[i]);
   }

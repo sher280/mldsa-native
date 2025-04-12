@@ -152,7 +152,13 @@ void poly_invntt_tomont(poly *a);
  *              - const poly *a: pointer to first input polynomial
  *              - const poly *b: pointer to second input polynomial
  **************************************************/
-void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
+void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(memory_no_alias(b, sizeof(poly)))
+  requires(memory_no_alias(c, sizeof(poly)))
+  assigns(memory_slice(c, sizeof(poly)))
+);
 
 #define poly_power2round MLD_NAMESPACE(poly_power2round)
 /*************************************************
