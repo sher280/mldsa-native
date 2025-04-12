@@ -30,6 +30,11 @@ void poly_caddq(poly *a)
   unsigned int i;
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(forall(k0, i, MLDSA_N, a->coeffs[k0] == loop_entry(*a).coeffs[k0]))
+    invariant(array_bound(a->coeffs, 0, i, 0, MLDSA_Q))
+    )
   {
     a->coeffs[i] = caddq(a->coeffs[i]);
   }

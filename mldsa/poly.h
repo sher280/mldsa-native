@@ -42,7 +42,13 @@ __contract__(
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
-void poly_caddq(poly *a);
+void poly_caddq(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
+  assigns(memory_slice(a, sizeof(poly)))
+  ensures(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+);
 
 #define poly_add MLD_NAMESPACE(poly_add)
 /*************************************************
