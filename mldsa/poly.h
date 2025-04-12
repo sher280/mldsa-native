@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include "cbmc.h"
+#include "ntt.h"
 #include "params.h"
 #include "reduce.h"
 #include "rounding.h"
@@ -118,7 +119,14 @@ __contract__(
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
-void poly_ntt(poly *a);
+void poly_ntt(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
+  assigns(memory_slice(a, sizeof(poly)))
+  ensures(array_abs_bound(a->coeffs, 0, MLDSA_N, MLD_NTT_BOUND))
+);
+
 
 #define poly_invntt_tomont MLD_NAMESPACE(poly_invntt_tomont)
 /*************************************************
