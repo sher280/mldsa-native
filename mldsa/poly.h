@@ -270,7 +270,15 @@ __contract__(
  * Returns 0 if norm is strictly smaller than B <= (MLDSA_Q-1)/8 and 1
  *otherwise.
  **************************************************/
-int poly_chknorm(const poly *a, int32_t B);
+int poly_chknorm(const poly *a, int32_t B)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
+  requires(array_bound(a->coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))
+  ensures(return_value == 0 || return_value == 1)
+  ensures((return_value == 0) == array_abs_bound(a->coeffs, 0, MLDSA_N, B))
+);
+
 
 #define poly_uniform MLD_NAMESPACE(poly_uniform)
 /*************************************************

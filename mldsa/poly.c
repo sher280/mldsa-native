@@ -160,20 +160,26 @@ void poly_use_hint(poly *b, const poly *a, const poly *h)
   }
 }
 
+/* Reference: explicitly checks the bound B to be <= (MLDSA_Q - 1) / 8).
+ * This is unnecessary as it's always a compile-time constant.
+ * We instead model it as a precondition.
+ */
 int poly_chknorm(const poly *a, int32_t B)
 {
   unsigned int i;
+  int rc = 0;
   int32_t t;
-
-  if (B > (MLDSA_Q - 1) / 8)
-  {
-    return 1;
-  }
 
   /* It is ok to leak which coefficient violates the bound since
      the probability for each coefficient is independent of secret
      data but we must not leak the sign of the centralized representative. */
+
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(rc == 0 || rc == 1)
+    invariant((rc == 0) == array_abs_bound(a->coeffs, 0, i, B))
+  )
   {
     /* Absolute value */
     t = a->coeffs[i] >> 31;
@@ -181,11 +187,11 @@ int poly_chknorm(const poly *a, int32_t B)
 
     if (t >= B)
     {
-      return 1;
+      rc = 1;
     }
   }
 
-  return 0;
+  return rc;
 }
 
 /*************************************************
