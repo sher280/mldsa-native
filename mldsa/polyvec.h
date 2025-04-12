@@ -25,7 +25,24 @@ void polyvecl_uniform_gamma1(polyvecl *v, const uint8_t seed[MLDSA_CRHBYTES],
                              uint16_t nonce);
 
 #define polyvecl_reduce MLD_NAMESPACE(polyvecl_reduce)
-void polyvecl_reduce(polyvecl *v);
+/*************************************************
+ * Name:        polyvecl_reduce
+ *
+ * Description: Inplace reduction of all coefficients of all polynomial in a
+ *              vector of length MLDSA_L to
+ *              representative in [-6283008,6283008].
+ *
+ * Arguments:   - poly *v: pointer to input/output vector
+ **************************************************/
+void polyvecl_reduce(polyvecl *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L,
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX)))
+  assigns(memory_slice(v, sizeof(polyvecl)))
+  ensures(forall(k1, 0, MLDSA_L,
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+);
 
 #define polyvecl_add MLD_NAMESPACE(polyvecl_add)
 /*************************************************

@@ -65,8 +65,18 @@ void polyvecl_reduce(polyvecl *v)
   unsigned int i;
 
   for (i = 0; i < MLDSA_L; ++i)
+  __loop__(
+    invariant(i <= MLDSA_L)
+    invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
+    invariant(forall(k2, 0, i,
+      array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))))
   {
-    poly_reduce(&v->vec[i]);
+    poly t = v->vec[i];
+    poly_reduce(&t);
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    v->vec[i] = t;
   }
 }
 
