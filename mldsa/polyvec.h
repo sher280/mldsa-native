@@ -55,7 +55,17 @@ __contract__(
  *              - const polyvecl *u: pointer to first summand
  *              - const polyvecl *v: pointer to second summand
  **************************************************/
-void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v);
+void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(polyvecl)))
+  requires(memory_no_alias(u, sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L,
+    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_L,
+    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(memory_slice(w, sizeof(polyvecl)))
+);
 
 #define polyvecl_ntt MLD_NAMESPACE(polyvecl_ntt)
 /*************************************************
