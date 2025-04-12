@@ -9,6 +9,7 @@
 #include "cbmc.h"
 #include "params.h"
 #include "reduce.h"
+#include "rounding.h"
 
 typedef struct
 {
@@ -152,7 +153,18 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
  *              - poly *a0: pointer to output polynomial with coefficients c0
  *              - const poly *a: pointer to input polynomial
  **************************************************/
-void poly_power2round(poly *a1, poly *a0, const poly *a);
+void poly_power2round(poly *a1, poly *a0, const poly *a)
+__contract__(
+  requires(memory_no_alias(a0, sizeof(poly)))
+  requires(memory_no_alias(a1, sizeof(poly)))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  assigns(memory_slice(a1, sizeof(poly)))
+  assigns(memory_slice(a0, sizeof(poly)))
+  ensures(array_bound(a0->coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1))
+  ensures(array_bound(a1->coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1))
+);
+
 
 #define poly_decompose MLD_NAMESPACE(poly_decompose)
 /*************************************************
