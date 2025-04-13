@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef POLY_H
-#define POLY_H
+#ifndef MLD_POLY_H
+#define MLD_POLY_H
 
 #include <stdint.h>
 #include "cbmc.h"

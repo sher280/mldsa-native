@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NTT_H
-#define NTT_H
+#ifndef MLD_NTT_H
+#define MLD_NTT_H
 
 #include <stdint.h>
 #include "cbmc.h"

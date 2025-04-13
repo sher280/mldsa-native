@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef MLD_CONFIG_H
+#define MLD_CONFIG_H
 
 #define MLD_RANDOMIZED_SIGNING
 

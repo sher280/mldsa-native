@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef SYMMETRIC_H
-#define SYMMETRIC_H
+#ifndef MLD_SYMMETRIC_H
+#define MLD_SYMMETRIC_H
 
 #include <stdint.h>
 #include "params.h"
