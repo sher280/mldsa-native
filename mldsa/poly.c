@@ -50,6 +50,8 @@ void poly_add(poly *c, const poly *a, const poly *b)
   {
     c->coeffs[i] = a->coeffs[i] + b->coeffs[i];
   }
+
+  cassert(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] + b->coeffs[k]));
 }
 
 void poly_sub(poly *c, const poly *a, const poly *b)

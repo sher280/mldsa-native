@@ -209,8 +209,15 @@ void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v)
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    invariant(i <= MLDSA_K))
   {
-    poly_add(&w->vec[i], &u->vec[i], &v->vec[i]);
+    poly t;
+    poly_add(&t, &u->vec[i], &v->vec[i]);
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    w->vec[i] = t;
   }
 }
 
