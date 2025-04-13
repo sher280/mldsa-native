@@ -72,11 +72,18 @@ __contract__(
  * Name:        polyvecl_ntt
  *
  * Description: Forward NTT of all polynomials in vector of length MLDSA_L.
- *Output coefficients can be up to 16*MLDSA_Q larger than input coefficients.
+ *              Coefficients can grow by 8*MLDSA_Q in absolute value.
  *
  * Arguments:   - polyvecl *v: pointer to input/output vector
  **************************************************/
-void polyvecl_ntt(polyvecl *v);
+void polyvecl_ntt(polyvecl *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  assigns(memory_slice(v, sizeof(polyvecl)))
+  ensures(forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+);
+
 #define polyvecl_invntt_tomont MLD_NAMESPACE(polyvecl_invntt_tomont)
 void polyvecl_invntt_tomont(polyvecl *v);
 #define polyvecl_pointwise_poly_montgomery \
@@ -155,7 +162,15 @@ __contract__(
  *
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
-void polyveck_caddq(polyveck *v);
+void polyveck_caddq(polyveck *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  assigns(memory_slice(v, sizeof(polyveck)))
+  ensures(forall(k1, 0, MLDSA_K,
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
+);
 
 #define polyveck_add MLD_NAMESPACE(polyveck_add)
 /*************************************************
@@ -221,11 +236,18 @@ void polyveck_shiftl(polyveck *v);
  * Name:        polyveck_ntt
  *
  * Description: Forward NTT of all polynomials in vector of length MLDSA_K.
- *Output coefficients can be up to 16*MLDSA_Q larger than input coefficients.
+ *              Coefficients can grow by 8*MLDSA_Q in absolute value.
  *
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
-void polyveck_ntt(polyveck *v);
+void polyveck_ntt(polyveck *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  assigns(memory_slice(v, sizeof(polyveck)))
+  ensures(forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+);
+
 #define polyveck_invntt_tomont MLD_NAMESPACE(polyveck_invntt_tomont)
 /*************************************************
  * Name:        polyveck_invntt_tomont
@@ -272,7 +294,18 @@ int polyveck_chknorm(const polyveck *v, int32_t B);
  *                              coefficients a0
  *              - const polyveck *v: pointer to input vector
  **************************************************/
-void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v);
+void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v)
+__contract__(
+  requires(memory_no_alias(v1, sizeof(polyveck)))
+  requires(memory_no_alias(v0, sizeof(polyveck)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, array_bound(v->vec[k0].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
+  assigns(memory_slice(v1, sizeof(polyveck)))
+  assigns(memory_slice(v0, sizeof(polyveck)))
+  ensures(forall(k1, 0, MLDSA_K, array_bound(v0->vec[k1].coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1)))
+  ensures(forall(k2, 0, MLDSA_K, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1)))
+);
+
 #define polyveck_decompose MLD_NAMESPACE(polyveck_decompose)
 /*************************************************
  * Name:        polyveck_decompose
