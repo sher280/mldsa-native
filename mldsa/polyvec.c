@@ -354,8 +354,15 @@ void polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h)
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    invariant(i <= MLDSA_K))
   {
-    poly_use_hint(&w->vec[i], &u->vec[i], &h->vec[i]);
+    poly t;
+    poly_use_hint(&t, &u->vec[i], &h->vec[i]);
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    w->vec[i] = t;
   }
 }
 

@@ -336,7 +336,19 @@ __contract__(
  *              - const polyveck *u: pointer to input vector
  *              - const polyveck *h: pointer to input hint vector
  **************************************************/
-void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h);
+void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h)
+__contract__(
+  requires(memory_no_alias(w,  sizeof(polyveck)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(memory_no_alias(h, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(h->vec[k1].coeffs, 0, MLDSA_N, 0, 2)))
+  assigns(memory_slice(w, sizeof(polyveck)))
+  requires(forall(k2, 0, MLDSA_K,
+    array_bound(w->vec[k2].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2))))
+);
 
 #define polyveck_pack_w1 MLD_NAMESPACE(polyveck_pack_w1)
 /*************************************************
