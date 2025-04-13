@@ -62,7 +62,10 @@ void poly_sub(poly *c, const poly *a, const poly *b)
   __loop__(
     invariant(i <= MLDSA_N)
     invariant(forall(k1, 0, i, c->coeffs[k1] == a->coeffs[k1] - b->coeffs[k1])))
-  c->coeffs[i] = a->coeffs[i] - b->coeffs[i];
+  {
+    c->coeffs[i] = a->coeffs[i] - b->coeffs[i];
+  }
+  cassert(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] - b->coeffs[k]));
 }
 
 void poly_shiftl(poly *a)

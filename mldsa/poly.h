@@ -90,7 +90,6 @@ __contract__(
   requires(memory_no_alias(b, sizeof(poly)))
   requires(forall(k0, 0, MLDSA_N, (int64_t) a->coeffs[k0] - b->coeffs[k0] <= INT32_MAX))
   requires(forall(k1, 0, MLDSA_N, (int64_t) a->coeffs[k1] - b->coeffs[k1] >= INT32_MIN))
-  ensures(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] - b->coeffs[k]))
   assigns(memory_slice(c, sizeof(poly))));
 
 #define poly_shiftl MLD_NAMESPACE(poly_shiftl)

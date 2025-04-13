@@ -226,8 +226,16 @@ void polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v)
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, object_whole(w))
+    invariant(i <= MLDSA_K))
   {
-    poly_sub(&w->vec[i], &u->vec[i], &v->vec[i]);
+    poly t;
+    poly_sub(&t, &u->vec[i], &v->vec[i]);
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    w->vec[i] = t;
   }
 }
 
