@@ -2,9 +2,10 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "rounding.h"
 #include <stdint.h>
+
 #include "params.h"
+#include "rounding.h"
 
 
 void power2round(int32_t *a0, int32_t *a1, const int32_t a)
@@ -25,14 +26,14 @@ void decompose(int32_t *a0, int32_t *a1, int32_t a)
 
   *a1 ^= ((43 - *a1) >> 31) & *a1;
   cassert(*a1 >= 0 && *a1 <= 43);
-#else
+#else /* MLDSA_MODE == 2 */
   *a1 = (*a1 * 1025 + (1 << 21)) >> 22;
   cassert(*a1 >= 0 && *a1 <= 16);
 
   *a1 &= 15;
   cassert(*a1 >= 0 && *a1 <= 15);
 
-#endif
+#endif /* MLDSA_MODE != 2 */
 
   *a0 = a - *a1 * 2 * MLDSA_GAMMA2;
   *a0 -= (((MLDSA_Q - 1) / 2 - *a0) >> 31) & MLDSA_Q;
@@ -68,7 +69,7 @@ int32_t use_hint(int32_t a, unsigned int hint)
   {
     return (a1 == 0) ? 43 : a1 - 1;
   }
-#else
+#else  /* MLDSA_MODE == 2 */
   if (a0 > 0)
   {
     return (a1 + 1) & 15;
@@ -77,5 +78,5 @@ int32_t use_hint(int32_t a, unsigned int hint)
   {
     return (a1 - 1) & 15;
   }
-#endif
+#endif /* MLDSA_MODE != 2 */
 }

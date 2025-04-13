@@ -2,9 +2,9 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "sign.h"
 #include <stdint.h>
 #include <string.h>
+
 #include "cbmc.h"
 #include "fips202/fips202.h"
 #include "packing.h"
@@ -12,6 +12,7 @@
 #include "poly.h"
 #include "polyvec.h"
 #include "randombytes.h"
+#include "sign.h"
 #include "symmetric.h"
 
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
@@ -216,7 +217,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   {
     rnd[i] = 0;
   }
-#endif
+#endif /* !MLD_RANDOMIZED_SIGNING */
 
   crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, rnd, sk,
                                  0);
@@ -237,7 +238,7 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
   {
     rnd[i] = 0;
   }
-#endif
+#endif /* !MLD_RANDOMIZED_SIGNING */
 
   crypto_sign_signature_internal(sig, siglen, mu, 0, NULL, 0, rnd, sk, 1);
   return 0;

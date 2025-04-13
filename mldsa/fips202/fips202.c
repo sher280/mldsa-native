@@ -7,9 +7,10 @@
  * domain "TweetFips202" implementation from https://twitter.com/tweetfips202 by
  * Gilles Van Assche, Daniel J. Bernstein, and Peter Schwabe */
 
-#include "fips202.h"
 #include <stddef.h>
 #include <stdint.h>
+
+#include "fips202.h"
 
 #define NROUNDS 24
 #define ROL(a, offset) ((a << offset) ^ (a >> (64 - offset)))

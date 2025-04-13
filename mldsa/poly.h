@@ -483,13 +483,13 @@ __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 44))
   assigns(object_whole(r)));
-#else
+#else  /* MLDSA_MODE == 2 */
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 16))
   assigns(object_whole(r)));
-#endif
+#endif /* MLDSA_MODE != 2 */
 
 
-#endif
+#endif /* !MLD_POLY_H */

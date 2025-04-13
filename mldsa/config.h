@@ -25,4 +25,4 @@
 #define MLD_NAMESPACE(s) MLD_87_ref_##s
 #endif
 
-#endif
+#endif /* !MLD_CONFIG_H */

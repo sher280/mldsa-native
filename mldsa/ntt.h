@@ -55,4 +55,4 @@ __contract__(
  **************************************************/
 void invntt_tomont(int32_t a[MLDSA_N]);
 
-#endif
+#endif /* !MLD_NTT_H */
