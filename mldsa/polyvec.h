@@ -339,8 +339,35 @@ __contract__(
 void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h);
 
 #define polyveck_pack_w1 MLD_NAMESPACE(polyveck_pack_w1)
+/*************************************************
+ * Name:        polyveck_pack_w1
+ *
+ * Description: Bit-pack polynomial vector w1 with coefficients in [0,15] or
+ *              [0,43].
+ *              Input coefficients are assumed to be standard representatives.
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_K* MLDSA_POLYW1_PACKEDBYTES bytes
+ *              - const polyveck *a: pointer to input polynomial vector
+ **************************************************/
 void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
-                      const polyveck *w1);
+                      const polyveck *w1)
+#if MLDSA_MODE == 2
+__contract__(
+  requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(w1, sizeof(polyveck)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, 44)))
+  assigns(object_whole(r)));
+#else  /* MLDSA_MODE == 2 */
+__contract__(
+  requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(w1, sizeof(polyveck)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, 16)))
+  assigns(object_whole(r)));
+#endif /* MLDSA_MODE != 2 */
+
 
 #define polyveck_pack_eta MLD_NAMESPACE(polyveck_pack_eta)
 void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
