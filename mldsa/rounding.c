@@ -19,19 +19,19 @@ void decompose(int32_t *a0, int32_t *a1, int32_t a)
   /* We know a >= 0 and a < MLDSA_Q, so... */
   cassert(*a1 >= 0 && *a1 <= 65472);
 
-#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
+#if MLDSA_MODE == 2
+  *a1 = (*a1 * 11275 + (1 << 23)) >> 24;
+  cassert(*a1 >= 0 && *a1 <= 44);
+
+  *a1 ^= ((43 - *a1) >> 31) & *a1;
+  cassert(*a1 >= 0 && *a1 <= 43);
+#else
   *a1 = (*a1 * 1025 + (1 << 21)) >> 22;
   cassert(*a1 >= 0 && *a1 <= 16);
 
   *a1 &= 15;
   cassert(*a1 >= 0 && *a1 <= 15);
 
-#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
-  *a1 = (*a1 * 11275 + (1 << 23)) >> 24;
-  cassert(*a1 >= 0 && *a1 <= 44);
-
-  *a1 ^= ((43 - *a1) >> 31) & *a1;
-  cassert(*a1 >= 0 && *a1 <= 43);
 #endif
 
   *a0 = a - *a1 * 2 * MLDSA_GAMMA2;
@@ -59,16 +59,7 @@ int32_t use_hint(int32_t a, unsigned int hint)
     return a1;
   }
 
-#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
-  if (a0 > 0)
-  {
-    return (a1 + 1) & 15;
-  }
-  else
-  {
-    return (a1 - 1) & 15;
-  }
-#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+#if MLDSA_MODE == 2
   if (a0 > 0)
   {
     return (a1 == 43) ? 0 : a1 + 1;
@@ -76,6 +67,15 @@ int32_t use_hint(int32_t a, unsigned int hint)
   else
   {
     return (a1 == 0) ? 43 : a1 - 1;
+  }
+#else
+  if (a0 > 0)
+  {
+    return (a1 + 1) & 15;
+  }
+  else
+  {
+    return (a1 - 1) & 15;
   }
 #endif
 }

@@ -629,7 +629,7 @@ void polyz_pack(uint8_t *r, const poly *a)
   unsigned int i;
   uint32_t t[4];
 
-#if MLDSA_GAMMA1 == (1 << 17)
+#if MLDSA_MODE == 2
   for (i = 0; i < MLDSA_N / 4; ++i)
   __loop__(
     invariant(i <= MLDSA_N/4))
@@ -652,7 +652,7 @@ void polyz_pack(uint8_t *r, const poly *a)
     r[9 * i + 7] = (t[3] >> 2) & 0xFF;
     r[9 * i + 8] = (t[3] >> 10) & 0xFF;
   }
-#elif MLDSA_GAMMA1 == (1 << 19)
+#else
   for (i = 0; i < MLDSA_N / 2; ++i)
   __loop__(
     invariant(i <= MLDSA_N/2))
@@ -667,8 +667,6 @@ void polyz_pack(uint8_t *r, const poly *a)
     r[5 * i + 3] = (t[1] >> 4) & 0xFF;
     r[5 * i + 4] = (t[1] >> 12) & 0xFF;
   }
-#else
-#error "Invalid value of MLDSA_GAMMA1"
 #endif
 }
 
@@ -676,7 +674,7 @@ void polyz_unpack(poly *r, const uint8_t *a)
 {
   unsigned int i;
 
-#if MLDSA_GAMMA1 == (1 << 17)
+#if MLDSA_MODE == 2
   for (i = 0; i < MLDSA_N / 4; ++i)
   __loop__(
     invariant(i <= MLDSA_N/4)
@@ -707,7 +705,7 @@ void polyz_unpack(poly *r, const uint8_t *a)
     r->coeffs[4 * i + 2] = MLDSA_GAMMA1 - r->coeffs[4 * i + 2];
     r->coeffs[4 * i + 3] = MLDSA_GAMMA1 - r->coeffs[4 * i + 3];
   }
-#elif MLDSA_GAMMA1 == (1 << 19)
+#else
   for (i = 0; i < MLDSA_N / 2; ++i)
   __loop__(
     invariant(i <= MLDSA_N/2)
@@ -727,8 +725,6 @@ void polyz_unpack(poly *r, const uint8_t *a)
     r->coeffs[2 * i + 0] = MLDSA_GAMMA1 - r->coeffs[2 * i + 0];
     r->coeffs[2 * i + 1] = MLDSA_GAMMA1 - r->coeffs[2 * i + 1];
   }
-#else
-#error "Invalid value of MLDSA_GAMMA1"
 #endif
 }
 
@@ -736,7 +732,7 @@ void polyw1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
 
-#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+#if MLDSA_MODE == 2
   for (i = 0; i < MLDSA_N / 4; ++i)
   __loop__(
     invariant(i <= MLDSA_N/4))
@@ -748,14 +744,12 @@ void polyw1_pack(uint8_t *r, const poly *a)
     r[3 * i + 2] = (a->coeffs[4 * i + 2] >> 4) & 0xFF;
     r[3 * i + 2] |= (a->coeffs[4 * i + 3] << 2) & 0xFF;
   }
-#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
+#else
   for (i = 0; i < MLDSA_N / 2; ++i)
   __loop__(
     invariant(i <= MLDSA_N/2))
   {
     r[i] = a->coeffs[2 * i + 0] | (a->coeffs[2 * i + 1] << 4);
   }
-#else
-#error "Invalid value of MLDSA_GAMMA2"
 #endif
 }
