@@ -6,8 +6,12 @@
 import subprocess
 import platform
 import argparse
+import pathlib
 import sys
 import os
+
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 modulus = 8380417
 root_of_unity = 1753
@@ -17,6 +21,12 @@ montgomery_factor = pow(2, 32, modulus)
 #
 # It currently covers:
 # - zeta values for the reference NTT and invNTT
+# - header guards
+
+
+def status_update(task, msg):
+    print(f"\r{'':<140}", end="", flush=True)
+    print(f"\r[{task}]: {msg} ...", end="", flush=True)
 
 
 def gen_header():
@@ -30,6 +40,18 @@ def gen_header():
     yield " *          Do not modify it directly."
     yield " */"
     yield ""
+
+
+def get_files(pattern):
+    return [str(p) for p in pathlib.Path().glob(pattern) if p.is_file()]
+
+
+def get_c_source_files():
+    return get_files("mldsa/**/*.c")
+
+
+def get_header_files():
+    return get_files("mldsa/**/*.h")
 
 
 def format_content(content):
@@ -120,6 +142,86 @@ def gen_c_zeta_file(dry_run=False):
     update_file("mldsa/zetas.inc", "\n".join(gen()), dry_run=dry_run, force_format=True)
 
 
+def adjust_header_guard_for_filename(content, header_file):
+
+    status_update("header guards", header_file)
+
+    content = content.split("\n")
+    exceptions = {}
+
+    # Use full filename as the header guard, with '/' and '.' replaced by '_'
+    guard_name = (
+        header_file.removeprefix("mldsa/").replace("/", "_").replace(".", "_").upper()
+    )
+    guard_name = "MLD_" + guard_name
+
+    if header_file in exceptions.keys():
+        guard_name = exceptions[header_file]
+
+    def gen_copyright():
+        yield "/*"
+        yield " * Copyright (c) 2025 The mldsa-native project authors"
+        yield " * SPDX-License-Identifier: Apache-2.0"
+        yield " */"
+
+    def gen_guard():
+        yield f"#ifndef {guard_name}"
+        yield f"#define {guard_name}"
+
+    def gen_footer():
+        yield f"#endif"
+        yield ""
+
+    cr = list(gen_copyright())
+    guard = list(gen_guard())
+    footer = list(gen_footer())
+
+    # Check if header file begins with copyright notice; otherwise, add it.
+    if content[: len(cr)] != cr:
+        assert False
+        content = cr + content
+    i = len(cr)
+    while content[i].strip() == "":
+        i += 1
+    # Check if header file has some guard -- if so, drop it
+    if content[i].strip().startswith("#if !defined") or content[i].strip().startswith(
+        "#ifndef"
+    ):
+        del content[i]
+        if content[i].strip().startswith("#define"):
+            del content[i]
+        has_guard = True
+    else:
+        has_guard = False
+    # Add standardized guard
+    content = content[:i] + guard + content[i:]
+    # Check if header has some footer
+    if (
+        has_guard is True
+        and content[-1] == ""
+        and content[-2].strip().startswith("#endif")
+    ):
+        del content[-2:]
+    # Add standardized footer
+    content = content + footer
+
+    return "\n".join(content)
+
+
+def gen_header_guard(header_file, dry_run=False):
+    with open(header_file, "r") as f:
+        content = f.read()
+    new_content = adjust_header_guard_for_filename(content, header_file)
+    update_file(header_file, new_content, dry_run=dry_run)
+
+
+def gen_header_guards(dry_run=False):
+    with ThreadPoolExecutor() as executor:
+        _ = list(
+            executor.map(partial(gen_header_guard, dry_run=dry_run), get_header_files())
+        )
+
+
 def _main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -131,6 +233,9 @@ def _main():
     os.chdir(os.path.join(os.path.dirname(__file__), ".."))
 
     gen_c_zeta_file(args.dry_run)
+    gen_header_guards(args.dry_run)
+
+    print()
 
 
 if __name__ == "__main__":

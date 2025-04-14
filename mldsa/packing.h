@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef PACKING_H
-#define PACKING_H
+#ifndef MLD_PACKING_H
+#define MLD_PACKING_H
 
 #include <stdint.h>
 #include "params.h"

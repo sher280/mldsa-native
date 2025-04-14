@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ROUNDING_H
-#define ROUNDING_H
+#ifndef MLD_ROUNDING_H
+#define MLD_ROUNDING_H
 
 #include <stdint.h>
 #include "cbmc.h"

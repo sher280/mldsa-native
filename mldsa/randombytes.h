@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef RANDOMBYTES_H
-#define RANDOMBYTES_H
+#ifndef MLD_RANDOMBYTES_H
+#define MLD_RANDOMBYTES_H
 
 #include <stddef.h>
 #include <stdint.h>

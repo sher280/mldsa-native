@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef MLD_PARAMS_H
+#define MLD_PARAMS_H
 
 #include "config.h"
 

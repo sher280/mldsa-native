@@ -2,8 +2,8 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef API_H
-#define API_H
+#ifndef MLD_API_H
+#define MLD_API_H
 
 #include <stddef.h>
 #include <stdint.h>
