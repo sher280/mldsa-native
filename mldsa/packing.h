@@ -181,4 +181,4 @@ __contract__(
 int unpack_sig(uint8_t c[MLDSA_CTILDEBYTES], polyvecl *z, polyveck *h,
                const uint8_t sig[CRYPTO_BYTES]);
 
-#endif
+#endif /* !MLD_PACKING_H */

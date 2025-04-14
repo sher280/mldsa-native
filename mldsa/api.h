@@ -107,7 +107,7 @@ int MLD_87_ref_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
 #define crypto_sign MLD_87_ref
 #define crypto_sign_verify MLD_87_ref_verify
 #define crypto_sign_open MLD_87_ref_open
-#endif
+#endif /* MLDSA_MODE == 5 */
 
 
-#endif
+#endif /* !MLD_API_H */

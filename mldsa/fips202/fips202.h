@@ -59,4 +59,4 @@ void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen);
 #define sha3_512 FIPS202_NAMESPACE(sha3_512)
 void sha3_512(uint8_t h[64], const uint8_t *in, size_t inlen);
 
-#endif
+#endif /* !MLD_FIPS202_FIPS202_H */

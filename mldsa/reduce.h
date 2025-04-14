@@ -71,4 +71,4 @@ __contract__(
 );
 
 
-#endif
+#endif /* !MLD_REDUCE_H */

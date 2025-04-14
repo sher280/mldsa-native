@@ -35,4 +35,4 @@ void mldsa_shake256_stream_init(keccak_state *state,
 #define stream256_squeezeblocks(OUT, OUTBLOCKS, STATE) \
   shake256_squeezeblocks(OUT, OUTBLOCKS, STATE)
 
-#endif
+#endif /* !MLD_SYMMETRIC_H */

@@ -105,4 +105,4 @@ __contract__(
   ensures(return_value >= 0 && return_value < (MLDSA_Q-1)/(2*MLDSA_GAMMA2))
 );
 
-#endif
+#endif /* !MLD_ROUNDING_H */

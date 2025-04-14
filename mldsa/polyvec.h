@@ -381,4 +381,4 @@ void polyvec_matrix_pointwise_montgomery(polyveck *t,
                                          const polyvecl mat[MLDSA_K],
                                          const polyvecl *v);
 
-#endif
+#endif /* !MLD_POLYVEC_H */

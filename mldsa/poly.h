@@ -477,21 +477,19 @@ __contract__(
  *              - const poly *a: pointer to input polynomial
  **************************************************/
 void polyw1_pack(uint8_t *r, const poly *a)
-#if MLDSA_GAMMA2 == (MLDSA_Q - 1) / 32
-__contract__(
-  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
-  requires(memory_no_alias(a, sizeof(poly)))
-  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 16))
-  assigns(object_whole(r)));
-#elif MLDSA_GAMMA2 == (MLDSA_Q - 1) / 88
+#if MLDSA_MODE == 2
 __contract__(
   requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 44))
   assigns(object_whole(r)));
-#else
-#error "Invalid value of MLDSA_GAMMA2"
-#endif
+#else  /* MLDSA_MODE == 2 */
+__contract__(
+  requires(memory_no_alias(r, MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, 16))
+  assigns(object_whole(r)));
+#endif /* MLDSA_MODE != 2 */
 
 
-#endif
+#endif /* !MLD_POLY_H */

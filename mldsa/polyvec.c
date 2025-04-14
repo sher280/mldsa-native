@@ -2,10 +2,11 @@
  * Copyright (c) 2025 The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "polyvec.h"
 #include <stdint.h>
+
 #include "params.h"
 #include "poly.h"
+#include "polyvec.h"
 
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
                            const uint8_t rho[MLDSA_SEEDBYTES])
