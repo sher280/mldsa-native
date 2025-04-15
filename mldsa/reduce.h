@@ -12,7 +12,7 @@
 #define MONT -4186625 /* 2^32 % MLDSA_Q */
 #define REDUCE_DOMAIN_MAX (INT32_MAX - (1 << 22))
 #define REDUCE_RANGE_MAX 6283009
-#define MONTGOMERY_REDUCE_DOMAIN_MAX (MLDSA_Q * (1LL << 31))
+#define MONTGOMERY_REDUCE_DOMAIN_MAX ((int64_t)INT32_MIN * INT32_MIN)
 
 #define montgomery_reduce MLD_NAMESPACE(montgomery_reduce)
 /*************************************************
@@ -22,6 +22,8 @@
  *              -2^{31}MLDSA_Q <= a <= MLDSA_Q*2^31,
  *              compute r \equiv a*2^{-32} (mod MLDSA_Q) such that
  *              -MLDSA_Q < r < MLDSA_Q.
+ *              If the output bounds are not required, the inputs can be larger
+ *              (up to INT64_MAX - (2^31 * MLDSA_Q) > INT32_MAX^2)
  *
  * Arguments:   - int64_t: finite field element a
  *

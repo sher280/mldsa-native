@@ -7,8 +7,10 @@
 
 #include <stdint.h>
 #include "cbmc.h"
+#include "ntt.h"
 #include "params.h"
 #include "reduce.h"
+#include "rounding.h"
 
 typedef struct
 {
@@ -41,7 +43,13 @@ __contract__(
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
-void poly_caddq(poly *a);
+void poly_caddq(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
+  assigns(memory_slice(a, sizeof(poly)))
+  ensures(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+);
 
 #define poly_add MLD_NAMESPACE(poly_add)
 /*************************************************
@@ -111,7 +119,14 @@ __contract__(
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
-void poly_ntt(poly *a);
+void poly_ntt(poly *a)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
+  assigns(memory_slice(a, sizeof(poly)))
+  ensures(array_abs_bound(a->coeffs, 0, MLDSA_N, MLD_NTT_BOUND))
+);
+
 
 #define poly_invntt_tomont MLD_NAMESPACE(poly_invntt_tomont)
 /*************************************************
@@ -137,7 +152,13 @@ void poly_invntt_tomont(poly *a);
  *              - const poly *a: pointer to first input polynomial
  *              - const poly *b: pointer to second input polynomial
  **************************************************/
-void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
+void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(memory_no_alias(b, sizeof(poly)))
+  requires(memory_no_alias(c, sizeof(poly)))
+  assigns(memory_slice(c, sizeof(poly)))
+);
 
 #define poly_power2round MLD_NAMESPACE(poly_power2round)
 /*************************************************
@@ -152,7 +173,18 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b);
  *              - poly *a0: pointer to output polynomial with coefficients c0
  *              - const poly *a: pointer to input polynomial
  **************************************************/
-void poly_power2round(poly *a1, poly *a0, const poly *a);
+void poly_power2round(poly *a1, poly *a0, const poly *a)
+__contract__(
+  requires(memory_no_alias(a0, sizeof(poly)))
+  requires(memory_no_alias(a1, sizeof(poly)))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  assigns(memory_slice(a1, sizeof(poly)))
+  assigns(memory_slice(a0, sizeof(poly)))
+  ensures(array_bound(a0->coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1))
+  ensures(array_bound(a1->coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1))
+);
+
 
 #define poly_decompose MLD_NAMESPACE(poly_decompose)
 /*************************************************
@@ -238,7 +270,15 @@ __contract__(
  * Returns 0 if norm is strictly smaller than B <= (MLDSA_Q-1)/8 and 1
  *otherwise.
  **************************************************/
-int poly_chknorm(const poly *a, int32_t B);
+int poly_chknorm(const poly *a, int32_t B)
+__contract__(
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
+  requires(array_bound(a->coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))
+  ensures(return_value == 0 || return_value == 1)
+  ensures((return_value == 0) == array_abs_bound(a->coeffs, 0, MLDSA_N, B))
+);
+
 
 #define poly_uniform MLD_NAMESPACE(poly_uniform)
 /*************************************************

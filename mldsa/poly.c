@@ -30,6 +30,11 @@ void poly_caddq(poly *a)
   unsigned int i;
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(forall(k0, i, MLDSA_N, a->coeffs[k0] == loop_entry(*a).coeffs[k0]))
+    invariant(array_bound(a->coeffs, 0, i, 0, MLDSA_Q))
+    )
   {
     a->coeffs[i] = caddq(a->coeffs[i]);
   }
@@ -84,6 +89,8 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
   unsigned int i;
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N))
   {
     c->coeffs[i] = montgomery_reduce((int64_t)a->coeffs[i] * b->coeffs[i]);
   }
@@ -94,6 +101,12 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
   unsigned int i;
 
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    assigns(i, memory_slice(a0, sizeof(poly)), memory_slice(a1, sizeof(poly)))
+    invariant(i <= MLDSA_N)
+    invariant(array_bound(a0->coeffs, 0, i, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1))
+    invariant(array_bound(a1->coeffs, 0, i, 0, (MLD_2_POW_D/2)+1))
+  )
   {
     power2round(&a0->coeffs[i], &a1->coeffs[i], a->coeffs[i]);
   }
@@ -147,20 +160,26 @@ void poly_use_hint(poly *b, const poly *a, const poly *h)
   }
 }
 
+/* Reference: explicitly checks the bound B to be <= (MLDSA_Q - 1) / 8).
+ * This is unnecessary as it's always a compile-time constant.
+ * We instead model it as a precondition.
+ */
 int poly_chknorm(const poly *a, int32_t B)
 {
   unsigned int i;
+  int rc = 0;
   int32_t t;
-
-  if (B > (MLDSA_Q - 1) / 8)
-  {
-    return 1;
-  }
 
   /* It is ok to leak which coefficient violates the bound since
      the probability for each coefficient is independent of secret
      data but we must not leak the sign of the centralized representative. */
+
   for (i = 0; i < MLDSA_N; ++i)
+  __loop__(
+    invariant(i <= MLDSA_N)
+    invariant(rc == 0 || rc == 1)
+    invariant((rc == 0) == array_abs_bound(a->coeffs, 0, i, B))
+  )
   {
     /* Absolute value */
     t = a->coeffs[i] >> 31;
@@ -168,11 +187,11 @@ int poly_chknorm(const poly *a, int32_t B)
 
     if (t >= B)
     {
-      return 1;
+      rc = 1;
     }
   }
 
-  return 0;
+  return rc;
 }
 
 /*************************************************
