@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "ntt.h"
-#include "params.h"
 #include "reduce.h"
 
 static int32_t mld_fqmul(int32_t a, int32_t b)

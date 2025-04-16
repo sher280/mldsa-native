@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "cbmc.h"
-#include "params.h"
+#include "common.h"
 
 #define MLD_2_POW_D (1 << MLDSA_D)
 

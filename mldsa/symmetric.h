@@ -6,7 +6,6 @@
 #define MLD_SYMMETRIC_H
 
 #include <stdint.h>
-#include "params.h"
 
 #include "fips202/fips202.h"
 
