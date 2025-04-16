@@ -4,8 +4,8 @@
  */
 #include <string.h>
 
+#include "common.h"
 #include "packing.h"
-#include "params.h"
 #include "poly.h"
 #include "polyvec.h"
 

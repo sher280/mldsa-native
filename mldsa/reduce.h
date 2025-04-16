@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "cbmc.h"
-#include "params.h"
+#include "common.h"
 
 #define MONT -4186625 /* 2^32 % MLDSA_Q */
 #define REDUCE_DOMAIN_MAX (INT32_MAX - (1 << 22))

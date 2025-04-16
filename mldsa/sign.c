@@ -8,7 +8,6 @@
 #include "cbmc.h"
 #include "fips202/fips202.h"
 #include "packing.h"
-#include "params.h"
 #include "poly.h"
 #include "polyvec.h"
 #include "randombytes.h"

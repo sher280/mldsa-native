@@ -491,8 +491,10 @@ def adjust_header_guard_for_filename(content, header_file):
     if header_file in exceptions.keys():
         guard_name = exceptions[header_file]
 
-    def gen_copyright():
+    def gen_copyright(include_mlkem=False):
         yield "/*"
+        if include_mlkem is True:
+            yield " * Copyright (c) 2024-2025 The mlkem-native project authors"
         yield " * Copyright (c) 2025 The mldsa-native project authors"
         yield " * SPDX-License-Identifier: Apache-2.0"
         yield " */"
@@ -506,14 +508,18 @@ def adjust_header_guard_for_filename(content, header_file):
         yield ""
 
     cr = list(gen_copyright())
+    cr_alt = list(gen_copyright(include_mlkem=True))
     guard = list(gen_guard())
     footer = list(gen_footer())
 
-    # Check if header file begins with copyright notice; otherwise, add it.
-    if content[: len(cr)] != cr:
+    # Check if header file begins with copyright notice
+    if content[: len(cr)] == cr:
+        i = len(cr)
+    elif content[: len(cr_alt)] == cr_alt:
+        i = len(cr_alt)
+    else:
         assert False
-        content = cr + content
-    i = len(cr)
+
     while content[i].strip() == "":
         i += 1
     # Check if header file has some guard -- if so, drop it

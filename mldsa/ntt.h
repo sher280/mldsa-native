@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "cbmc.h"
-#include "params.h"
+#include "common.h"
 
 /* Absolute exclusive upper bound for the output of the forward NTT */
 #define MLD_NTT_BOUND (9 * MLDSA_Q)

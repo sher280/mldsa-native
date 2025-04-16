@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "ntt.h"
-#include "params.h"
 #include "poly.h"
 #include "reduce.h"
 #include "rounding.h"

@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 #include "cbmc.h"
+#include "common.h"
 #include "ntt.h"
-#include "params.h"
 #include "reduce.h"
 #include "rounding.h"
 

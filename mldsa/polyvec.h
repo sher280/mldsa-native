@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include "cbmc.h"
-#include "params.h"
+#include "common.h"
 #include "poly.h"
 
 /* Vectors of polynomials of length MLDSA_L */

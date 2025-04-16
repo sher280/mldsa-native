@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "params.h"
+#include "common.h"
 #include "poly.h"
 #include "polyvec.h"
 
