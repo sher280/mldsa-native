@@ -25,7 +25,24 @@ void polyvecl_uniform_gamma1(polyvecl *v, const uint8_t seed[MLDSA_CRHBYTES],
                              uint16_t nonce);
 
 #define polyvecl_reduce MLD_NAMESPACE(polyvecl_reduce)
-void polyvecl_reduce(polyvecl *v);
+/*************************************************
+ * Name:        polyvecl_reduce
+ *
+ * Description: Inplace reduction of all coefficients of all polynomial in a
+ *              vector of length MLDSA_L to
+ *              representative in [-6283008,6283008].
+ *
+ * Arguments:   - poly *v: pointer to input/output vector
+ **************************************************/
+void polyvecl_reduce(polyvecl *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L,
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX)))
+  assigns(memory_slice(v, sizeof(polyvecl)))
+  ensures(forall(k1, 0, MLDSA_L,
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+);
 
 #define polyvecl_add MLD_NAMESPACE(polyvecl_add)
 /*************************************************
@@ -38,7 +55,17 @@ void polyvecl_reduce(polyvecl *v);
  *              - const polyvecl *u: pointer to first summand
  *              - const polyvecl *v: pointer to second summand
  **************************************************/
-void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v);
+void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(polyvecl)))
+  requires(memory_no_alias(u, sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L,
+    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_L,
+    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(memory_slice(w, sizeof(polyvecl)))
+);
 
 #define polyvecl_ntt MLD_NAMESPACE(polyvecl_ntt)
 /*************************************************
@@ -109,7 +136,16 @@ void polyveck_uniform_eta(polyveck *v, const uint8_t seed[MLDSA_CRHBYTES],
  *
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
-void polyveck_reduce(polyveck *v);
+void polyveck_reduce(polyveck *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX)))
+  assigns(memory_slice(v, sizeof(polyveck)))
+  ensures(forall(k1, 0, MLDSA_K,
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+);
+
 #define polyveck_caddq MLD_NAMESPACE(polyveck_caddq)
 /*************************************************
  * Name:        polyveck_caddq
@@ -132,7 +168,19 @@ void polyveck_caddq(polyveck *v);
  *              - const polyveck *u: pointer to first summand
  *              - const polyveck *v: pointer to second summand
  **************************************************/
-void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v);
+void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(polyveck)))
+  requires(memory_no_alias(u, sizeof(polyveck)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_K,
+    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(memory_slice(w, sizeof(polyveck)))
+);
+
+#define polyveck_sub MLD_NAMESPACE(polyveck_sub)
 /*************************************************
  * Name:        polyveck_sub
  *
@@ -144,8 +192,18 @@ void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v);
  *              - const polyveck *v: pointer to second input vector to be
  *                                   subtracted from first input vector
  **************************************************/
-#define polyveck_sub MLD_NAMESPACE(polyveck_sub)
-void polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v);
+void polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(polyveck)))
+  requires(memory_no_alias(u, sizeof(polyveck)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] - v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_K,
+    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] - v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(memory_slice(w, sizeof(polyveck)))
+);
+
 #define polyveck_shiftl MLD_NAMESPACE(polyveck_shiftl)
 /*************************************************
  * Name:        polyveck_shiftl
@@ -278,11 +336,50 @@ __contract__(
  *              - const polyveck *u: pointer to input vector
  *              - const polyveck *h: pointer to input hint vector
  **************************************************/
-void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h);
+void polyveck_use_hint(polyveck *w, const polyveck *v, const polyveck *h)
+__contract__(
+  requires(memory_no_alias(w,  sizeof(polyveck)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(memory_no_alias(h, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K,
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(h->vec[k1].coeffs, 0, MLDSA_N, 0, 2)))
+  assigns(memory_slice(w, sizeof(polyveck)))
+  requires(forall(k2, 0, MLDSA_K,
+    array_bound(w->vec[k2].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2))))
+);
 
 #define polyveck_pack_w1 MLD_NAMESPACE(polyveck_pack_w1)
+/*************************************************
+ * Name:        polyveck_pack_w1
+ *
+ * Description: Bit-pack polynomial vector w1 with coefficients in [0,15] or
+ *              [0,43].
+ *              Input coefficients are assumed to be standard representatives.
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            MLDSA_K* MLDSA_POLYW1_PACKEDBYTES bytes
+ *              - const polyveck *a: pointer to input polynomial vector
+ **************************************************/
 void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
-                      const polyveck *w1);
+                      const polyveck *w1)
+#if MLDSA_MODE == 2
+__contract__(
+  requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(w1, sizeof(polyveck)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, 44)))
+  assigns(object_whole(r)));
+#else  /* MLDSA_MODE == 2 */
+__contract__(
+  requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
+  requires(memory_no_alias(w1, sizeof(polyveck)))
+  requires(forall(k1, 0, MLDSA_K,
+    array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, 16)))
+  assigns(object_whole(r)));
+#endif /* MLDSA_MODE != 2 */
+
 
 #define polyveck_pack_eta MLD_NAMESPACE(polyveck_pack_eta)
 void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],

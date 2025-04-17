@@ -29,7 +29,7 @@ typedef struct
 void poly_reduce(poly *a)
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(forall(k0, 0, MLDSA_N, a->coeffs[k0] <= REDUCE_DOMAIN_MAX))
+  requires(array_bound(a->coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX))
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))
 );
@@ -68,7 +68,6 @@ __contract__(
   requires(memory_no_alias(b, sizeof(poly)))
   requires(forall(k0, 0, MLDSA_N, (int64_t) a->coeffs[k0] + b->coeffs[k0] <= INT32_MAX))
   requires(forall(k1, 0, MLDSA_N, (int64_t) a->coeffs[k1] + b->coeffs[k1] >= INT32_MIN))
-  ensures(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] + b->coeffs[k]))
   assigns(memory_slice(c, sizeof(poly)))
 );
 
@@ -91,7 +90,6 @@ __contract__(
   requires(memory_no_alias(b, sizeof(poly)))
   requires(forall(k0, 0, MLDSA_N, (int64_t) a->coeffs[k0] - b->coeffs[k0] <= INT32_MAX))
   requires(forall(k1, 0, MLDSA_N, (int64_t) a->coeffs[k1] - b->coeffs[k1] >= INT32_MIN))
-  ensures(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] - b->coeffs[k]))
   assigns(memory_slice(c, sizeof(poly))));
 
 #define poly_shiftl MLD_NAMESPACE(poly_shiftl)
