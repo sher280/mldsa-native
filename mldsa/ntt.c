@@ -141,6 +141,44 @@ void ntt(int32_t a[MLDSA_N])
   /* are bounded in magnitude by 9 * MLDSA_Q                 */
 }
 
+/* Reference: Embedded into `invntt_tomont()` in the reference implementation
+ * [@REF] */
+static void mld_invntt_layer(int32_t r[MLDSA_N], unsigned layer)
+__contract__(
+  requires(memory_no_alias(r, sizeof(int32_t) * MLDSA_N))
+  requires(1 <= layer && layer <= 8)
+  requires(array_abs_bound(r, 0, MLDSA_N, (MLDSA_N >> layer) * MLDSA_Q))
+  assigns(memory_slice(r, sizeof(int32_t) * MLDSA_N))
+  ensures(array_abs_bound(r, 0, MLDSA_N, (MLDSA_N >> (layer - 1)) * MLDSA_Q)))
+{
+  unsigned start, k, len;
+  len = (MLDSA_N >> layer);
+  k = (1u << layer) - 1;
+  for (start = 0; start < MLDSA_N; start += 2 * len)
+  __loop__(
+    invariant(start <= MLDSA_N && k <= 255)
+    invariant(2 * len * k + start == 2 * MLDSA_N - 2 * len)
+    invariant(array_abs_bound(r, 0, start, (MLDSA_N >> (layer - 1)) * MLDSA_Q))
+    invariant(array_abs_bound(r, start, MLDSA_N, (MLDSA_N >> layer) * MLDSA_Q)))
+  {
+    unsigned j;
+    int32_t zeta = -zetas[k--];
+
+    for (j = start; j < start + len; j++)
+    __loop__(
+      invariant(start <= j && j <= start + len)
+      invariant(array_abs_bound(r, 0, start, (MLDSA_N >> (layer - 1)) * MLDSA_Q))
+      invariant(array_abs_bound(r, start, j, (MLDSA_N >> (layer - 1)) * MLDSA_Q))
+      invariant(array_abs_bound(r, j, start + len, (MLDSA_N >> layer) * MLDSA_Q))
+      invariant(array_abs_bound(r, start + len, MLDSA_N, (MLDSA_N >> layer) * MLDSA_Q)))
+    {
+      int32_t t = r[j];
+      r[j] = t + r[j + len];
+      r[j + len] = t - r[j + len];
+      r[j + len] = mld_fqmul(r[j + len], zeta);
+    }
+  }
+}
 
 /*************************************************
  * Name:        invntt_tomont
@@ -149,33 +187,32 @@ void ntt(int32_t a[MLDSA_N])
  *              In-place. No modular reductions after additions or
  *              subtractions; input coefficients need to be smaller than
  *              MLDSA_Q in absolute value. Output coefficient are smaller than
- *MLDSA_Q in absolute value.
+ *              MLDSA_Q in absolute value.
  *
- * Arguments:   - uint32_t p[MLDSA_N]: input/output coefficient array
+ * Arguments:   - uint32_t a[MLDSA_N]: input/output coefficient array
  **************************************************/
 void invntt_tomont(int32_t a[MLDSA_N])
+
 {
-  unsigned int start, len, j, k;
-  int32_t t, zeta;
+  unsigned int layer, j;
   const int32_t f = 41978; /* mont^2/256 */
 
-  k = 256;
-  for (len = 1; len < MLDSA_N; len <<= 1)
+  for (layer = 8; layer >= 1; layer--)
+  __loop__(
+    invariant(layer <= 8)
+    /* Absolute bounds increase from 1Q before layer 8 */
+    /* up to 256Q after layer 1                        */
+    invariant(array_abs_bound(a, 0, MLDSA_N, (MLDSA_N >> layer) * MLDSA_Q)))
   {
-    for (start = 0; start < MLDSA_N; start = j + len)
-    {
-      zeta = -zetas[--k];
-      for (j = start; j < start + len; ++j)
-      {
-        t = a[j];
-        a[j] = t + a[j + len];
-        a[j + len] = t - a[j + len];
-        a[j + len] = mld_fqmul(a[j + len], zeta);
-      }
-    }
+    mld_invntt_layer(a, layer);
   }
 
+  /* Coefficient bounds are now at 256Q. We now invert and reduce  */
+  /* each coefficient to bring them back to be bounded by 1Q       */
   for (j = 0; j < MLDSA_N; ++j)
+  __loop__(
+    invariant(j <= MLDSA_N)
+    invariant(array_abs_bound(a, 0, j, MLDSA_Q)))
   {
     a[j] = mld_fqmul(a[j], f);
   }

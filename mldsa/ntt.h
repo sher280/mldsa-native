@@ -51,8 +51,14 @@ __contract__(
  *              MLDSA_Q in absolute value. Output coefficient are smaller than
  *              MLDSA_Q in absolute value.
  *
- * Arguments:   - uint32_t p[MLDSA_N]: input/output coefficient array
+ * Arguments:   - uint32_t a[MLDSA_N]: input/output coefficient array
  **************************************************/
-void invntt_tomont(int32_t a[MLDSA_N]);
+void invntt_tomont(int32_t a[MLDSA_N])
+__contract__(
+  requires(memory_no_alias(a, MLDSA_N * sizeof(int32_t)))
+  requires(array_abs_bound(a, 0, MLDSA_N, MLDSA_Q))
+  assigns(memory_slice(a, MLDSA_N * sizeof(int32_t)))
+  ensures(array_abs_bound(a, 0, MLDSA_N, MLDSA_Q))
+);
 
 #endif /* !MLD_NTT_H */
