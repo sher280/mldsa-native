@@ -104,7 +104,7 @@ __contract__(
 void poly_shiftl(poly *a)
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, 1 << (31 - MLDSA_D) - 1))
+  requires(array_abs_bound(a->coeffs, 0, MLDSA_N, 1 << (31 - MLDSA_D)))
   assigns(memory_slice(a, sizeof(poly)))
 );
 
