@@ -498,7 +498,7 @@ void polyz_unpack(poly *r, const uint8_t *a)
 __contract__(
   requires(memory_no_alias(r, sizeof(poly)))
   requires(memory_no_alias(a, MLDSA_POLYZ_PACKEDBYTES))
-  assigns(object_whole(r))
+  assigns(memory_slice(r, sizeof(poly)))
   ensures(array_bound(r->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
 );
 
