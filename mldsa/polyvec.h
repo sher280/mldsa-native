@@ -86,10 +86,29 @@ __contract__(
 
 #define polyvecl_invntt_tomont MLD_NAMESPACE(polyvecl_invntt_tomont)
 void polyvecl_invntt_tomont(polyvecl *v);
+
 #define polyvecl_pointwise_poly_montgomery \
   MLD_NAMESPACE(polyvecl_pointwise_poly_montgomery)
+/*************************************************
+ * Name:        polyvecl_pointwise_poly_montgomery
+ *
+ * Description: Pointwise multiplication of a polynomial vector of length
+ *              MLDSA_L by a single polynomial in NTT domain and multiplication
+ *              of the resulting polynomial vector by 2^{-32}.
+ *
+ * Arguments:   - polyvecl *r: pointer to output vector
+ *              - poly *a: pointer to input polynomial
+ *              - polyvecl *v: pointer to input vector
+ **************************************************/
 void polyvecl_pointwise_poly_montgomery(polyvecl *r, const poly *a,
-                                        const polyvecl *v);
+                                        const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(r, sizeof(polyvecl)))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  assigns(memory_slice(r, sizeof(polyvecl)))
+);
+
 #define polyvecl_pointwise_acc_montgomery \
   MLD_NAMESPACE(polyvecl_pointwise_acc_montgomery)
 /*************************************************
@@ -229,7 +248,12 @@ __contract__(
  *
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
-void polyveck_shiftl(polyveck *v);
+void polyveck_shiftl(polyveck *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, 1 << (31 - MLDSA_D))))
+  assigns(memory_slice(v, sizeof(polyveck)))
+);
 
 #define polyveck_ntt MLD_NAMESPACE(polyveck_ntt)
 /*************************************************
@@ -259,10 +283,28 @@ __contract__(
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
 void polyveck_invntt_tomont(polyveck *v);
+
 #define polyveck_pointwise_poly_montgomery \
   MLD_NAMESPACE(polyveck_pointwise_poly_montgomery)
+/*************************************************
+ * Name:        polyveck_pointwise_poly_montgomery
+ *
+ * Description: Pointwise multiplication of a polynomial vector of length
+ *              MLDSA_K by a single polynomial in NTT domain and multiplication
+ *              of the resulting polynomial vector by 2^{-32}.
+ *
+ * Arguments:   - polyveck *r: pointer to output vector
+ *              - poly *a: pointer to input polynomial
+ *              - polyveck *v: pointer to input vector
+ **************************************************/
 void polyveck_pointwise_poly_montgomery(polyveck *r, const poly *a,
-                                        const polyveck *v);
+                                        const polyveck *v)
+__contract__(
+  requires(memory_no_alias(r, sizeof(polyveck)))
+  requires(memory_no_alias(a, sizeof(poly)))
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  assigns(memory_slice(r, sizeof(polyveck)))
+);
 
 #define polyveck_chknorm MLD_NAMESPACE(polyveck_chknorm)
 /*************************************************
