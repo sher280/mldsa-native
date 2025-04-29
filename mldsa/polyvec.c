@@ -121,8 +121,17 @@ void polyvecl_invntt_tomont(polyvecl *v)
   unsigned int i;
 
   for (i = 0; i < MLDSA_L; ++i)
+  __loop__(
+    invariant(i <= MLDSA_L)
+    invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
+    invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLDSA_Q))))
   {
-    poly_invntt_tomont(&v->vec[i]);
+    poly t = v->vec[i];
+    poly_invntt_tomont(&t);
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    v->vec[i] = t;
   }
 }
 

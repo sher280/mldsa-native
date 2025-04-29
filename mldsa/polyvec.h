@@ -85,7 +85,22 @@ __contract__(
 );
 
 #define polyvecl_invntt_tomont MLD_NAMESPACE(polyvecl_invntt_tomont)
-void polyvecl_invntt_tomont(polyvecl *v);
+/*************************************************
+ * Name:        polyvecl_invntt_tomont
+ *
+ * Description: Inplace inverse NTT and multiplication by 2^{32}.
+ *              Input coefficients need to be less than MLDSA_Q in absolute
+ *              value and output coefficients are again bounded by MLDSA_Q.
+ *
+ * Arguments:   - polyvecl *v: pointer to input/output vector
+ **************************************************/
+void polyvecl_invntt_tomont(polyvecl *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  assigns(memory_slice(v, sizeof(polyvecl)))
+  ensures(forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0 , MLDSA_N, MLDSA_Q)))
+);
 
 #define polyvecl_pointwise_poly_montgomery \
   MLD_NAMESPACE(polyvecl_pointwise_poly_montgomery)
