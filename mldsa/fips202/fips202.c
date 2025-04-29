@@ -394,22 +394,27 @@ static unsigned int keccak_absorb(uint64_t s[MLD_KECCAK_LANES],
                                   unsigned int pos, unsigned int r,
                                   const uint8_t *in, size_t inlen)
 __contract__(
-  requires(r >= 0 && r < sizeof(uint64_t) * MLD_KECCAK_LANES)
-  requires(pos < r && pos >= 0)
+  requires(r < sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires(pos < r)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(in, inlen))
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES)))
 {
   unsigned int i;
 
-  if (pos + inlen >= r)
+  while (pos + inlen >= r)
+  __loop__(
+    assigns(pos, i, in, inlen,
+      memory_slice(s, sizeof(uint64_t) *  MLD_KECCAK_LANES))
+    invariant(inlen <= loop_entry(inlen))
+    invariant(pos < r)
+    invariant(in == loop_entry(in) + (loop_entry(inlen) - inlen)))
   {
     for (i = pos; i < r; i++)
     __loop__(
-          assigns(i, in, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
-          invariant(i >= pos && i <= r)
-          invariant(in == loop_entry(in) + (i - pos))
-        )
+      assigns(i, in, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+      invariant(i >= pos && i <= r)
+      invariant(in == loop_entry(in) + (i - pos)))
     {
       s[i / 8] ^= (uint64_t)*in++ << 8 * (i % 8);
     }
@@ -418,32 +423,10 @@ __contract__(
     pos = 0;
   }
 
-  while (inlen >= r)
-  __loop__(
-    assigns(i, in, inlen, memory_slice(s, sizeof(uint64_t) *  MLD_KECCAK_LANES))
-    invariant(inlen <= loop_entry(inlen))
-    invariant(in == loop_entry(in) + (loop_entry(inlen) - inlen))
-  )
-  {
-    for (i = 0; i < r; i++)
-    __loop__(
-      assigns(i, in, memory_slice(s, sizeof(uint64_t) *  MLD_KECCAK_LANES))
-      invariant(i <= r)
-      invariant(in == loop_entry(in) + i)
-    )
-    {
-      s[i / 8] ^= (uint64_t)*in++ << 8 * (i % 8);
-    }
-    inlen -= r;
-    KeccakF1600_StatePermute(s);
-  }
-
   for (i = pos; i < pos + inlen; i++)
   __loop__(
-          assigns(i, in, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
-          invariant(i >= pos && i - pos <= inlen)
-          invariant(in == loop_entry(in) + (i - pos))
-        )
+    invariant(i >= pos && i - pos <= inlen)
+    invariant(in == loop_entry(in) + (i - pos)))
   {
     s[i / 8] ^= (uint64_t)*in++ << 8 * (i % 8);
   }
