@@ -92,9 +92,12 @@ const uint64_t KeccakF_RoundConstants[NROUNDS] = {
  *
  * Arguments:   - uint64_t *state: pointer to input/output Keccak state
  **************************************************/
-static void KeccakF1600_StatePermute(uint64_t state[25])
+static void KeccakF1600_StatePermute(uint64_t state[MLD_KECCAK_LANES])
+__contract__(
+  requires(memory_no_alias(state, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  assigns(memory_slice(state, sizeof(uint64_t) * MLD_KECCAK_LANES)))
 {
-  int round;
+  unsigned round;
 
   uint64_t Aba, Abe, Abi, Abo, Abu;
   uint64_t Aga, Age, Agi, Ago, Agu;
@@ -137,6 +140,7 @@ static void KeccakF1600_StatePermute(uint64_t state[25])
   Asu = state[24];
 
   for (round = 0; round < NROUNDS; round += 2)
+  __loop__(invariant(round <= NROUNDS && round % 2 == 0))
   {
     /* prepareTheta */
     BCa = Aba ^ Aga ^ Aka ^ Ama ^ Asa;
@@ -386,15 +390,31 @@ static void keccak_init(uint64_t s[25])
  *
  * Returns new position pos in current block
  **************************************************/
-static unsigned int keccak_absorb(uint64_t s[25], unsigned int pos,
-                                  unsigned int r, const uint8_t *in,
-                                  size_t inlen)
+static unsigned int keccak_absorb(uint64_t s[MLD_KECCAK_LANES],
+                                  unsigned int pos, unsigned int r,
+                                  const uint8_t *in, size_t inlen)
+__contract__(
+  requires(r < sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires(pos < r)
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(in, inlen))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES)))
 {
   unsigned int i;
 
   while (pos + inlen >= r)
+  __loop__(
+    assigns(pos, i, in, inlen,
+      memory_slice(s, sizeof(uint64_t) *  MLD_KECCAK_LANES))
+    invariant(inlen <= loop_entry(inlen))
+    invariant(pos < r)
+    invariant(in == loop_entry(in) + (loop_entry(inlen) - inlen)))
   {
     for (i = pos; i < r; i++)
+    __loop__(
+      assigns(i, in, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+      invariant(i >= pos && i <= r)
+      invariant(in == loop_entry(in) + (i - pos)))
     {
       s[i / 8] ^= (uint64_t)*in++ << 8 * (i % 8);
     }
@@ -404,6 +424,9 @@ static unsigned int keccak_absorb(uint64_t s[25], unsigned int pos,
   }
 
   for (i = pos; i < pos + inlen; i++)
+  __loop__(
+    invariant(i >= pos && i - pos <= inlen)
+    invariant(in == loop_entry(in) + (i - pos)))
   {
     s[i / 8] ^= (uint64_t)*in++ << 8 * (i % 8);
   }
@@ -467,7 +490,6 @@ static unsigned int keccak_squeeze(uint8_t *out, size_t outlen, uint64_t s[25],
   return pos;
 }
 
-
 /*************************************************
  * Name:        keccak_absorb_once
  *
@@ -475,25 +497,36 @@ static unsigned int keccak_squeeze(uint8_t *out, size_t outlen, uint64_t s[25],
  *              non-incremental, starts by zeroeing the state.
  *
  * Arguments:   - uint64_t *s: pointer to (uninitialized) output Keccak state
- *              - unsigned int r: rate in bytes (e.g., 168 for SHAKE128)
+ *              - const unsigned int r: rate in bytes (e.g., 168 for SHAKE128)
  *              - const uint8_t *in: pointer to input to be absorbed into s
  *              - size_t inlen: length of input in bytes
  *              - uint8_t p: domain-separation byte for different Keccak-derived
  *functions
  **************************************************/
-static void keccak_absorb_once(uint64_t s[25], unsigned int r,
-                               const uint8_t *in, size_t inlen, uint8_t p)
+static void keccak_absorb_once(uint64_t s[MLD_KECCAK_LANES],
+                               const unsigned int r, const uint8_t *in,
+                               size_t inlen, uint8_t p)
+__contract__(
+  requires(r <= sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(in, inlen))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES)))
 {
   unsigned int i;
 
-  for (i = 0; i < 25; i++)
+  for (i = 0; i < MLD_KECCAK_LANES; i++)
+  __loop__(invariant(i <= MLD_KECCAK_LANES))
   {
     s[i] = 0;
   }
 
   while (inlen >= r)
+  __loop__(
+    invariant(inlen <= loop_entry(inlen))
+    invariant(in == loop_entry(in) + (loop_entry(inlen) - inlen)))
   {
     for (i = 0; i < r / 8; i++)
+    __loop__(invariant(i <= r / 8))
     {
       s[i] ^= load64(in + 8 * i);
     }
@@ -503,6 +536,7 @@ static void keccak_absorb_once(uint64_t s[25], unsigned int r,
   }
 
   for (i = 0; i < inlen; i++)
+  __loop__(invariant(i <= inlen))
   {
     s[i / 8] ^= (uint64_t)in[i] << 8 * (i % 8);
   }
@@ -781,14 +815,15 @@ void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
  *              - const uint8_t *in: pointer to input
  *              - size_t inlen: length of input in bytes
  **************************************************/
-void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen)
+void sha3_256(uint8_t h[SHA3_256_HASHBYTES], const uint8_t *in, size_t inlen)
 {
   unsigned int i;
-  uint64_t s[25];
+  uint64_t s[MLD_KECCAK_LANES];
 
   keccak_absorb_once(s, SHA3_256_RATE, in, inlen, 0x06);
   KeccakF1600_StatePermute(s);
   for (i = 0; i < 4; i++)
+  __loop__(invariant(i <= 4))
   {
     store64(h + 8 * i, s[i]);
   }
@@ -803,14 +838,15 @@ void sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen)
  *              - const uint8_t *in: pointer to input
  *              - size_t inlen: length of input in bytes
  **************************************************/
-void sha3_512(uint8_t h[64], const uint8_t *in, size_t inlen)
+void sha3_512(uint8_t h[SHA3_512_HASHBYTES], const uint8_t *in, size_t inlen)
 {
   unsigned int i;
-  uint64_t s[25];
+  uint64_t s[MLD_KECCAK_LANES];
 
   keccak_absorb_once(s, SHA3_512_RATE, in, inlen, 0x06);
   KeccakF1600_StatePermute(s);
   for (i = 0; i < 8; i++)
+  __loop__(invariant(i <= 8))
   {
     store64(h + 8 * i, s[i]);
   }
