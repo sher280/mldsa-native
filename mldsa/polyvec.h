@@ -297,7 +297,13 @@ __contract__(
  *
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
-void polyveck_invntt_tomont(polyveck *v);
+void polyveck_invntt_tomont(polyveck *v)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  assigns(memory_slice(v, sizeof(polyveck)))
+  ensures(forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+);
 
 #define polyveck_pointwise_poly_montgomery \
   MLD_NAMESPACE(polyveck_pointwise_poly_montgomery)
