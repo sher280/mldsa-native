@@ -580,7 +580,7 @@ static void keccak_squeezeblocks(uint8_t *out, size_t nblocks,
                                  uint64_t s[MLD_KECCAK_LANES], unsigned int r)
 __contract__(
   requires(r == SHAKE128_RATE || r == SHAKE256_RATE)
-  requires(nblocks < (UINT32_MAX / r))
+  requires(nblocks <= 8 /* somewhat arbitrary bound */)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(out, nblocks * r))
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
