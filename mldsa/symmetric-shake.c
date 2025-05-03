@@ -27,7 +27,7 @@ void mldsa_shake256_stream_init(keccak_state *state,
                                 uint16_t nonce)
 {
   uint8_t t[2];
-  t[0] = nonce;
+  t[0] = nonce & 0xFF;
   t[1] = nonce >> 8;
 
   shake256_init(state);
