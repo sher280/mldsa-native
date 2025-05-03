@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../mldsa/ntt.h"
+#include "../mldsa/poly.h"
 #include "../mldsa/randombytes.h"
 #include "hal.h"
 
@@ -49,7 +50,7 @@ static int bench(void)
   uint64_t t0, t1;
 
   /* ntt */
-  BENCH("ntt", ntt(data0))
+  BENCH("poly_ntt", poly_ntt((poly *)data0))
 
   return 0;
 }

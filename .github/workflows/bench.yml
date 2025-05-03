@@ -30,7 +30,7 @@ jobs:
         - system: rpi4
           name: Arm Cortex-A72 (Raspberry Pi 4) benchmarks
           bench_pmu: PMU
-          archflags: -mcpu=cortex-a72 -DMLK_SYS_AARCH64_SLOW_BARREL_SHIFTER
+          archflags: -mcpu=cortex-a72 -DMLD_SYS_AARCH64_SLOW_BARREL_SHIFTER
           cflags: "-flto"
           bench_extra_args: ""
           only_no_opt: false
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: ./.github/actions/bench
-        if: ${{ matrix.target.only_no_opt == 'false' }}
+        if: ${{ !matrix.target.only_no_opt }}
         with:
           name: ${{ matrix.target.name }} (opt)
           cflags: ${{ matrix.target.cflags }}
