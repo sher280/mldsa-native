@@ -6,6 +6,8 @@
 #define MLD_SYMMETRIC_H
 
 #include <stdint.h>
+#include "cbmc.h"
+#include "common.h"
 
 #include "fips202/fips202.h"
 
@@ -15,7 +17,12 @@ typedef keccak_state stream256_state;
 #define mldsa_shake128_stream_init MLD_NAMESPACE(mldsa_shake128_stream_init)
 void mldsa_shake128_stream_init(keccak_state *state,
                                 const uint8_t seed[MLDSA_SEEDBYTES],
-                                uint16_t nonce);
+                                uint16_t nonce)
+__contract__(
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  requires(memory_no_alias(seed, MLDSA_SEEDBYTES))
+  assigns(memory_slice(state, sizeof(keccak_state)))
+);
 
 #define mldsa_shake256_stream_init MLD_NAMESPACE(mldsa_shake256_stream_init)
 void mldsa_shake256_stream_init(keccak_state *state,
