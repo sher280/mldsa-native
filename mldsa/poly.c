@@ -111,12 +111,21 @@ void poly_ntt(poly *p)
 }
 #endif /* MLD_USE_NATIVE_NTT */
 
+#if !defined(MLD_USE_NATIVE_INTT)
 void poly_invntt_tomont(poly *a)
 {
   mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
   invntt_tomont(a->coeffs);
   mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
 }
+#else  /* !MLD_USE_NATIVE_INTT */
+void poly_invntt_tomont(poly *a)
+{
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+  mld_intt_native(a->coeffs);
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+}
+#endif /* MLD_USE_NATIVE_INTT */
 
 void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
 {
