@@ -118,12 +118,7 @@
         restore_vregs
 .endm
 
-.text
-.global MLD_ASM_NAMESPACE(ntt_asm)
-.balign 4
-MLD_ASM_FN_SYMBOL(ntt_asm)
-        push_stack
-
+        // Inputs
         in           .req x0 // Input/output buffer
         r012345_ptr  .req x1 // twiddles for layer 0,1,2,3,4,5
         r67_ptr      .req x2 // twiddles for layer 6,7
@@ -180,6 +175,12 @@ MLD_ASM_FN_SYMBOL(ntt_asm)
         consts .req v8
         q_consts .req q8
 
+.text
+.global MLD_ASM_NAMESPACE(ntt_asm)
+.balign 4
+MLD_ASM_FN_SYMBOL(ntt_asm)
+        push_stack
+
         // load q = 8380417
         movz wtmp, #57345
         movk wtmp, #127, lsl #16
@@ -232,6 +233,13 @@ layer123_start:
         add inpp, in, #64
         mov count, #8
 
+        // Use two data pointers and carefully arrange
+        // increments to facilitate reordering of loads
+        // and stores by SLOTHY.
+        //
+        // TODO: Think of alternatives here -- the start with `in`
+        // pointing to 64 byte below the actual data, which in theory
+        // could underflow. It's unclear how the CPU would behave in this case.
         sub in, in, #64
         sub inpp, inpp, #64
 
@@ -266,6 +274,7 @@ layer45678_start:
         ct_butterfly data4, data5, root2, 2, 3
         ct_butterfly data6, data7, root3, 0, 1
 
+        // Transpose using trn
         transpose4 data0, data1, data2, data3
         transpose4 data4, data5, data6, data7
 
@@ -283,8 +292,7 @@ layer45678_start:
         ct_butterfly_v data4, data5, root1, root1_tw
         ct_butterfly_v data6, data7, root2, root2_tw
 
-        // Standard way using vector instructions
-
+        // Transpose as part of st4
         st4 {data0.4S, data1.4S, data2.4S, data3.4S}, [in], #64
         st4 {data4.4S, data5.4S, data6.4S, data7.4S}, [inpp], #64
 
