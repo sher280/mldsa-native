@@ -16,10 +16,4 @@
 #include "aarch64/meta.h"
 #endif
 
-/*
-#ifdef MLD_SYS_X86_64_AVX2
-#include "x86_64/meta.h"
-#endif
-*/
-
 #endif /* !MLD_NATIVE_META_H */
