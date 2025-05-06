@@ -563,6 +563,46 @@ __contract__(
 }
 
 /*************************************************
+ * Name:        keccakf1600_extract_bytes
+ *
+ * Description: Extracts a specified number of bytes from the state
+ *              buffer starting at offset and stores them in the provided
+ *              data buffer
+ *
+ * Arguments:   - uint64_t *state: pointer to the state array
+ *              - unsigned char *data: pointer to the output byte array
+ *(allocated)
+ *              - unsigned offset: starting byte position in the state
+ *              - unsigned length: number of bytes to extract
+ **************************************************/
+static void keccakf1600_extract_bytes(uint64_t *state, unsigned char *data,
+                                      unsigned offset, unsigned length)
+__contract__(
+  requires(0 <= offset && offset <= MLD_KECCAK_LANES * sizeof(uint64_t) &&
+      0 <= length && length <= MLD_KECCAK_LANES * sizeof(uint64_t) - offset)
+  requires(memory_no_alias(state, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(data, length))
+  assigns(memory_slice(data, length)))
+{
+  unsigned i;
+#if defined(MLD_SYS_LITTLE_ENDIAN)
+  uint8_t *state_ptr = (uint8_t *)state + offset;
+  for (i = 0; i < length; i++)
+  __loop__(invariant(i <= length))
+  {
+    data[i] = state_ptr[i];
+  }
+#else  /* MLD_SYS_LITTLE_ENDIAN */
+  /* Portable version */
+  for (i = 0; i < length; i++)
+  __loop__(invariant(i <= length))
+  {
+    data[i] = (state[(offset + i) >> 3] >> (8 * ((offset + i) & 0x07))) & 0xFF;
+  }
+#endif /* !MLD_SYS_LITTLE_ENDIAN */
+}
+
+/*************************************************
  * Name:        keccak_squeezeblocks
  *
  * Description: Squeeze step of Keccak. Squeezes full blocks of r bytes each.
@@ -586,23 +626,16 @@ __contract__(
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   assigns(memory_slice(out, nblocks * r)))
 {
-  unsigned int i;
-
   while (nblocks > 0)
   __loop__(
-    assigns(i, out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, nblocks * r))
+    assigns(out, nblocks, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES),
+      memory_slice(out, nblocks * r))
     invariant(nblocks <= loop_entry(nblocks))
-    invariant(out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks) && nblocks >= 0)
+    invariant(out == loop_entry(out) + r * (loop_entry(nblocks) - nblocks))
   )
   {
     KeccakF1600_StatePermute(s);
-    for (i = 0; i < r / 8; i++)
-    __loop__(
-      invariant(i <= (r / 8))
-    )
-    {
-      store64(out + 8 * i, s[i]);
-    }
+    keccakf1600_extract_bytes(s, out, 0, r);
     out += r;
     nblocks -= 1;
   }
