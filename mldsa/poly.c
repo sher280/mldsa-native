@@ -85,7 +85,11 @@ void poly_shiftl(poly *a)
   }
 }
 
+#if !defined(MLD_USE_NATIVE_NTT)
 void poly_ntt(poly *a) { ntt(a->coeffs); }
+#else
+void poly_ntt(poly *p) { mld_ntt_native(p->coeffs); }
+#endif
 
 void poly_invntt_tomont(poly *a) { invntt_tomont(a->coeffs); }
 

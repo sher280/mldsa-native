@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024-2025 The mldsa-native project authors
+# Copyright (c) 2024-2025 The mlkem-native project authors
 # Copyright (c) 2025      The mldsa-native project authors
 # SPDX-License-Identifier: Apache-2.0
 
@@ -33,7 +33,7 @@ def status_update(task, msg):
 
 def gen_header():
     yield "/*"
-    yield " * Copyright (c) 2024-2025 The mldsa-native project authors"
+    yield " * Copyright (c) 2025 The mldsa-native project authors"
     yield " * SPDX-License-Identifier: Apache-2.0"
     yield " */"
     yield ""
@@ -475,6 +475,144 @@ def gen_c_zeta_file(dry_run=False):
     update_file("mldsa/zetas.inc", "\n".join(gen()), dry_run=dry_run, force_format=True)
 
 
+def prepare_root_for_barrett(root):
+    """Takes a constant that the code needs to Barrett-multiply with,
+    and returns the pair of (a) its signed canonical form, (b) the
+    twisted constant used in the high-mul part of the Barrett multiplication."""
+
+    # Signed canonical reduction
+    root = signed_reduce(root)
+
+    def round_to_even(t):
+        rt = round(t)
+        if rt % 2 == 0:
+            return rt
+        # Make sure to pick a rounding target
+        # that's <= 1 away from x in absolute value.
+        if rt <= t:
+            return rt + 1
+        return rt - 1
+
+    root_twisted = round_to_even((root * 2**32) / modulus) // 2
+    return root, root_twisted
+
+
+def gen_aarch64_root_of_unity_for_block(layer, block, inv=False):
+    # We are computing a negacyclic NTT; the twiddles needed here is
+    # the second half of the twiddles for a cyclic NTT of twice the size.
+    # For ease of calculating the roots, layers are numbers 0 through 7
+    # in this function.
+    log = bitreverse(pow(2, layer) + block, 8)
+    if inv is True:
+        log = -log
+    root, root_twisted = prepare_root_for_barrett(pow(root_of_unity, log, modulus))
+    return root, root_twisted
+
+
+def gen_aarch64_fwd_ntt_zetas_layer123456():
+    # Layers 1,2,3 are merged
+    yield from gen_aarch64_root_of_unity_for_block(0, 0)
+    yield from gen_aarch64_root_of_unity_for_block(1, 0)
+    yield from gen_aarch64_root_of_unity_for_block(1, 1)
+    yield from gen_aarch64_root_of_unity_for_block(2, 0)
+    yield from gen_aarch64_root_of_unity_for_block(2, 1)
+    yield from gen_aarch64_root_of_unity_for_block(2, 2)
+    yield from gen_aarch64_root_of_unity_for_block(2, 3)
+    yield from (0, 0)  # Padding
+
+    # Layers 4,5,6 are merged
+    for block in range(8):  # There are 8 blocks in Layer 4
+        yield from gen_aarch64_root_of_unity_for_block(3, block)
+        yield from gen_aarch64_root_of_unity_for_block(4, 2 * block + 0)
+        yield from gen_aarch64_root_of_unity_for_block(4, 2 * block + 1)
+        yield from gen_aarch64_root_of_unity_for_block(5, 4 * block + 0)
+        yield from gen_aarch64_root_of_unity_for_block(5, 4 * block + 1)
+        yield from gen_aarch64_root_of_unity_for_block(5, 4 * block + 2)
+        yield from gen_aarch64_root_of_unity_for_block(5, 4 * block + 3)
+        yield from (0, 0)  # Padding
+
+
+def gen_aarch64_fwd_ntt_zetas_layer78():
+    # Layers 4,5,6,7,8 are merged, but we emit roots for 4,5,6
+    # in separate arrays than those for 7,8
+    for block in range(8):
+
+        # Ordering of blocks is adjusted to suit the transposed internal
+        # presentation of the data
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 0)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 1)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 2)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 3)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 0)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 2)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 4)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 6)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 1)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 3)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 5)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 7)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 0 + 4)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 1 + 4)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 2 + 4)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, 8 * block + 3 + 4)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 0 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 2 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 4 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 6 + 8)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 1 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 3 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 5 + 8)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 7 + 8)[i]
+
+
+def gen_aarch64_zeta_file(dry_run=False):
+    def gen():
+        yield from gen_header()
+        yield '#include "../../../common.h"'
+        yield ""
+        yield "#if defined(MLD_ARITH_BACKEND_AARCH64)"
+        yield ""
+        yield "#include <stdint.h>"
+        yield '#include "arith_native_aarch64.h"'
+        yield ""
+        yield "/*"
+        yield " * Table of zeta values used in the AArch64 forward NTT"
+        yield " * See autogen for details."
+        yield " */"
+        yield "MLD_ALIGN const int32_t mld_aarch64_ntt_zetas_layer123456[] = {"
+        yield from map(lambda t: str(t) + ",", gen_aarch64_fwd_ntt_zetas_layer123456())
+        yield "};"
+        yield ""
+        yield "MLD_ALIGN const int32_t mld_aarch64_ntt_zetas_layer78[] = {"
+        yield from map(lambda t: str(t) + ",", gen_aarch64_fwd_ntt_zetas_layer78())
+        yield "};"
+        yield ""
+        yield "#else"
+        yield ""
+        yield "MLD_EMPTY_CU(aarch64_zetas)"
+        yield ""
+        yield "#endif"
+        yield ""
+
+    update_file(
+        "mldsa/native/aarch64/src/aarch64_zetas.c",
+        "\n".join(gen()),
+        dry_run=dry_run,
+    )
+
+
 def adjust_header_guard_for_filename(content, header_file):
 
     status_update("header guards", header_file)
@@ -572,6 +710,7 @@ def _main():
     os.chdir(os.path.join(os.path.dirname(__file__), ".."))
 
     gen_c_zeta_file(args.dry_run)
+    gen_aarch64_zeta_file(args.dry_run)
     gen_header_guards(args.dry_run)
     gen_preprocessor_comments(args.dry_run)
 

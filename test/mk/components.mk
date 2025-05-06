@@ -2,7 +2,10 @@
 
 FIPS202_SRCS = $(wildcard mldsa/fips202/*.c)
 SOURCES += $(wildcard mldsa/*.c)
-
+ifeq ($(OPT),1)
+	SOURCES += $(wildcard mldsa/native/aarch64/src/*.[csS]) $(wildcard mldsa/native/x86_64/src/*.[csS])
+	CFLAGS += -DMLD_CONFIG_USE_NATIVE_BACKEND_ARITH -DMLD_CONFIG_USE_NATIVE_BACKEND_FIPS202
+endif
 ALL_TESTS = test_mldsa acvp_mldsa bench_mldsa bench_components_mldsa gen_NISTKAT gen_KAT
 NON_NIST_TESTS = $(filter-out gen_NISTKAT,$(ALL_TESTS))
 
