@@ -3,15 +3,17 @@
 
 #include "poly.h"
 
-unsigned rej_uniform(int32_t *a, unsigned int len, const uint8_t *buf,
-                     unsigned int buflen);
+static unsigned int rej_uniform(int32_t *a, unsigned int target,
+                                unsigned int offset, const uint8_t *buf,
+                                unsigned int buflen);
 
 void harness(void)
 {
   int32_t *a;
-  unsigned int len;
+  unsigned int target;
+  unsigned int offset;
   const uint8_t *buf;
   unsigned int buflen;
 
-  rej_uniform(a, len, buf, buflen);
+  rej_uniform(a, target, offset, buf, buflen);
 }

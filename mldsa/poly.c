@@ -268,29 +268,31 @@ int poly_chknorm(const poly *a, int32_t B)
  **************************************************/
 #define POLY_UNIFORM_NBLOCKS \
   ((768 + STREAM128_BLOCKBYTES - 1) / STREAM128_BLOCKBYTES)
-static unsigned int rej_uniform(int32_t *a, unsigned int len,
-                                const uint8_t *buf, unsigned int buflen)
+static unsigned int rej_uniform(int32_t *a, unsigned int target,
+                                unsigned int offset, const uint8_t *buf,
+                                unsigned int buflen)
 __contract__(
-  requires(len <= buflen && len <= MLDSA_N)
+  requires(offset <= target && target <= MLDSA_N)
   requires(buflen <= (POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES) && buflen % 3 == 0)
-  requires(memory_no_alias(a, sizeof(int32_t) * len))
+  requires(memory_no_alias(a, sizeof(int32_t) * target))
   requires(memory_no_alias(buf, buflen))
-  assigns(memory_slice(a, sizeof(int32_t) * len))
-  ensures(return_value <= len)
+  requires(array_bound(a, 0, offset, 0, MLDSA_Q))
+  assigns(memory_slice(a, sizeof(int32_t) * target))
+  ensures(offset <= return_value && return_value <= target)
   ensures(array_bound(a, 0, return_value, 0, MLDSA_Q))
 )
 {
   unsigned int ctr, pos;
   uint32_t t;
 
-  ctr = pos = 0;
+  ctr = offset;
+  pos = 0;
   /* pos + 3 cannot overflow due to the assumption
   buflen <= (POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES) */
-  while (ctr < len && pos + 3 <= buflen)
+  while (ctr < target && pos + 3 <= buflen)
   __loop__(
-    invariant(ctr <= len && pos <= buflen)
-    invariant(array_bound(a, 0, ctr, 0, MLDSA_Q))
-  )
+    invariant(offset <= ctr && ctr <= target && pos <= buflen)
+    invariant(array_bound(a, 0, ctr, 0, MLDSA_Q)))
   {
     t = buf[pos++];
     t |= (uint32_t)buf[pos++] << 8;
@@ -316,7 +318,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
   stream128_init(&state, seed, nonce);
   stream128_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
 
-  ctr = rej_uniform(a->coeffs, MLDSA_N, buf, buflen);
+  ctr = rej_uniform(a->coeffs, MLDSA_N, 0, buf, buflen);
 
   while (ctr < MLDSA_N)
   {
@@ -328,7 +330,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
 
     stream128_squeezeblocks(buf + off, 1, &state);
     buflen = STREAM128_BLOCKBYTES + off;
-    ctr += rej_uniform(a->coeffs + ctr, MLDSA_N - ctr, buf, buflen);
+    ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
 }
 
