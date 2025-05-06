@@ -484,12 +484,30 @@ __contract__(
  *
  * Returns new position pos in current block
  **************************************************/
-static unsigned int keccak_squeeze(uint8_t *out, size_t outlen, uint64_t s[25],
+static unsigned int keccak_squeeze(uint8_t *out, size_t outlen,
+                                   uint64_t s[MLD_KECCAK_LANES],
                                    unsigned int pos, unsigned int r)
+__contract__(
+  requires(r == SHAKE128_RATE || r == SHAKE256_RATE)
+  requires(pos <= r)
+  requires(outlen <= 8 * r /* somewhat arbitrary bound */)
+  requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  requires(memory_no_alias(out, outlen))
+  assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
+  assigns(memory_slice(out, outlen))
+  ensures(return_value <= r))
 {
   unsigned int i;
+  uint64_t lane;
+  uint8_t byte;
 
-  while (outlen)
+  while (outlen > 0)
+  __loop__(
+    assigns(i, outlen, pos, out, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, outlen))
+    invariant(outlen <= loop_entry(outlen))
+    invariant(out == loop_entry(out) + (loop_entry(outlen) - outlen))
+    invariant(pos <= r)
+  )
   {
     if (pos == r)
     {
@@ -497,8 +515,15 @@ static unsigned int keccak_squeeze(uint8_t *out, size_t outlen, uint64_t s[25],
       pos = 0;
     }
     for (i = pos; i < r && i < pos + outlen; i++)
+    __loop__(
+      assigns(i, out, memory_slice(out, outlen))
+      invariant(i >= pos && i <= r && i <= pos + outlen)
+      invariant(out == loop_entry(out) + (i - pos))
+    )
     {
-      *out++ = s[i / 8] >> 8 * (i % 8);
+      lane = s[i / 8];
+      byte = (uint8_t)((lane >> (8 * (i % 8))) & 0xFF);
+      *out++ = byte;
     }
     outlen -= i - pos;
     pos = i;
