@@ -111,7 +111,17 @@ __contract__(
 );
 
 #define shake256_squeeze FIPS202_NAMESPACE(shake256_squeeze)
-void shake256_squeeze(uint8_t *out, size_t outlen, keccak_state *state);
+void shake256_squeeze(uint8_t *out, size_t outlen, keccak_state *state)
+__contract__(
+  requires(outlen <= 8 * SHAKE256_RATE /* somewhat arbitrary bound */)
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  requires(memory_no_alias(out, outlen))
+  requires(state->pos <= SHAKE256_RATE)
+  assigns(memory_slice(state, sizeof(keccak_state)))
+  assigns(memory_slice(out, outlen))
+  ensures(state->pos <= SHAKE256_RATE)
+);
+
 #define shake256_absorb_once FIPS202_NAMESPACE(shake256_absorb_once)
 void shake256_absorb_once(keccak_state *state, const uint8_t *in, size_t inlen)
 __contract__(
