@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "debug.h"
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
@@ -14,6 +15,9 @@
 void poly_reduce(poly *a)
 {
   unsigned int i;
+  /* TODO: Introduce the following after using inclusive lower bounds in
+   * the underlying debug function mld_debug_check_bounds(). */
+  /* mld_assert_bound(a->coeffs, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX); */
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
@@ -23,11 +27,14 @@ void poly_reduce(poly *a)
   {
     a->coeffs[i] = reduce32(a->coeffs[i]);
   }
+
+  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX);
 }
 
 void poly_caddq(poly *a)
 {
   unsigned int i;
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
@@ -38,6 +45,8 @@ void poly_caddq(poly *a)
   {
     a->coeffs[i] = caddq(a->coeffs[i]);
   }
+
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, MLDSA_Q);
 }
 
 void poly_add(poly *c, const poly *a, const poly *b)
@@ -72,6 +81,7 @@ void poly_sub(poly *c, const poly *a, const poly *b)
 void poly_shiftl(poly *a)
 {
   unsigned int i;
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, 1 << (31 - MLDSA_D));
 
   for (i = 0; i < MLDSA_N; i++)
   __loop__(
@@ -86,12 +96,27 @@ void poly_shiftl(poly *a)
 }
 
 #if !defined(MLD_USE_NATIVE_NTT)
-void poly_ntt(poly *a) { ntt(a->coeffs); }
-#else
-void poly_ntt(poly *p) { mld_ntt_native(p->coeffs); }
-#endif
+void poly_ntt(poly *a)
+{
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+  ntt(a->coeffs);
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLD_NTT_BOUND);
+}
+#else  /* !MLD_USE_NATIVE_NTT */
+void poly_ntt(poly *p)
+{
+  mld_assert_abs_bound(p->coeffs, MLDSA_N, MLDSA_Q);
+  mld_ntt_native(p->coeffs);
+  mld_assert_abs_bound(p->coeffs, MLDSA_N, MLD_NTT_BOUND);
+}
+#endif /* MLD_USE_NATIVE_NTT */
 
-void poly_invntt_tomont(poly *a) { invntt_tomont(a->coeffs); }
+void poly_invntt_tomont(poly *a)
+{
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+  invntt_tomont(a->coeffs);
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+}
 
 void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
 {
@@ -108,6 +133,7 @@ void poly_pointwise_montgomery(poly *c, const poly *a, const poly *b)
 void poly_power2round(poly *a1, poly *a0, const poly *a)
 {
   unsigned int i;
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, MLDSA_Q);
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
@@ -119,11 +145,16 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
   {
     power2round(&a0->coeffs[i], &a1->coeffs[i], a->coeffs[i]);
   }
+
+  mld_assert_bound(a0->coeffs, MLDSA_N, -(MLD_2_POW_D / 2) + 1,
+                   (MLD_2_POW_D / 2) + 1);
+  mld_assert_bound(a1->coeffs, MLDSA_N, 0, (MLD_2_POW_D / 2) + 1);
 }
 
 void poly_decompose(poly *a1, poly *a0, const poly *a)
 {
   unsigned int i;
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, MLDSA_Q);
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
@@ -135,6 +166,9 @@ void poly_decompose(poly *a1, poly *a0, const poly *a)
   {
     decompose(&a0->coeffs[i], &a1->coeffs[i], a->coeffs[i]);
   }
+
+  mld_assert_abs_bound(a0->coeffs, MLDSA_N, MLDSA_GAMMA2 + 1);
+  mld_assert_bound(a1->coeffs, MLDSA_N, 0, (MLDSA_Q - 1) / (2 * MLDSA_GAMMA2));
 }
 
 unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1)
@@ -152,12 +186,15 @@ unsigned int poly_make_hint(poly *h, const poly *a0, const poly *a1)
     s += hint_bit;
   }
 
+  mld_assert(s <= MLDSA_N);
   return s;
 }
 
 void poly_use_hint(poly *b, const poly *a, const poly *h)
 {
   unsigned int i;
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, MLDSA_Q);
+  mld_assert_bound(h->coeffs, MLDSA_N, 0, 2);
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
@@ -167,6 +204,8 @@ void poly_use_hint(poly *b, const poly *a, const poly *h)
   {
     b->coeffs[i] = use_hint(a->coeffs[i], h->coeffs[i]);
   }
+
+  mld_assert_bound(b->coeffs, MLDSA_N, 0, (MLDSA_Q - 1) / (2 * MLDSA_GAMMA2));
 }
 
 /* Reference: explicitly checks the bound B to be <= (MLDSA_Q - 1) / 8).
@@ -178,6 +217,7 @@ int poly_chknorm(const poly *a, int32_t B)
   unsigned int i;
   int rc = 0;
   int32_t t;
+  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX);
 
   /* It is ok to leak which coefficient violates the bound since
      the probability for each coefficient is independent of secret
@@ -461,12 +501,16 @@ void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
     /* Move to the next bit of signs for next time */
     signs >>= 1;
   }
+
+  mld_assert_bound(c->coeffs, MLDSA_N, -1, 2);
 }
 
 void polyeta_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint8_t t[8];
+
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_ETA + 1);
 
 #if MLDSA_ETA == 2
   for (i = 0; i < MLDSA_N / 8; ++i)
@@ -543,11 +587,15 @@ void polyeta_unpack(poly *r, const uint8_t *a)
 #else /* MLDSA_ETA == 4 */
 #error "Invalid value of MLDSA_ETA"
 #endif /* MLDSA_ETA != 2 && MLDSA_ETA != 4 */
+
+  mld_assert_bound(r->coeffs, MLDSA_N, MLD_POLYETA_UNPACK_LOWER_BOUND,
+                   MLDSA_ETA + 1);
 }
 
 void polyt1_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, 1 << 10);
 
   for (i = 0; i < MLDSA_N / 4; ++i)
   __loop__(
@@ -582,12 +630,17 @@ void polyt1_unpack(poly *r, const uint8_t *a)
     r->coeffs[4 * i + 3] =
         ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF;
   }
+
+  mld_assert_bound(r->coeffs, MLDSA_N, 0, 1 << 10);
 }
 
 void polyt0_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint32_t t[8];
+
+  mld_assert_bound(a->coeffs, MLDSA_N, -(1 << (MLDSA_D - 1)) + 1,
+                   (1 << (MLDSA_D - 1)) + 1);
 
   for (i = 0; i < MLDSA_N / 8; ++i)
   __loop__(
@@ -679,12 +732,17 @@ void polyt0_unpack(poly *r, const uint8_t *a)
     r->coeffs[8 * i + 6] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 6];
     r->coeffs[8 * i + 7] = (1 << (MLDSA_D - 1)) - r->coeffs[8 * i + 7];
   }
+
+  mld_assert_bound(r->coeffs, MLDSA_N, -(1 << (MLDSA_D - 1)) + 1,
+                   (1 << (MLDSA_D - 1)) + 1);
 }
 
 void polyz_pack(uint8_t *r, const poly *a)
 {
   unsigned int i;
   uint32_t t[4];
+
+  mld_assert_bound(a->coeffs, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1);
 
 #if MLDSA_MODE == 2
   for (i = 0; i < MLDSA_N / 4; ++i)
@@ -783,6 +841,8 @@ void polyz_unpack(poly *r, const uint8_t *a)
     r->coeffs[2 * i + 1] = MLDSA_GAMMA1 - r->coeffs[2 * i + 1];
   }
 #endif /* MLDSA_MODE != 2 */
+
+  mld_assert_bound(r->coeffs, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1);
 }
 
 void polyw1_pack(uint8_t *r, const poly *a)
@@ -790,6 +850,8 @@ void polyw1_pack(uint8_t *r, const poly *a)
   unsigned int i;
 
 #if MLDSA_MODE == 2
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, 44);
+
   for (i = 0; i < MLDSA_N / 4; ++i)
   __loop__(
     invariant(i <= MLDSA_N/4))
@@ -802,6 +864,8 @@ void polyw1_pack(uint8_t *r, const poly *a)
     r[3 * i + 2] |= (a->coeffs[4 * i + 3] << 2) & 0xFF;
   }
 #else  /* MLDSA_MODE == 2 */
+  mld_assert_bound(a->coeffs, MLDSA_N, 0, 16);
+
   for (i = 0; i < MLDSA_N / 2; ++i)
   __loop__(
     invariant(i <= MLDSA_N/2))
