@@ -343,7 +343,14 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
  *              - const uint8_t mu[]: byte array containing seed of length
  *                MLDSA_CTILDEBYTES
  **************************************************/
-void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES]);
+void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
+__contract__(
+  requires(memory_no_alias(c, sizeof(poly)))
+  requires(memory_no_alias(seed, MLDSA_CTILDEBYTES))
+  assigns(memory_slice(c, sizeof(poly)))
+  /* All coefficients of c are -1, 0 or +1 */
+  ensures(array_bound(c->coeffs, 0, MLDSA_N, -1, 2))
+);
 
 #define polyeta_pack MLD_NAMESPACE(polyeta_pack)
 /*************************************************

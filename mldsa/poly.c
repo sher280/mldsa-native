@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
+#include <string.h>
 
 #include "ntt.h"
 #include "poly.h"
@@ -390,8 +391,9 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
 
 void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
 {
-  unsigned int i, b, pos;
+  unsigned int i, j, pos;
   uint64_t signs;
+  uint64_t offset;
   uint8_t buf[SHAKE256_RATE];
   keccak_state state;
 
@@ -400,32 +402,59 @@ void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
   shake256_finalize(&state);
   shake256_squeezeblocks(buf, 1, &state);
 
+  /* Convert the first 8 bytes of buf[] into an unsigned 64-bit value.   */
+  /* Each bit of that dictates the sign of the resulting challenge value */
   signs = 0;
   for (i = 0; i < 8; ++i)
+  __loop__(
+    assigns(i, signs)
+    invariant(i <= 8)
+  )
   {
     signs |= (uint64_t)buf[i] << 8 * i;
   }
   pos = 8;
 
-  for (i = 0; i < MLDSA_N; ++i)
-  {
-    c->coeffs[i] = 0;
-  }
+  memset(c, 0, sizeof(poly));
+
   for (i = MLDSA_N - MLDSA_TAU; i < MLDSA_N; ++i)
+  __loop__(
+    assigns(i, j, object_whole(buf), state, pos, memory_slice(c, sizeof(poly)), signs)
+    invariant(i >= MLDSA_N - MLDSA_TAU)
+    invariant(i <= MLDSA_N)
+    invariant(pos >= 1)
+    invariant(pos <= SHAKE256_RATE)
+    invariant(array_bound(c->coeffs, 0, MLDSA_N, -1, 2))
+  )
   {
     do
+    __loop__(
+      assigns(j, object_whole(buf), state, pos)
+    )
     {
       if (pos >= SHAKE256_RATE)
       {
         shake256_squeezeblocks(buf, 1, &state);
         pos = 0;
       }
+      j = buf[pos++];
+    } while (j > i);
 
-      b = buf[pos++];
-    } while (b > i);
+    c->coeffs[i] = c->coeffs[j];
 
-    c->coeffs[i] = c->coeffs[b];
-    c->coeffs[b] = 1 - 2 * (signs & 1);
+    /* Reference: Compute coefficent value here in two steps to */
+    /* mixinf unsigned and signed arithmetic with implicit      */
+    /* conversions, and so that CBMC can keep track of ranges   */
+    /* to complete type-safety proof here.                      */
+
+    /* The least-significant bit of signs tells us if we want -1 or +1 */
+    offset = 2 * (signs & 1);
+
+    /* offset has value 0 or 2 here, so (1 - (int32_t) offset) has
+     * value -1 or +1 */
+    c->coeffs[j] = 1 - (int32_t)offset;
+
+    /* Move to the next bit of signs for next time */
     signs >>= 1;
   }
 }
