@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* TODO: autogenerate this file */
+/*
+ * WARNING: This file is auto-generated from scripts/autogen
+ *          Do not modify it directly.
+ */
+
 #include "../../../common.h"
 
 #if defined(MLD_ARITH_BACKEND_AARCH64)
@@ -11,6 +15,10 @@
 #include <stdint.h>
 #include "arith_native_aarch64.h"
 
+/*
+ * Table of zeta values used in the AArch64 forward NTT
+ * See autogen for details.
+ */
 MLD_ALIGN const int32_t mld_aarch64_ntt_zetas_layer123456[] = {
     -3572223, -915382907,  3765607,  964937599,   3761513,  963888510,
     -3201494, -820383522,  -2883726, -738955404,  -3145678, -806080660,
@@ -117,6 +125,7 @@ MLD_ALIGN const int32_t mld_aarch64_ntt_zetas_layer78[] = {
     270210213,   3531229,     -3773731,   -781875,     -731434,
     904878186,   -967019376,  -200355636, -187430119,
 };
+
 #else /* MLD_ARITH_BACKEND_AARCH64 */
 
 MLD_EMPTY_CU(aarch64_zetas)
