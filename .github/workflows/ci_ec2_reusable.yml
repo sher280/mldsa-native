@@ -68,8 +68,8 @@ on:
 env:
   AWS_ROLE: arn:aws:iam::904233116199:role/mldsa-native-ci
   AWS_REGION: us-east-1
-  AMI_UBUNTU_LATEST_X86_64: ami-0e86e20dae9224db8
-  AMI_UBUNTU_LATEST_AARCH64: ami-096ea6a12ea24a797
+  AMI_UBUNTU_LATEST_X86_64: ami-084568db4383264d4
+  AMI_UBUNTU_LATEST_AARCH64: ami-0c4e709339fa8521a
 jobs:
   start-ec2-runner:
     name: Start instance (${{ inputs.ec2_instance_type }})
