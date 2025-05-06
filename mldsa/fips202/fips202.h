@@ -35,6 +35,7 @@ __contract__(
   assigns(memory_slice(state, sizeof(keccak_state)))
   ensures(state->pos == 0)
 );
+
 #define shake128_absorb FIPS202_NAMESPACE(shake128_absorb)
 void shake128_absorb(keccak_state *state, const uint8_t *in, size_t inlen)
 __contract__(
@@ -44,6 +45,7 @@ __contract__(
   assigns(memory_slice(state, sizeof(keccak_state)))
   ensures(state->pos < SHAKE128_RATE)
 );
+
 #define shake128_finalize FIPS202_NAMESPACE(shake128_finalize)
 void shake128_finalize(keccak_state *state)
 __contract__(
@@ -51,8 +53,19 @@ __contract__(
   requires(state->pos < SHAKE128_RATE)
   assigns(memory_slice(state, sizeof(keccak_state)))
 );
+
 #define shake128_squeeze FIPS202_NAMESPACE(shake128_squeeze)
-void shake128_squeeze(uint8_t *out, size_t outlen, keccak_state *state);
+void shake128_squeeze(uint8_t *out, size_t outlen, keccak_state *state)
+__contract__(
+  requires(outlen <= 8 * SHAKE128_RATE /* somewhat arbitrary bound */)
+  requires(memory_no_alias(state, sizeof(keccak_state)))
+  requires(memory_no_alias(out, outlen))
+  requires(state->pos <= SHAKE128_RATE)
+  assigns(memory_slice(state, sizeof(keccak_state)))
+  assigns(memory_slice(out, outlen))
+  ensures(state->pos <= SHAKE128_RATE)
+);
+
 #define shake128_absorb_once FIPS202_NAMESPACE(shake128_absorb_once)
 void shake128_absorb_once(keccak_state *state, const uint8_t *in, size_t inlen)
 __contract__(
