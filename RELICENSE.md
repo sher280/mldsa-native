@@ -15,3 +15,4 @@ in the mldsa-native project under `Apache-2.0 OR ISC OR MIT`.
 - Matthias Kannwischer <matthias@kannwischer.eu>
 - Rod Chapman <rodchap@amazon.co.uk>
 - Pravek Sharma <sharmapravek@gmail.com>
+- Mila Anastasova <manastasova2017@fau.edu>
