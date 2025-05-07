@@ -488,8 +488,8 @@ static unsigned int keccak_squeeze(uint8_t *out, size_t outlen,
                                    uint64_t s[MLD_KECCAK_LANES],
                                    unsigned int pos, unsigned int r)
 __contract__(
-  requires(r == SHAKE128_RATE || r == SHAKE256_RATE)
-  requires(pos <= r)
+  requires((r == SHAKE128_RATE && pos <= SHAKE128_RATE) ||
+    (r == SHAKE256_RATE && pos <= SHAKE256_RATE))
   requires(outlen <= 8 * r /* somewhat arbitrary bound */)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(out, outlen))
