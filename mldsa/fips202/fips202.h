@@ -131,6 +131,7 @@ __contract__(
   requires(memory_no_alias(state, sizeof(keccak_state)))
   requires(memory_no_alias(in, inlen))
   assigns(memory_slice(state, sizeof(keccak_state)))
+  ensures(state->pos == SHAKE256_RATE)
 );
 
 #define shake256_squeezeblocks FIPS202_NAMESPACE(shake256_squeezeblocks)
@@ -139,8 +140,10 @@ __contract__(
   requires(nblocks <= 8 /* somewhat arbitrary bound */)
   requires(memory_no_alias(state, sizeof(keccak_state)))
   requires(memory_no_alias(out, nblocks * SHAKE256_RATE))
+  requires(state->pos <= SHAKE256_RATE)
   assigns(memory_slice(state, sizeof(keccak_state)))
   assigns(memory_slice(out, nblocks * SHAKE256_RATE))
+  ensures(state->pos <= SHAKE256_RATE)
 );
 
 #define shake128 FIPS202_NAMESPACE(shake128)
@@ -153,7 +156,14 @@ __contract__(
 );
 
 #define shake256 FIPS202_NAMESPACE(shake256)
-void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen);
+void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
+__contract__(
+  requires(outlen <= 8 * SHAKE256_RATE /* somewhat arbitrary bound */)
+  requires(memory_no_alias(in, inlen))
+  requires(memory_no_alias(out, outlen))
+  assigns(memory_slice(out, outlen))
+);
+
 #define sha3_256 FIPS202_NAMESPACE(sha3_256)
 void sha3_256(uint8_t h[SHA3_256_HASHBYTES], const uint8_t *in, size_t inlen)
 __contract__(
