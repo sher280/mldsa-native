@@ -352,14 +352,22 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
  * Description: Sample uniformly random coefficients in [-MLDSA_ETA, MLDSA_ETA]
  *by performing rejection sampling on array of random bytes.
  *
- * Arguments:   - int32_t *a: pointer to output array (allocated)
- *              - unsigned int len: number of coefficients to be sampled
- *              - const uint8_t *buf: array of random bytes
+ * Arguments:   - int32_t *a:          pointer to output array (allocated)
+ *              - unsigned int target: requested number of coefficients to
+ *sample
+ *              - unsigned int offset: number of coefficients already sampled
+ *              - const uint8_t *buf:  array of random bytes to sample from
  *              - unsigned int buflen: length of array of random bytes
  *
- * Returns number of sampled coefficients. Can be smaller than len if not enough
- * random bytes were given.
+ * Returns number of sampled coefficients. Can be smaller than target if not
+ *enough random bytes were given.
  **************************************************/
+
+/* Reference: `rej_eta()` in the reference implementation [@REF].
+ *            - Our signature differs from the reference implementation
+ *              in that it adds the offset and always expects the base of the
+ *              target buffer. This avoids shifting the buffer base in the
+ *              caller, which appears tricky to reason about. */
 #if MLDSA_ETA == 2
 #define POLY_UNIFORM_ETA_NBLOCKS \
   ((136 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
@@ -369,25 +377,28 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
 #else
 #error "Invalid value of MLDSA_ETA"
 #endif
-static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf,
+static unsigned int rej_eta(int32_t *a, unsigned int target,
+                            unsigned int offset, const uint8_t *buf,
                             unsigned int buflen)
 __contract__(
-  requires(len <= buflen && len <= MLDSA_N && \
-                  buflen <= (POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES))
-  requires(memory_no_alias(a, sizeof(int32_t) * len))
+  requires(offset <= target && target <= MLDSA_N)
+  requires(buflen <= (POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES))
+  requires(memory_no_alias(a, sizeof(int32_t) * target))
   requires(memory_no_alias(buf, buflen))
-  assigns(memory_slice(a, sizeof(int32_t) * len))
-  ensures(return_value <= len)
+  requires(array_abs_bound(a, 0, offset, MLDSA_ETA + 1))
+  assigns(memory_slice(a, sizeof(int32_t) * target))
+  ensures(offset <= return_value && return_value <= target)
   ensures(array_abs_bound(a, 0, return_value, MLDSA_ETA + 1))
 )
 {
   unsigned int ctr, pos;
   uint32_t t0, t1;
 
-  ctr = pos = 0;
-  while (ctr < len && pos < buflen)
+  ctr = offset;
+  pos = 0;
+  while (ctr < target && pos < buflen)
   __loop__(
-    invariant(0 <= ctr && ctr <= len && pos <= buflen)
+    invariant(offset <= ctr && ctr <= target && pos <= buflen)
     invariant(array_abs_bound(a, 0, ctr, MLDSA_ETA + 1))
   )
   {
@@ -400,7 +411,7 @@ __contract__(
       t0 = t0 - (205 * t0 >> 10) * 5;
       a[ctr++] = 2 - (int32_t)t0;
     }
-    if (t1 < 15 && ctr < len)
+    if (t1 < 15 && ctr < target)
     {
       t1 = t1 - (205 * t1 >> 10) * 5;
       a[ctr++] = 2 - (int32_t)t1;
@@ -410,7 +421,7 @@ __contract__(
     {
       a[ctr++] = 4 - (int32_t)t0;
     }
-    if (t1 < 9 && ctr < len)
+    if (t1 < 9 && ctr < target)
     {
       a[ctr++] = 4 - (int32_t)t1;
     }
@@ -421,7 +432,6 @@ __contract__(
 
   return ctr;
 }
-
 
 void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                       uint16_t nonce)
@@ -434,12 +444,12 @@ void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
   stream256_init(&state, seed, nonce);
   stream256_squeezeblocks(buf, POLY_UNIFORM_ETA_NBLOCKS, &state);
 
-  ctr = rej_eta(a->coeffs, MLDSA_N, buf, buflen);
-
+  ctr = rej_eta(a->coeffs, MLDSA_N, 0, buf, buflen);
+  buflen = STREAM256_BLOCKBYTES;
   while (ctr < MLDSA_N)
   {
     stream256_squeezeblocks(buf, 1, &state);
-    ctr += rej_eta(a->coeffs + ctr, MLDSA_N - ctr, buf, STREAM256_BLOCKBYTES);
+    ctr = rej_eta(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
 }
 
