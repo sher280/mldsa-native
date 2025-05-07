@@ -405,7 +405,7 @@ static unsigned int keccak_absorb(uint64_t s[MLD_KECCAK_LANES],
                                   const uint8_t *in, size_t inlen)
 __contract__(
   requires(r < sizeof(uint64_t) * MLD_KECCAK_LANES)
-  requires(pos < r)
+  requires(pos <= r)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   requires(memory_no_alias(in, inlen))
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
@@ -418,7 +418,7 @@ __contract__(
     assigns(pos, i, in, inlen,
       memory_slice(s, sizeof(uint64_t) *  MLD_KECCAK_LANES))
     invariant(inlen <= loop_entry(inlen))
-    invariant(pos < r)
+    invariant(pos <= r)
     invariant(in == loop_entry(in) + (loop_entry(inlen) - inlen)))
   {
     for (i = pos; i < r; i++)
@@ -458,7 +458,7 @@ __contract__(
 static void keccak_finalize(uint64_t s[MLD_KECCAK_LANES], unsigned int pos,
                             unsigned int r, uint8_t p)
 __contract__(
-  requires(pos < r && r < sizeof(uint64_t) * MLD_KECCAK_LANES)
+  requires(pos <= r && r < sizeof(uint64_t) * MLD_KECCAK_LANES)
   requires((r / 8) >= 1)
   requires(memory_no_alias(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
   assigns(memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES))
