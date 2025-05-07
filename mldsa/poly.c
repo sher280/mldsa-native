@@ -333,11 +333,14 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
   stream128_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
 
   ctr = rej_uniform(a->coeffs, MLDSA_N, 0, buf, buflen);
-
+  buflen = STREAM128_BLOCKBYTES;
   while (ctr < MLDSA_N)
+  __loop__(
+    assigns(ctr, state, memory_slice(a, sizeof(poly)), object_whole(buf))
+    invariant(ctr <= MLDSA_N)
+    invariant(array_bound(a->coeffs, 0, ctr, 0, MLDSA_Q)))
   {
     stream128_squeezeblocks(buf, 1, &state);
-    buflen = STREAM128_BLOCKBYTES;
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
 }
