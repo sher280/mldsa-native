@@ -55,4 +55,20 @@
 static MLD_INLINE void mld_ntt_native(int32_t p[MLDSA_N]);
 #endif /* MLD_USE_NATIVE_NTT */
 
+
+#if defined(MLD_USE_NATIVE_INTT)
+/*************************************************
+ * Name:        mld_intt_native
+ *
+ * Description: Computes inverse of negacyclic number-theoretic transform (NTT)
+ *              of a polynomial in place.
+ *
+ *              The input polynomial is in bitreversed order.
+ *              The output polynomial is assumed to be in normal order.
+ *
+ * Arguments:   - uint32_t p[MLDSA_N]: pointer to in/output polynomial
+ **************************************************/
+static MLD_INLINE void mld_intt_native(int16_t p[MLKEM_N])
+#endif /* MLD_USE_NATIVE_INTT */
+
 #endif /* !MLD_NATIVE_API_H */

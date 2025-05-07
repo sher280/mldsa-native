@@ -497,7 +497,7 @@ def prepare_root_for_barrett(root):
     return root, root_twisted
 
 
-def gen_aarch64_root_of_unity_for_block(layer, block, inv=False):
+def gen_aarch64_root_of_unity_for_block(layer, block, inv=False, scale=False):
     # We are computing a negacyclic NTT; the twiddles needed here is
     # the second half of the twiddles for a cyclic NTT of twice the size.
     # For ease of calculating the roots, layers are numbers 0 through 7
@@ -505,7 +505,13 @@ def gen_aarch64_root_of_unity_for_block(layer, block, inv=False):
     log = bitreverse(pow(2, layer) + block, 8)
     if inv is True:
         log = -log
-    root, root_twisted = prepare_root_for_barrett(pow(root_of_unity, log, modulus))
+    root = pow(root_of_unity, log, modulus)
+
+    if scale is True:
+        # Integrate scaling by 2**(-8) and Montgomery factor 2**32 into twiddle
+        root = root * pow(2, 32 - 8, modulus)
+
+    root, root_twisted = prepare_root_for_barrett(root)
     return root, root_twisted
 
 
@@ -577,6 +583,53 @@ def gen_aarch64_fwd_ntt_zetas_layer78():
             yield gen_aarch64_root_of_unity_for_block(7, 16 * block + 7 + 8)[i]
 
 
+def gen_aarch64_intt_zetas_layer78():
+    for block in range(16):
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(6, block * 4 + 0, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, block * 4 + 1, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, block * 4 + 2, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(6, block * 4 + 3, inv=True)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 0, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 2, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 4, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 6, inv=True)[i]
+
+        for i in range(2):
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 1, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 3, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 5, inv=True)[i]
+            yield gen_aarch64_root_of_unity_for_block(7, block * 8 + 7, inv=True)[i]
+
+
+def gen_aarch64_intt_zetas_layer123456():
+    for i in range(16):
+        yield from gen_aarch64_root_of_unity_for_block(4, i, inv=True)
+        yield from gen_aarch64_root_of_unity_for_block(5, i * 2, inv=True)
+        yield from gen_aarch64_root_of_unity_for_block(5, i * 2 + 1, inv=True)
+
+    # The last layer has the scaling by 1/256 integrated in the twiddle
+    yield from gen_aarch64_root_of_unity_for_block(0, 0, inv=True, scale=True)
+
+    yield from gen_aarch64_root_of_unity_for_block(1, 0, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(1, 1, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(2, 0, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(2, 1, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(2, 2, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(2, 3, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 0, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 1, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 2, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 3, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 4, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 5, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 6, inv=True)
+    yield from gen_aarch64_root_of_unity_for_block(3, 7, inv=True)
+    yield from (0, 0)  # Padding
+
+
 def gen_aarch64_zeta_file(dry_run=False):
     def gen():
         yield from gen_header()
@@ -597,6 +650,14 @@ def gen_aarch64_zeta_file(dry_run=False):
         yield ""
         yield "MLD_ALIGN const int32_t mld_aarch64_ntt_zetas_layer78[] = {"
         yield from map(lambda t: str(t) + ",", gen_aarch64_fwd_ntt_zetas_layer78())
+        yield "};"
+        yield ""
+        yield "MLD_ALIGN const int32_t mld_aarch64_intt_zetas_layer78[] = {"
+        yield from map(lambda t: str(t) + ",", gen_aarch64_intt_zetas_layer78())
+        yield "};"
+        yield ""
+        yield "MLD_ALIGN const int32_t mld_aarch64_intt_zetas_layer123456[] = {"
+        yield from map(lambda t: str(t) + ",", gen_aarch64_intt_zetas_layer123456())
         yield "};"
         yield ""
         yield "#else"
