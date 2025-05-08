@@ -338,6 +338,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
   __loop__(
     assigns(ctr, state, memory_slice(a, sizeof(poly)), object_whole(buf))
     invariant(ctr <= MLDSA_N)
+    invariant((&state)->pos <= SHAKE128_RATE)
     invariant(array_bound(a->coeffs, 0, ctr, 0, MLDSA_Q)))
   {
     stream128_squeezeblocks(buf, 1, &state);
@@ -490,12 +491,14 @@ void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
     invariant(i <= MLDSA_N)
     invariant(pos >= 1)
     invariant(pos <= SHAKE256_RATE)
+    invariant((&state)->pos <= SHAKE256_RATE)
     invariant(array_bound(c->coeffs, 0, MLDSA_N, -1, 2))
   )
   {
     do
     __loop__(
       assigns(j, object_whole(buf), state, pos)
+      invariant((&state)->pos <= SHAKE256_RATE)
     )
     {
       if (pos >= SHAKE256_RATE)

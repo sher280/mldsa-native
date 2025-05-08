@@ -22,6 +22,7 @@ __contract__(
   requires(memory_no_alias(state, sizeof(keccak_state)))
   requires(memory_no_alias(seed, MLDSA_SEEDBYTES))
   assigns(memory_slice(state, sizeof(keccak_state)))
+  ensures(state->pos <= SHAKE128_RATE)
 );
 
 #define mldsa_shake256_stream_init MLD_NAMESPACE(mldsa_shake256_stream_init)
@@ -32,6 +33,7 @@ __contract__(
   requires(memory_no_alias(state, sizeof(keccak_state)))
   requires(memory_no_alias(seed, MLDSA_CRHBYTES))
   assigns(memory_slice(state, sizeof(keccak_state)))
+  ensures(state->pos <= SHAKE256_RATE)
 );
 
 #define STREAM128_BLOCKBYTES SHAKE128_RATE
