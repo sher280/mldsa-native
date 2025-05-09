@@ -165,8 +165,29 @@ typedef struct
 } polyveck;
 
 #define polyveck_uniform_eta MLD_NAMESPACE(polyveck_uniform_eta)
+/*************************************************
+ * Name:        polyveck_uniform_eta
+ *
+ * Description: Sample vector of polynomials with uniformly random coefficients
+ *              in [-MLDSA_ETA, MLDSA_ETA] by performing rejection sampling on
+ *              the output stream from SHAKE256(seed|nonce). The vector has
+ *              MLDSA_K polynomials.
+ *
+ * Arguments:   - polyveck *v: pointer to output polynomial vector
+ *              - const uint8_t seed[]: byte array with seed of length
+ *                MLDSA_CRHBYTES
+ *              - uint16_t nonce: 2-byte nonce
+ **************************************************/
 void polyveck_uniform_eta(polyveck *v, const uint8_t seed[MLDSA_CRHBYTES],
-                          uint16_t nonce);
+                          uint16_t nonce)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyveck)))
+  requires(memory_no_alias(seed, MLDSA_CRHBYTES))
+  requires(nonce <= UINT16_MAX - MLDSA_K)
+  assigns(memory_slice(v, sizeof(polyveck)))
+  ensures(forall(k0, 0, MLDSA_K,
+  array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
+);
 
 #define polyveck_reduce MLD_NAMESPACE(polyveck_reduce)
 /*************************************************
