@@ -184,10 +184,23 @@ void polyveck_uniform_eta(polyveck *v, const uint8_t seed[MLDSA_CRHBYTES],
                           uint16_t nonce)
 {
   unsigned int i;
+  uint16_t n = nonce;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, n, object_whole(v))
+    invariant(i <= MLDSA_K)
+    invariant(n == nonce + i) 
+    invariant(forall(k1, 0, i,
+      array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLDSA_ETA + 1))))
   {
-    poly_uniform_eta(&v->vec[i], seed, nonce++);
+    poly t;
+    poly_uniform_eta(&t, seed, n);
+    n++;
+    /* Full struct assignment from local variables to simplify proof */
+    /* TODO: eliminate once CBMC resolves
+     * https://github.com/diffblue/cbmc/issues/8617 */
+    v->vec[i] = t;
   }
 }
 
