@@ -475,7 +475,7 @@ __contract__(
  *              Modifies the state. Can be called multiple times to keep
  *              squeezing, i.e., is incremental.
  *
- * Arguments:   - uint8_t *out: pointer to output
+ * Arguments:   - uint8_t *out: pointer to output data
  *              - size_t outlen: number of bytes to be squeezed (written to out)
  *              - uint64_t *s: pointer to input/output Keccak state
  *              - unsigned int pos: number of bytes in current block already
@@ -498,14 +498,21 @@ __contract__(
   ensures(return_value <= r))
 {
   unsigned int i;
-  uint64_t lane;
-  uint8_t byte;
+  size_t out_offset = 0;
 
-  while (outlen > 0)
+  /* Reference: This code is re-factored from the reference implementation
+   * to facilitate proof with CBMC and to improve readability.
+   *
+   * Take a mutable copy of outlen to count down the number of bytes
+   * still to squeeze. The initial value of outlen is needed for the CBMC
+   * assigns() clauses. */
+  size_t bytes_to_go = outlen;
+
+  while (bytes_to_go > 0)
   __loop__(
-    assigns(i, outlen, pos, out, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, outlen))
-    invariant(outlen <= loop_entry(outlen))
-    invariant(out == loop_entry(out) + (loop_entry(outlen) - outlen))
+    assigns(i, bytes_to_go, pos, out_offset, memory_slice(s, sizeof(uint64_t) * MLD_KECCAK_LANES), memory_slice(out, outlen))
+    invariant(bytes_to_go <= outlen)
+    invariant(out_offset == outlen - bytes_to_go)
     invariant(pos <= r)
   )
   {
@@ -514,18 +521,18 @@ __contract__(
       KeccakF1600_StatePermute(s);
       pos = 0;
     }
-    for (i = pos; i < r && i < pos + outlen; i++)
+    for (i = pos; i < r && i < pos + bytes_to_go; i++)
     __loop__(
-      assigns(i, out, memory_slice(out, outlen))
-      invariant(i >= pos && i <= r && i <= pos + outlen)
-      invariant(out == loop_entry(out) + (i - pos))
+      assigns(i, out_offset, memory_slice(out, outlen))
+      invariant(i >= pos && i <= r && i <= pos + bytes_to_go)
+      invariant(out_offset == loop_entry(out_offset) + (i - pos))
     )
     {
-      lane = s[i / 8];
-      byte = (uint8_t)((lane >> (8 * (i % 8))) & 0xFF);
-      *out++ = byte;
+      const uint64_t lane = s[i / 8];
+      out[out_offset] = (uint8_t)((lane >> (8 * (i % 8))) & 0xFF);
+      out_offset++;
     }
-    outlen -= i - pos;
+    bytes_to_go -= i - pos;
     pos = i;
   }
 
