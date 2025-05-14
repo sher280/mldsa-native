@@ -3,22 +3,64 @@
  * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 #include <stdint.h>
+#include <string.h>
 
 #include "common.h"
 #include "poly.h"
 #include "polyvec.h"
 
+
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
                            const uint8_t rho[MLDSA_SEEDBYTES])
 {
   unsigned int i, j;
+  /*
+   * We generate four separate seed arrays rather than a single one to work
+   * around limitations in CBMC function contracts dealing with disjoint slices
+   * of the same parent object.
+   */
 
-  for (i = 0; i < MLDSA_K; ++i)
+  MLD_ALIGN uint8_t seed_ext[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)];
+
+  for (j = 0; j < 4; j++)
   {
-    for (j = 0; j < MLDSA_L; ++j)
+    memcpy(seed_ext[j], rho, MLDSA_SEEDBYTES);
+  }
+
+  /* Sample 4 matrix entries a time. */
+  for (i = 0; i < (MLDSA_K * MLDSA_L / 4) * 4; i += 4)
+  {
+    uint8_t x, y;
+
+    for (j = 0; j < 4; j++)
     {
-      poly_uniform(&mat[i].vec[j], rho, (i << 8) + j);
+      x = (i + j) / MLDSA_L;
+      y = (i + j) % MLDSA_L;
+
+      seed_ext[j][MLDSA_SEEDBYTES + 0] = y;
+      seed_ext[j][MLDSA_SEEDBYTES + 1] = x;
     }
+
+    /*
+     * This call writes across polyvec boundaries for L=5 and L=7.
+     */
+    /* TODO: This is actually not safe; we cannot be sure that the compiler
+     * does not introduce any padding here. Need to refactor the data type to
+     * polymat as in mlkem-native.
+     */
+    poly_rej_uniform_4x(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], seed_ext);
+  }
+
+  /* For MLDSA_K=6, MLDSA_L=5, process the last two entries individually */
+  while (i < MLDSA_K * MLDSA_L)
+  {
+    uint8_t x, y;
+    x = i / MLDSA_L;
+    y = i % MLDSA_L;
+
+    poly_uniform(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], rho, (x << 8) + y);
+
+    i++;
   }
 }
 

@@ -7,7 +7,7 @@
 #include "reduce.h"
 
 /*************************************************
- * Name:        mlk_cast_uint32_to_int32
+ * Name:        mld_cast_uint32_to_int32
  *
  * Description: Cast uint32 value to int32
  *
