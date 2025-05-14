@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 The mldsa-native project authors
+ * Copyright (c) The mldsa-native project authors
  * SPDX-License-Identifier: LicenseRef-PD-hp OR CC0-1.0 OR 0BSD OR MIT-0 OR MI
  * Based on https://cr.yp.to/papers.html#surf by Daniel. J. Bernstein
  */
