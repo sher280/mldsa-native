@@ -1,7 +1,7 @@
 /* Copyright (c) 2022 Arm Limited
  * Copyright (c) 2022 Hanno Becker
  * Copyright (c) 2023 Amin Abdulrahman, Matthias Kannwischer
- * Copyright (c) 2025 The mldsa-native project authors
+ * Copyright (c) The mldsa-native project authors
  * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy

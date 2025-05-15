@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 The mldsa-native project authors
+ * Copyright (c) The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
 /* Based on the public domain implementation in crypto_hash/keccakc512/simple/

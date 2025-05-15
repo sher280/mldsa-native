@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 The mldsa-native project authors
- * Copyright (c) 2024-2025 The mlkem-native project authors
+ * Copyright (c) The mldsa-native project authors
+ * Copyright (c) The mlkem-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <inttypes.h>

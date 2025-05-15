@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024-2025 The mlkem-native project authors
-# Copyright (c) 2025      The mldsa-native project authors
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
 # SPDX-License-Identifier: Apache-2.0
 
 import subprocess
@@ -33,7 +33,7 @@ def status_update(task, msg):
 
 def gen_header():
     yield "/*"
-    yield " * Copyright (c) 2025 The mldsa-native project authors"
+    yield " * Copyright (c) The mldsa-native project authors"
     yield " * SPDX-License-Identifier: Apache-2.0"
     yield " */"
     yield ""
@@ -693,8 +693,8 @@ def adjust_header_guard_for_filename(content, header_file):
     def gen_copyright(include_mlkem=False):
         yield "/*"
         if include_mlkem is True:
-            yield " * Copyright (c) 2024-2025 The mlkem-native project authors"
-        yield " * Copyright (c) 2025 The mldsa-native project authors"
+            yield " * Copyright (c) The mlkem-native project authors"
+        yield " * Copyright (c) The mldsa-native project authors"
         yield " * SPDX-License-Identifier: Apache-2.0"
         yield " */"
 

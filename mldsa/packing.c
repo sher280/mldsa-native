@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 The mldsa-native project authors
+ * Copyright (c) The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>

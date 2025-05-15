@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 The mldsa-native project authors
- * Copyright (c) 2024-2025 The mlkem-native project authors
+ * Copyright (c) The mldsa-native project authors
+ * Copyright (c) The mlkem-native project authors
  * Copyright (c) 2022 Arm Limited
  * Copyright (c) 2020 Dougall Johnson
  * SPDX-License-Identifier: MIT
