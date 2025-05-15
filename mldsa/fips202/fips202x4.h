@@ -22,7 +22,7 @@ typedef struct
 } mld_shake128x4ctx;
 
 /* TODO: proof */
-#define mld_shake128x4_absorb_once MLD_NAMESPACE(shake128x4_absorb_once)
+#define mld_shake128x4_absorb_once FIPS202_NAMESPACE(shake128x4_absorb_once)
 void mld_shake128x4_absorb_once(mld_shake128x4ctx *state, const uint8_t *in0,
                                 const uint8_t *in1, const uint8_t *in2,
                                 const uint8_t *in3, size_t inlen)
@@ -36,7 +36,7 @@ __contract__(
 );
 
 /* TODO: proof */
-#define mld_shake128x4_squeezeblocks MLD_NAMESPACE(shake128x4_squeezeblocks)
+#define mld_shake128x4_squeezeblocks FIPS202_NAMESPACE(shake128x4_squeezeblocks)
 void mld_shake128x4_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2,
                                   uint8_t *out3, size_t nblocks,
                                   mld_shake128x4ctx *state)
@@ -54,10 +54,10 @@ __contract__(
     object_whole(state))
 );
 
-#define mld_shake128x4_init MLD_NAMESPACE(shake128x4_init)
+#define mld_shake128x4_init FIPS202_NAMESPACE(shake128x4_init)
 void mld_shake128x4_init(mld_shake128x4ctx *state);
 
-#define mld_shake128x4_release MLD_NAMESPACE(shake128x4_release)
+#define mld_shake128x4_release FIPS202_NAMESPACE(shake128x4_release)
 void mld_shake128x4_release(mld_shake128x4ctx *state);
 
 #endif /* !MLD_FIPS202_FIPS202X4_H */

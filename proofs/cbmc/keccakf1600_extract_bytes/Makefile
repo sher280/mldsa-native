@@ -8,7 +8,7 @@ HARNESS_FILE = keccakf1600_extract_bytes_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = keccakf1600_extract_bytes
+PROOF_UID = mld_keccakf1600_extract_bytes
 
 DEFINES +=
 INCLUDES +=
@@ -17,9 +17,9 @@ REMOVE_FUNCTION_BODY +=
 UNWINDSET +=
 
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
-PROJECT_SOURCES += $(SRCDIR)/mldsa/fips202/fips202.c
+PROJECT_SOURCES += $(SRCDIR)/mldsa/fips202/keccakf1600.c
 
-CHECK_FUNCTION_CONTRACTS=keccakf1600_extract_bytes
+CHECK_FUNCTION_CONTRACTS=$(FIPS202_NAMESPACE)keccakf1600_extract_bytes
 USE_FUNCTION_CONTRACTS=
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
@@ -28,7 +28,7 @@ USE_DYNAMIC_FRAMES=1
 EXTERNAL_SAT_SOLVER=
 CBMCFLAGS=--smt2
 
-FUNCTION_NAME = keccakf1600_extract_bytes
+FUNCTION_NAME = mld_keccakf1600_extract_bytes
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will
