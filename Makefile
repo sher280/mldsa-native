@@ -1,10 +1,12 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 .PHONY: func kat nistkat acvp \
 	func_44 kat_44 nistkat_44 acvp_44 \
 	func_65 kat_65 nistkat_65 acvp_65 \
 	func_87 kat_87 nistkat_87 acvp_87 \
-	run_func run_kat run_nistkat \
+	run_func run_kat run_nistkat run_acvp \
 	run_func_44 run_kat_44 run_nistkat_44 \
 	run_func_65 run_kat_65 run_nistkat_65 \
 	run_func_87 run_kat_87 run_nistkat_87 \
@@ -32,7 +34,6 @@ build: func nistkat kat acvp
 test: run_kat run_nistkat run_func run_acvp
 	$(Q)echo "  Everything checks fine!"
 
-
 run_kat_44: kat_44
 	$(W) $(MLDSA44_DIR)/bin/gen_KAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  kat-sha256
 run_kat_65: kat_65
@@ -40,7 +41,6 @@ run_kat_65: kat_65
 run_kat_87: kat_87
 	$(W) $(MLDSA87_DIR)/bin/gen_KAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  kat-sha256
 run_kat: run_kat_44 run_kat_65 run_kat_87
-
 
 run_nistkat_44: nistkat_44
 	$(W) $(MLDSA44_DIR)/bin/gen_NISTKAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  nistkat-sha256
@@ -57,6 +57,7 @@ run_func_65: func_65
 run_func_87: func_87
 	$(W) $(MLDSA87_DIR)/bin/test_mldsa87
 run_func: run_func_44 run_func_65 run_func_87
+
 run_acvp: acvp
 	python3 ./test/acvp_client.py
 

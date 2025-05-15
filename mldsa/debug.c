@@ -1,7 +1,7 @@
 /*
  * Copyright (c) The mlkem-native project authors
  * Copyright (c) The mldsa-native project authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 
 /* NOTE: You can remove this file unless you compile with MLDSA_DEBUG. */

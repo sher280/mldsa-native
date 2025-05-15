@@ -1,6 +1,6 @@
 /*
  * Copyright (c) The mldsa-native project authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 /* Based on the public domain implementation in crypto_hash/keccakc512/simple/
  * from http://bench.cr.yp.to/supercop.html by Ronny Van Keer and the public

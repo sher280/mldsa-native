@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 ifndef _CONFIG
 _CONFIG :=
 
@@ -32,6 +34,7 @@ CC_AR  := $(CROSS_PREFIX)$(CC_AR)
 CFLAGS := \
 	-Wall \
 	-Wextra \
+	-Werror=unused-result \
 	-Wpedantic \
 	-Werror \
 	-Wmissing-prototypes \

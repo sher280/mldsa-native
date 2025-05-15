@@ -1,6 +1,6 @@
 /*
  * Copyright (c) The mldsa-native project authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 #ifndef MLD_FIPS202_FIPS202_H
 #define MLD_FIPS202_FIPS202_H

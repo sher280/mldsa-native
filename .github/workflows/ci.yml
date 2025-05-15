@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 name: CI
 permissions:
@@ -9,7 +11,7 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-    types: [ "opened", "synchronize" ]
+    types: ["opened", "synchronize"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -50,13 +52,25 @@ jobs:
            name: 'macos (aarch64)'
          - runner: macos-13
            name: 'macos (x86_64)'
+        exclude:
+          - {external: true,
+             target: {
+               runner: pqcp-arm64,
+               name: 'aarch64'
+             }}
     name: Quickcheck (${{ matrix.target.name }})
     runs-on: ${{ matrix.target.runner }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: make quickcheck
         run: |
-          make quickcheck
+          OPT=0 make quickcheck
+          make clean >/dev/null
+          OPT=1 make quickcheck
+      - uses: ./.github/actions/setup-os
+      - name: tests func
+        run: |
+          ./scripts/tests func
   quickcheck_bench:
     strategy:
       fail-fast: false
@@ -142,7 +156,32 @@ jobs:
       - name: tests bench components
         run: |
           ./scripts/tests bench --components -c NO --cflags="-std=c90"
+  scan-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        external:
+         - ${{ github.repository_owner != 'pq-code-package' }}
+        target:
+         - runner: pqcp-arm64
+           name: 'aarch64'
+         - runner: ubuntu-latest
+           name: 'x86_64'
+    name: scan-build (${{ matrix.target.name }})
+    runs-on: ${{ matrix.target.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./.github/actions/setup-apt
+        with:
+          packages: clang-tools clang
+      - name: make quickcheck
+        run: |
+          scan-build --status-bugs make quickcheck OPT=0
+          make clean >/dev/null
+          scan-build --status-bugs make quickcheck OPT=1
+
   build_kat:
+    needs: [quickcheck, quickcheck-c90, quickcheck_bench, lint]
     strategy:
       fail-fast: false
       matrix:
@@ -256,7 +295,7 @@ jobs:
           compile_mode: native
           cflags: "-DMLDSA_DEBUG -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=all"
   compiler_tests:
-    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
+    needs: [quickcheck, quickcheck-c90, quickcheck_bench, lint]
     name: Compiler tests  (${{ matrix.compiler.name }}, ${{ matrix.target.name }})
     strategy:
       fail-fast: false
@@ -274,41 +313,98 @@ jobs:
            darwin: False
            c17: False
            c23: False
+           opt: all
+           examples: False
          - name: gcc-4.9
            shell: ci_gcc49
            darwin: False
            c17: False
            c23: False
+           opt: all
+           examples: False
          - name: gcc-7
            shell: ci_gcc7
            darwin: False
            c17: False
            c23: False
+           opt: all
+           examples: False
          - name: gcc-11
            shell: ci_gcc11
            darwin: True
            c17: True
            c23: False
+           opt: all
+           examples: False
          - name: gcc-13
            shell: ci_gcc13
            darwin: True
            c17: True
            c23: False
+           opt: all
+           examples: False
          - name: gcc-14
            shell: ci_gcc14
            darwin: True
            c17: True
            c23: True
+           opt: all
+           examples: False
          - name: clang-18
            shell: ci_clang18
            darwin: True
            c17: True
            c23: True
+           opt: all
+           examples: False
          - name: clang-19
            shell: ci_clang19
            darwin: True
            c17: True
            c23: True
+           opt: all
+           examples: False
+         - name: clang-20
+           shell: ci_clang20
+           darwin: True
+           c17: True
+           c23: True
+           opt: all
+           examples: False
+         # CPU flags are not correctly passed to the zig assembler
+         # https://github.com/ziglang/zig/issues/23576
+         # We therefore only test the C backend
+         #
+         # We omit all examples since there is currently no way to run
+         # only those examples not involving native code.
+         - name: zig-0.10
+           shell: ci_zig0_10
+           darwin: False
+           c17: True
+           c23: False
+           examples: False
+           opt: no_opt
+         - name: zig-0.11
+           shell: ci_zig0_11
+           darwin: True
+           c17: True
+           c23: False
+           examples: False
+           opt: no_opt
+         - name: zig-0.12
+           shell: ci_zig0_12
+           darwin: True
+           c17: True
+           c23: False
+           examples: False
+           opt: no_opt
+         - name: zig-0.13
+           shell: ci_zig0_13
+           darwin: True
+           c17: True
+           c23: False
+           examples: False
+           opt: no_opt
     runs-on: ${{ matrix.target.runner }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -322,6 +418,8 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
       - name: native build+functest (C90)
         if: ${{ matrix.compiler.darwin || matrix.target.runner != 'macos-latest' }}
@@ -333,6 +431,8 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
           cflags: "-std=c90"
       - name: native build+functest (C99)
@@ -345,6 +445,8 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
           cflags: "-std=c99"
       - name: native build+functest (C11)
@@ -357,11 +459,13 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
           cflags: "-std=c11"
       - name: native build+functest (C17)
         if: ${{ (matrix.compiler.darwin || matrix.target.runner != 'macos-latest') &&
-                matrix.compiler.c23 }}
+                matrix.compiler.c17 }}
         uses: ./.github/actions/multi-functest
         with:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
@@ -370,6 +474,8 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
           cflags: "-std=c17"
       - name: native build+functest (C23)
@@ -383,12 +489,15 @@ jobs:
           nistkat: false
           kat: false
           acvp: false
+          examples: ${{ matrix.compiler.examples }}
+          opt: ${{ matrix.compiler.opt }}
           nix-shell: ${{ matrix.compiler.shell }}
           cflags: "-std=c23"
+
   cbmc_44:
+    needs: [quickcheck, quickcheck-c90, quickcheck_bench, lint]
     name: CBMC (ML-DSA-44)
     if: ${{ github.repository_owner == 'pq-code-package' && !github.event.pull_request.head.repo.fork }}
-    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -410,9 +519,9 @@ jobs:
       cbmc_mldsa_mode: 2
     secrets: inherit
   cbmc_65:
+    needs: [quickcheck, quickcheck-c90, quickcheck_bench, lint]
     name: CBMC (ML-DSA-65)
     if: ${{ github.repository_owner == 'pq-code-package' && !github.event.pull_request.head.repo.fork }}
-    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -431,12 +540,12 @@ jobs:
       nistkattest: false
       acvptest: false
       cbmc: true
-      cbmc_mldsa_mode: 2
+      cbmc_mldsa_mode: 3
     secrets: inherit
   cbmc_87:
+    needs: [quickcheck, quickcheck-c90, quickcheck_bench, lint]
     name: CBMC (ML-DSA-87)
     if: ${{ github.repository_owner == 'pq-code-package' && !github.event.pull_request.head.repo.fork }}
-    needs: [quickcheck, quickcheck_bench, quickcheck-c90, lint]
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -457,6 +566,7 @@ jobs:
       cbmc: true
       cbmc_mldsa_mode: 5
     secrets: inherit
+
   check_autogenerated_files:
     strategy:
       fail-fast: false
