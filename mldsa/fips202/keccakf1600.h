@@ -84,7 +84,6 @@ __contract__(
     assigns(memory_slice(state, sizeof(uint64_t) * MLD_KECCAK_LANES * MLD_KECCAK_WAY))
 );
 
-/* TODO: proof*/
 #define mld_keccakf1600x4_permute FIPS202_NAMESPACE(keccakf1600x4_permute)
 void mld_keccakf1600x4_permute(uint64_t *state)
 __contract__(
