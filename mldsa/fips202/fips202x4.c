@@ -13,7 +13,6 @@
 
 typedef mld_shake128x4ctx mld_shake256x4_ctx;
 
-/*TODO: Proof*/
 static void mld_keccak_absorb_once_x4(uint64_t *s, uint32_t r,
                                       const uint8_t *in0, const uint8_t *in1,
                                       const uint8_t *in2, const uint8_t *in3,
