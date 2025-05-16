@@ -48,7 +48,7 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
      * does not introduce any padding here. Need to refactor the data type to
      * polymat as in mlkem-native.
      */
-    poly_rej_uniform_4x(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], seed_ext);
+    poly_uniform_4x(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], seed_ext);
   }
 
   /* For MLDSA_K=6, MLDSA_L=5, process the last two entries individually */
@@ -58,7 +58,10 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
     x = i / MLDSA_L;
     y = i % MLDSA_L;
 
-    poly_uniform(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], rho, (x << 8) + y);
+    seed_ext[0][MLDSA_SEEDBYTES + 0] = y;
+    seed_ext[0][MLDSA_SEEDBYTES + 1] = x;
+
+    poly_uniform(&mat[i / MLDSA_L].vec[i % MLDSA_L], seed_ext[0]);
 
     i++;
   }

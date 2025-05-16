@@ -294,19 +294,18 @@ __contract__(
  *
  * Arguments:   - poly *a: pointer to output polynomial
  *              - const uint8_t seed[]: byte array with seed of length
- *                MLDSA_SEEDBYTES
- *              - uint16_t nonce: 2-byte nonce
+ *                MLDSA_SEEDBYTES and the packed 2-byte nonce
  **************************************************/
-void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
+void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
 __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
-  requires(memory_no_alias(seed, MLDSA_SEEDBYTES))
+  requires(memory_no_alias(seed, MLDSA_SEEDBYTES + 2))
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
 );
 #define poly_rej_uniform_4x MLD_NAMESPACE(poly_rej_uniform_4x)
 /*************************************************
- * Name:        poly_rej_uniform_x4
+ * Name:        poly_uniform_x4
  *
  * Description: Generate four polynomials using rejection sampling
  *              on (pseudo-)uniformly random bytes sampled from a seed.
@@ -318,8 +317,8 @@ __contract__(
  *                MLDSA_SEEDBYTES + 2 each, plus padding for alignment.
  *
  **************************************************/
-void poly_rej_uniform_4x(poly *vec,
-                         uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]);
+void poly_uniform_4x(poly *vec,
+                     uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]);
 
 #define poly_uniform_eta MLD_NAMESPACE(poly_uniform_eta)
 /*************************************************
