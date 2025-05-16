@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 name: CBMC
 description: Run CBMC proofs for mldsa-native
@@ -34,6 +36,11 @@ runs:
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
           script: |
+
+            if [[ ${{ inputs.nix-shell }} != '' ]]; then
+              nix-collect-garbage
+            fi
+
             cat >> $GITHUB_STEP_SUMMARY << EOF
               ## Setup
               Architecture: $(uname -m)

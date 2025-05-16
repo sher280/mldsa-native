@@ -1,11 +1,28 @@
 /*
  * Copyright (c) The mlkem-native project authors
  * Copyright (c) The mldsa-native project authors
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 
 #ifndef MLD_SYS_H
 #define MLD_SYS_H
+
+#if !defined(MLD_CONFIG_NO_ASM) && (defined(__GNUC__) || defined(__clang__))
+#define MLD_HAVE_INLINE_ASM
+#endif
+
+/* Try to find endianness, if not forced through CFLAGS already */
+#if !defined(MLD_SYS_LITTLE_ENDIAN) && !defined(MLD_SYS_BIG_ENDIAN)
+#if defined(__BYTE_ORDER__)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define MLD_SYS_LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define MLD_SYS_BIG_ENDIAN
+#else
+#error "__BYTE_ORDER__ defined, but don't recognize value."
+#endif
+#endif /* __BYTE_ORDER__ */
+#endif /* !MLD_SYS_LITTLE_ENDIAN && !MLD_SYS_BIG_ENDIAN */
 
 /* Check if we're running on an AArch64 little endian system. _M_ARM64 is set by
  * MSVC. */
@@ -25,26 +42,17 @@
 #endif
 #endif /* __x86_64__ */
 
+#if defined(MLD_SYS_LITTLE_ENDIAN) && defined(__powerpc64__)
+#define MLD_SYS_PPC64LE
+#endif
+
+#if defined(__riscv) && defined(__riscv_xlen) && __riscv_xlen == 64
+#define MLD_SYS_RISCV64
+#endif
+
 #if defined(_WIN32)
 #define MLD_SYS_WINDOWS
 #endif
-
-#if !defined(MLD_CONFIG_NO_ASM) && (defined(__GNUC__) || defined(__clang__))
-#define MLD_HAVE_INLINE_ASM
-#endif
-
-/* Try to find endianness, if not forced through CFLAGS already */
-#if !defined(MLD_SYS_LITTLE_ENDIAN) && !defined(MLD_SYS_BIG_ENDIAN)
-#if defined(__BYTE_ORDER__)
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define MLD_SYS_LITTLE_ENDIAN
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define MLD_SYS_BIG_ENDIAN
-#else
-#error "__BYTE_ORDER__ defined, but don't recognize value."
-#endif
-#endif /* __BYTE_ORDER__ */
-#endif /* !MLD_SYS_LITTLE_ENDIAN && !MLD_SYS_BIG_ENDIAN */
 
 /* If MLD_FORCE_AARCH64 is set, assert that we're indeed on an AArch64 system.
  */
@@ -62,6 +70,14 @@
 /* If MLD_FORCE_X86_64 is set, assert that we're indeed on an X86_64 system. */
 #if defined(MLD_FORCE_X86_64) && !defined(MLD_SYS_X86_64)
 #error "MLD_FORCE_X86_64 is set, but we don't seem to be on an X86_64 system."
+#endif
+
+#if defined(MLD_FORCE_PPC64LE) && !defined(MLD_SYS_PPC64LE)
+#error "MLD_FORCE_PPC64LE is set, but we don't seem to be on a PPC64LE system."
+#endif
+
+#if defined(MLD_FORCE_RISCV64) && !defined(MLD_SYS_RISCV64)
+#error "MLD_FORCE_RISCV64 is set, but we don't seem to be on a RISCV64 system."
 #endif
 
 /*

@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 { stdenvNoCC
 , fetchFromGitHub
@@ -20,7 +22,7 @@ let
   # protobuf 5.28.3
   protobuf_6_30_1 = python312Packages.buildPythonPackage rec {
     pname = "protobuf";
-    version = "6.30.1";
+    version = "5.29.3";
 
     propagatedBuildInputs = [
       python312Packages.setuptools
@@ -39,7 +41,7 @@ let
 
     src = fetchPypi {
       inherit pname version;
-      hash = "sha256-U1+05E0CNok9XPEmOg9wbxFgtomnq5YunaipzkBQt4A=";
+      hash = "sha256-XaD0HtrxF73jFkBLrRpIbLTt7fjkpUiRKW9kjo4HZiA=";
     };
   };
 
@@ -84,8 +86,8 @@ let
   };
 
   # TODO: switch to unicorn from nixpkgs
-  # nixpkgs 24.11 currently has 2.1.1 - we are experiencing some issues with 
-  # that version on MacOS. 2.1.2/2.1.3 (and also some older versions) don't 
+  # nixpkgs 24.11 currently has 2.1.1 - we are experiencing some issues with
+  # that version on MacOS. 2.1.2/2.1.3 (and also some older versions) don't
   # have that problem
   unicorn_2_1_3 = python312Packages.buildPythonPackage rec {
     pname = "unicorn";
@@ -121,13 +123,13 @@ let
 in
 stdenvNoCC.mkDerivation rec {
   pname = "slothy-cli";
-  version = "9416181b5bbb61992dc1928116e84eead100838e";
+  version = "5fafd8048c3ba7c5924cbd2e16e77040fa847447";
 
   src = fetchFromGitHub {
     owner = "slothy-optimizer";
     repo = "slothy";
     rev = version;
-    sha256 = "sha256-zmF2+9oUM5J8PzvyEA5lN1o4aucOqP4Db4x+H2MO4vI=";
+    sha256 = "sha256-3X8Z4Wgb+sGrDYTffBrG4hF3UAIVwab60XMiijtZlIY";
   };
 
   nativeBuildInputs = [ pkgs.makeWrapper ];

@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mlkem-native project authors
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 name: Multiple Functional tests
 description: Run functional tests
@@ -71,7 +73,7 @@ runs:
           nix-verbose: ${{ inputs.nix-verbose }}
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
-          cflags: ${{ inputs.cflags }}
+          cflags: "${{ inputs.cflags }} -DMLD_FORCE_X86_64"
           cross_prefix: x86_64-unknown-linux-gnu-
           exec_wrapper: qemu-x86_64
           opt: ${{ inputs.opt }}
@@ -89,7 +91,7 @@ runs:
           nix-verbose: ${{ inputs.nix-verbose }}
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
-          cflags: ${{ inputs.cflags }}
+          cflags: "${{ inputs.cflags }} -DMLD_FORCE_AARCH64"
           cross_prefix: aarch64-unknown-linux-gnu-
           exec_wrapper: qemu-aarch64
           opt: ${{ inputs.opt }}
@@ -107,7 +109,7 @@ runs:
           nix-verbose: ${{ inputs.nix-verbose }}
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
-          cflags: "${{ inputs.cflags }}"
+          cflags: "${{ inputs.cflags }} -DMLD_FORCE_PPC64LE"
           cross_prefix: powerpc64le-unknown-linux-gnu-
           exec_wrapper: qemu-ppc64le
           opt: ${{ inputs.opt }}
@@ -125,7 +127,7 @@ runs:
           nix-verbose: ${{ inputs.nix-verbose }}
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
-          cflags: "${{ inputs.cflags }} -static"
+          cflags: "${{ inputs.cflags }} -static  -DMLD_FORCE_AARCH64_EB"
           cross_prefix: aarch64_be-none-linux-gnu-
           exec_wrapper: qemu-aarch64_be
           opt: ${{ inputs.opt }}
@@ -143,7 +145,7 @@ runs:
           nix-verbose: ${{ inputs.nix-verbose }}
           gh_token: ${{ inputs.gh_token }}
           custom_shell: ${{ inputs.custom_shell }}
-          cflags: ${{ inputs.cflags }}
+          cflags: "${{ inputs.cflags }} -DMLD_FORCE_RISCV64"
           cross_prefix: riscv64-unknown-linux-gnu-
           exec_wrapper: qemu-riscv64
           opt: ${{ inputs.opt }}

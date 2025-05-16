@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 include ../Makefile_params.common
 

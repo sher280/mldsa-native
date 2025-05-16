@@ -1,14 +1,8 @@
 /*
  * Copyright (c) The mldsa-native project authors
- * SPDX-License-Identifier: MIT
- */
-
-/*
- * AES implementation based on code from BearSSL (https://bearssl.org/)
- * by Thomas Pornin.
- *
- *
  * Copyright (c) 2016 Thomas Pornin <pornin@bolet.org>
+ *
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the

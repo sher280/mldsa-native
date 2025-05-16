@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The mldsa-native project authors
+# SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 ifndef MLDSA_MODE
        $(warning MLDSA_MODE not set -- defaulting to MLDSA_MODE=3)
