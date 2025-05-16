@@ -34,7 +34,6 @@ __contract__(
   assigns(object_whole(state))
 );
 
-/* TODO: proof */
 #define mld_shake128x4_squeezeblocks FIPS202_NAMESPACE(shake128x4_squeezeblocks)
 void mld_shake128x4_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2,
                                   uint8_t *out3, size_t nblocks,
