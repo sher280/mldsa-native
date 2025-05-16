@@ -37,9 +37,31 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   /* Expand matrix */
   polyvec_matrix_expand(mat, rho);
 
-  /* Sample short vectors s1 and s2 */
-  polyvecl_uniform_eta(&s1, rhoprime, 0);
-  polyveck_uniform_eta(&s2, rhoprime, MLDSA_L);
+/* Sample short vectors s1 and s2 */
+#if MLDSA_MODE == 2
+  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s2.vec[0], &s2.vec[1], &s2.vec[2], &s2.vec[3], rhoprime,
+                      4, 5, 6, 7);
+#elif MLDSA_MODE == 3
+  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s1.vec[4], &s2.vec[0], &s2.vec[1],
+                      &s2.vec[2] /* irrelevant */, rhoprime, 4, 5, 6,
+                      0xFF /* irrelevant */);
+  poly_uniform_eta_4x(&s2.vec[2], &s2.vec[3], &s2.vec[4], &s2.vec[5], rhoprime,
+                      7, 8, 9, 10);
+#elif MLDSA_MODE == 5
+  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s1.vec[4], &s1.vec[5], &s1.vec[6],
+                      &s2.vec[0] /* irrelevant */, rhoprime, 4, 5, 6,
+                      0xFF /* irrelevant */);
+  poly_uniform_eta_4x(&s2.vec[0], &s2.vec[1], &s2.vec[2], &s2.vec[3], rhoprime,
+                      7, 8, 9, 10);
+  poly_uniform_eta_4x(&s2.vec[4], &s2.vec[5], &s2.vec[6], &s2.vec[7], rhoprime,
+                      11, 12, 13, 14);
+#endif /* MLDSA_MODE == 5 */
 
   /* Matrix-vector multiplication */
   s1hat = s1;
