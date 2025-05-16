@@ -1,14 +1,15 @@
 # Copyright (c) The mldsa-native project authors
+# Copyright (c) The mlkem-native project authors
 # SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 include ../Makefile_params.common
 
 HARNESS_ENTRY = harness
-HARNESS_FILE = keccakf1600_extract_bytes_be_harness
+HARNESS_FILE = keccak_absorb_once_x4_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = keccakf1600_extract_bytes (big endian)
+PROOF_UID = keccak_absorb_once_x4
 
 DEFINES +=
 INCLUDES +=
@@ -17,19 +18,18 @@ REMOVE_FUNCTION_BODY +=
 UNWINDSET +=
 
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
-PROJECT_SOURCES += $(SRCDIR)/mldsa/fips202/keccakf1600.c
+PROJECT_SOURCES += $(SRCDIR)/mldsa/fips202/fips202x4.c
 
-CHECK_FUNCTION_CONTRACTS=$(FIPS202_NAMESPACE)keccakf1600_extract_bytes
-USE_FUNCTION_CONTRACTS=
+CHECK_FUNCTION_CONTRACTS=mld_keccak_absorb_once_x4
+USE_FUNCTION_CONTRACTS=$(FIPS202_NAMESPACE)keccakf1600x4_permute $(FIPS202_NAMESPACE)keccakf1600x4_xor_bytes
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
 # Disable any setting of EXTERNAL_SAT_SOLVER, and choose SMT backend instead
 EXTERNAL_SAT_SOLVER=
-CBMCFLAGS=--smt2 --big-endian
-DEFINES += -DMLD_SYS_BIG_ENDIAN=1
+CBMCFLAGS=--bitwuzla
 
-FUNCTION_NAME = mld_keccakf1600_extract_bytes
+FUNCTION_NAME = mld_keccak_absorb_once_x4
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will
@@ -38,14 +38,14 @@ FUNCTION_NAME = mld_keccakf1600_extract_bytes
 # EXPENSIVE = true
 
 # This function is large enough to need...
-CBMC_OBJECT_BITS = 8
+CBMC_OBJECT_BITS = 9
 
 # If you require access to a file-local ("static") function or object to conduct
 # your proof, set the following (and do not include the original source file
-# ("mldsa/poly.c") in PROJECT_SOURCES).
+# ("mlkem/poly.c") in PROJECT_SOURCES).
 # REWRITTEN_SOURCES = $(PROOFDIR)/<__SOURCE_FILE_BASENAME__>.i
 # include ../Makefile.common
-# $(PROOFDIR)/<__SOURCE_FILE_BASENAME__>.i_SOURCE = $(SRCDIR)/mldsa/poly.c
+# $(PROOFDIR)/<__SOURCE_FILE_BASENAME__>.i_SOURCE = $(SRCDIR)/mlkem/poly.c
 # $(PROOFDIR)/<__SOURCE_FILE_BASENAME__>.i_FUNCTIONS = foo bar
 # $(PROOFDIR)/<__SOURCE_FILE_BASENAME__>.i_OBJECTS = baz
 # Care is required with variables on the left-hand side: REWRITTEN_SOURCES must

@@ -3,8 +3,7 @@
 
 #include "fips202/fips202.h"
 
-extern void keccakf1600_extract_bytes(uint64_t *state, unsigned char *data,
-                                      unsigned offset, unsigned length);
+#include <keccakf1600.h>
 
 void harness(void)
 {
@@ -12,6 +11,5 @@ void harness(void)
   unsigned char *data;
   unsigned offset;
   unsigned length;
-
-  keccakf1600_extract_bytes(state, data, offset, length);
+  mld_keccakf1600_extract_bytes(state, data, offset, length);
 }

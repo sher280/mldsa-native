@@ -304,6 +304,22 @@ __contract__(
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
 );
+#define poly_rej_uniform_4x MLD_NAMESPACE(poly_rej_uniform_4x)
+/*************************************************
+ * Name:        poly_rej_uniform_x4
+ *
+ * Description: Generate four polynomials using rejection sampling
+ *              on (pseudo-)uniformly random bytes sampled from a seed.
+ *
+ * Arguments:   - poly *vec:
+ *                Pointer to an array of 4 polynomials to be sampled.
+ *              - uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]:
+ *                Pointer consecutive array of seed buffers of size
+ *                MLDSA_SEEDBYTES + 2 each, plus padding for alignment.
+ *
+ **************************************************/
+void poly_rej_uniform_4x(poly *vec,
+                         uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]);
 
 #define poly_uniform_eta MLD_NAMESPACE(poly_uniform_eta)
 /*************************************************

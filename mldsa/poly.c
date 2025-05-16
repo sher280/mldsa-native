@@ -1,11 +1,13 @@
 /*
  * Copyright (c) The mldsa-native project authors
+ * Copyright (c) The mlkem-native project authors
  * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
  */
 #include <stdint.h>
 #include <string.h>
 
 #include "debug.h"
+#include "fips202/fips202x4.h"
 #include "ntt.h"
 #include "poly.h"
 #include "reduce.h"
@@ -344,6 +346,53 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
     stream128_squeezeblocks(buf, 1, &state);
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
+}
+
+void poly_rej_uniform_4x(poly *vec,
+                         uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
+{
+  /* Temporary buffers for XOF output before rejection sampling */
+  MLD_ALIGN uint8_t
+      buf[4][MLD_ALIGN_UP(POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES)];
+
+  /* Tracks the number of coefficients we have already sampled */
+  unsigned ctr[4];
+  mld_xof_x4_ctx state;
+  unsigned buflen;
+
+
+  mld_xof_x4_init(&state);
+  mld_xof_x4_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
+
+  /*
+   * Initially, squeeze heuristic number of POLY_UNIFORM_NBLOCKS.
+   * This should generate the matrix entries with high probability.
+   */
+
+
+  mld_xof_x4_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
+  buflen = POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES;
+  ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, 0, buf[0], buflen);
+  ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, 0, buf[1], buflen);
+  ctr[2] = rej_uniform(vec[2].coeffs, MLDSA_N, 0, buf[2], buflen);
+  ctr[3] = rej_uniform(vec[3].coeffs, MLDSA_N, 0, buf[3], buflen);
+
+
+  /*
+   * So long as not all matrix entries have been generated, squeeze
+   * one more block a time until we're done.
+   */
+  buflen = STREAM128_BLOCKBYTES;
+  while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
+         ctr[3] < MLDSA_N)
+  {
+    mld_xof_x4_squeezeblocks(buf, 1, &state);
+    ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, ctr[0], buf[0], buflen);
+    ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, ctr[1], buf[1], buflen);
+    ctr[2] = rej_uniform(vec[2].coeffs, MLDSA_N, ctr[2], buf[2], buflen);
+    ctr[3] = rej_uniform(vec[3].coeffs, MLDSA_N, ctr[3], buf[3], buflen);
+  }
+  mld_xof_x4_release(&state);
 }
 
 /*************************************************
