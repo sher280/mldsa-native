@@ -63,7 +63,6 @@ __contract__(
   }
 }
 
-/* TODO: proof */
 static void mld_keccak_squeezeblocks_x4(uint8_t *out0, uint8_t *out1,
                                         uint8_t *out2, uint8_t *out3,
                                         size_t nblocks, uint64_t *s, uint32_t r)
