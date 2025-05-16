@@ -21,7 +21,6 @@ typedef struct
   uint64_t ctx[MLD_KECCAK_LANES * MLD_KECCAK_WAY];
 } mld_shake128x4ctx;
 
-/* TODO: proof */
 #define mld_shake128x4_absorb_once FIPS202_NAMESPACE(shake128x4_absorb_once)
 void mld_shake128x4_absorb_once(mld_shake128x4ctx *state, const uint8_t *in0,
                                 const uint8_t *in1, const uint8_t *in2,
