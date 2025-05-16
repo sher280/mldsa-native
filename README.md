@@ -4,7 +4,9 @@
 
 ![CI](https://github.com/pq-code-package/mldsa-native/actions/workflows/ci.yml/badge.svg)
 ![Benchmarks](https://github.com/pq-code-package/mldsa-native/actions/workflows/bench.yml/badge.svg)
-[![Apache](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: Apache](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 mldsa-native is a work-in-progress implementation of the [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) post-quantum signature standard. It is a fork of the ML-DSA [reference implementation](https://github.com/pq-crystals/dilithium).
 
