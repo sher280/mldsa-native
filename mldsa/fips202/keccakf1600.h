@@ -63,7 +63,6 @@ __contract__(
     assigns(memory_slice(data3, length))
 );
 
-/* TODO: proof*/
 #define mld_keccakf1600x4_xor_bytes FIPS202_NAMESPACE(keccakf1600x4_xor_bytes)
 void mld_keccakf1600x4_xor_bytes(uint64_t *state, const unsigned char *data0,
                                  const unsigned char *data1,
