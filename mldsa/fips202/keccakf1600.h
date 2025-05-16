@@ -43,7 +43,6 @@ __contract__(
     assigns(memory_slice(state, sizeof(uint64_t) * MLD_KECCAK_LANES))
 );
 
-/* TODO: proof*/
 #define mld_keccakf1600x4_extract_bytes \
   FIPS202_NAMESPACE(keccakf1600x4_extract_bytes)
 void mld_keccakf1600x4_extract_bytes(uint64_t *state, unsigned char *data0,
