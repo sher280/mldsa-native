@@ -85,12 +85,21 @@ void polyvec_matrix_pointwise_montgomery(polyveck *t,
 void polyvecl_uniform_gamma1(polyvecl *v, const uint8_t seed[MLDSA_CRHBYTES],
                              uint16_t nonce)
 {
-  unsigned int i;
-
-  for (i = 0; i < MLDSA_L; ++i)
-  {
-    poly_uniform_gamma1(&v->vec[i], seed, MLDSA_L * nonce + i);
-  }
+  nonce = MLDSA_L * nonce;
+#if MLDSA_L == 4
+  poly_uniform_gamma1_4x(&v->vec[0], &v->vec[1], &v->vec[2], &v->vec[3], seed,
+                         nonce, nonce + 1, nonce + 2, nonce + 3);
+#elif MLDSA_L == 5
+  poly_uniform_gamma1_4x(&v->vec[0], &v->vec[1], &v->vec[2], &v->vec[3], seed,
+                         nonce, nonce + 1, nonce + 2, nonce + 3);
+  poly_uniform_gamma1(&v->vec[4], seed, nonce + 4);
+#elif MLDSA_L == 7
+  poly_uniform_gamma1_4x(&v->vec[0], &v->vec[1], &v->vec[2],
+                         &v->vec[3 /* irrelevant */], seed, nonce, nonce + 1,
+                         nonce + 2, 0xFF /* irrelevant */);
+  poly_uniform_gamma1_4x(&v->vec[3], &v->vec[4], &v->vec[5], &v->vec[6], seed,
+                         nonce + 3, nonce + 4, nonce + 5, nonce + 6);
+#endif /* MLDSA_L == 7 */
 }
 
 void polyvecl_reduce(polyvecl *v)
