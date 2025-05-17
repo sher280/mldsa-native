@@ -323,16 +323,20 @@ __contract__(
  *           - Simplified from reference by removing buffer tail handling
  *             since buflen % 3 = 0 always holds true (STREAM128_BLOCKBYTES =
  *             168).
- *           - Modified rej_uniform interface to track offset directly. */
-void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
+ *           - Modified rej_uniform interface to track offset directly.
+ *           - Pass nonce packed in the extended seed array instead of a third
+ *             argument.
+ * */
+void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
 {
   unsigned int ctr;
   unsigned int buflen = POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES;
-  uint8_t buf[POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES];
-  stream128_state state;
+  MLD_ALIGN uint8_t buf[POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES];
+  mld_xof_ctx state;
 
-  stream128_init(&state, seed, nonce);
-  stream128_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
+  mld_xof_init(&state);
+  mld_xof_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
+  mld_xof_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
 
   ctr = rej_uniform(a->coeffs, MLDSA_N, 0, buf, buflen);
   buflen = STREAM128_BLOCKBYTES;
@@ -343,13 +347,13 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES], uint16_t nonce)
     invariant((&state)->pos <= SHAKE128_RATE)
     invariant(array_bound(a->coeffs, 0, ctr, 0, MLDSA_Q)))
   {
-    stream128_squeezeblocks(buf, 1, &state);
+    mld_xof_squeezeblocks(buf, 1, &state);
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
 }
 
-void poly_rej_uniform_4x(poly *vec,
-                         uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
+void poly_uniform_4x(poly *vec,
+                     uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
 {
   /* Temporary buffers for XOF output before rejection sampling */
   MLD_ALIGN uint8_t
@@ -487,7 +491,7 @@ void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
 {
   unsigned int ctr;
   unsigned int buflen = POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES;
-  uint8_t buf[POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES];
+  MLD_ALIGN uint8_t buf[POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES];
   stream256_state state;
 
   stream256_init(&state, seed, nonce);
@@ -512,7 +516,7 @@ void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
 void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                          uint16_t nonce)
 {
-  uint8_t buf[POLY_UNIFORM_GAMMA1_NBLOCKS * STREAM256_BLOCKBYTES];
+  MLD_ALIGN uint8_t buf[POLY_UNIFORM_GAMMA1_NBLOCKS * STREAM256_BLOCKBYTES];
   stream256_state state;
 
   stream256_init(&state, seed, nonce);
@@ -525,7 +529,7 @@ void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
   unsigned int i, j, pos;
   uint64_t signs;
   uint64_t offset;
-  uint8_t buf[SHAKE256_RATE];
+  MLD_ALIGN uint8_t buf[SHAKE256_RATE];
   keccak_state state;
 
   shake256_init(&state);
