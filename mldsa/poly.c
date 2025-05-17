@@ -554,10 +554,17 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                          uint16_t nonce)
 {
   MLD_ALIGN uint8_t buf[POLY_UNIFORM_GAMMA1_NBLOCKS * STREAM256_BLOCKBYTES];
-  stream256_state state;
+  MLD_ALIGN uint8_t extseed[MLDSA_CRHBYTES + 2];
+  mld_xof256_ctx state;
 
-  stream256_init(&state, seed, nonce);
-  stream256_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
+  memcpy(extseed, seed, MLDSA_CRHBYTES);
+  extseed[MLDSA_CRHBYTES] = nonce & 0xFF;
+  extseed[MLDSA_CRHBYTES + 1] = nonce >> 8;
+
+  mld_xof256_init(&state);
+  mld_xof256_absorb(&state, extseed, MLDSA_CRHBYTES + 2);
+
+  mld_xof256_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
   polyz_unpack(a, buf);
 }
 
