@@ -320,27 +320,29 @@ __contract__(
 void poly_uniform_4x(poly *vec,
                      uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]);
 
-#define poly_uniform_eta MLD_NAMESPACE(poly_uniform_eta)
+
+#define poly_uniform_eta_4x MLD_NAMESPACE(poly_uniform_eta_4x)
 /*************************************************
  * Name:        poly_uniform_eta
  *
- * Description: Sample polynomial with uniformly random coefficients
+ * Description: Sample four polynomials with uniformly random coefficients
  *              in [-MLDSA_ETA,MLDSA_ETA] by performing rejection sampling on
- *              the output stream from SHAKE256(seed|nonce)
+ *              the output stream from SHAKE256(seed|nonce_i)
  *
- * Arguments:   - poly *a: pointer to output polynomial
+ * Arguments:   - poly *r0: pointer to first output polynomial
+ *              - poly *r1: pointer to second output polynomial
+ *              - poly *r2: pointer to third output polynomial
+ *              - poly *r3: pointer to fourth output polynomial
  *              - const uint8_t seed[]: byte array with seed of length
  *                MLDSA_CRHBYTES
- *              - uint16_t nonce: 2-byte nonce
+ *              - uint8_t nonce0: first nonce
+ *              - uint8_t nonce1: second nonce
+ *              - uint8_t nonce2: third nonce
+ *              - uint8_t nonce3: fourth nonce
  **************************************************/
-void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
-                      uint16_t nonce)
-__contract__(
-  requires(memory_no_alias(a, sizeof(poly)))
-  requires(memory_no_alias(seed, MLDSA_CRHBYTES))
-  assigns(memory_slice(a, sizeof(poly)))
-  ensures(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_ETA + 1))
-);
+void poly_uniform_eta_4x(poly *r0, poly *r1, poly *r2, poly *r3,
+                         const uint8_t seed[MLDSA_CRHBYTES], uint8_t nonce0,
+                         uint8_t nonce1, uint8_t nonce2, uint8_t nonce3);
 
 #define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
 /*************************************************

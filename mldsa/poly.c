@@ -332,11 +332,11 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
   unsigned int ctr;
   unsigned int buflen = POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES;
   MLD_ALIGN uint8_t buf[POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES];
-  mld_xof_ctx state;
+  mld_xof128_ctx state;
 
-  mld_xof_init(&state);
-  mld_xof_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
-  mld_xof_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
+  mld_xof128_init(&state);
+  mld_xof128_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
+  mld_xof128_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
 
   ctr = rej_uniform(a->coeffs, MLDSA_N, 0, buf, buflen);
   buflen = STREAM128_BLOCKBYTES;
@@ -347,7 +347,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
     invariant((&state)->pos <= SHAKE128_RATE)
     invariant(array_bound(a->coeffs, 0, ctr, 0, MLDSA_Q)))
   {
-    mld_xof_squeezeblocks(buf, 1, &state);
+    mld_xof128_squeezeblocks(buf, 1, &state);
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
 }
@@ -361,12 +361,12 @@ void poly_uniform_4x(poly *vec,
 
   /* Tracks the number of coefficients we have already sampled */
   unsigned ctr[4];
-  mld_xof_x4_ctx state;
+  mld_xof128_x4_ctx state;
   unsigned buflen;
 
 
-  mld_xof_x4_init(&state);
-  mld_xof_x4_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
+  mld_xof128_x4_init(&state);
+  mld_xof128_x4_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
 
   /*
    * Initially, squeeze heuristic number of POLY_UNIFORM_NBLOCKS.
@@ -374,7 +374,7 @@ void poly_uniform_4x(poly *vec,
    */
 
 
-  mld_xof_x4_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
+  mld_xof128_x4_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
   buflen = POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES;
   ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, 0, buf[0], buflen);
   ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, 0, buf[1], buflen);
@@ -390,13 +390,13 @@ void poly_uniform_4x(poly *vec,
   while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
          ctr[3] < MLDSA_N)
   {
-    mld_xof_x4_squeezeblocks(buf, 1, &state);
+    mld_xof128_x4_squeezeblocks(buf, 1, &state);
     ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, ctr[0], buf[0], buflen);
     ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, ctr[1], buf[1], buflen);
     ctr[2] = rej_uniform(vec[2].coeffs, MLDSA_N, ctr[2], buf[2], buflen);
     ctr[3] = rej_uniform(vec[3].coeffs, MLDSA_N, ctr[3], buf[3], buflen);
   }
-  mld_xof_x4_release(&state);
+  mld_xof128_x4_release(&state);
 }
 
 /*************************************************
@@ -486,30 +486,67 @@ __contract__(
   return ctr;
 }
 
-void poly_uniform_eta(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
-                      uint16_t nonce)
+void poly_uniform_eta_4x(poly *r0, poly *r1, poly *r2, poly *r3,
+                         const uint8_t seed[MLDSA_CRHBYTES], uint8_t nonce0,
+                         uint8_t nonce1, uint8_t nonce2, uint8_t nonce3)
 {
-  unsigned int ctr;
-  unsigned int buflen = POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES;
-  MLD_ALIGN uint8_t buf[POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES];
-  stream256_state state;
+  /* Temporary buffers for XOF output before rejection sampling */
+  MLD_ALIGN uint8_t
+      buf[4][MLD_ALIGN_UP(POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES)];
 
-  stream256_init(&state, seed, nonce);
-  stream256_squeezeblocks(buf, POLY_UNIFORM_ETA_NBLOCKS, &state);
+  MLD_ALIGN uint8_t extseed[4][MLD_ALIGN_UP(MLDSA_CRHBYTES + 2)];
 
-  ctr = rej_eta(a->coeffs, MLDSA_N, 0, buf, buflen);
+  /* Tracks the number of coefficients we have already sampled */
+  unsigned ctr[4];
+  mld_xof256_x4_ctx state;
+  unsigned buflen;
+
+  memcpy(extseed[0], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[1], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[2], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[3], seed, MLDSA_CRHBYTES);
+  extseed[0][MLDSA_CRHBYTES] = nonce0;
+  extseed[1][MLDSA_CRHBYTES] = nonce1;
+  extseed[2][MLDSA_CRHBYTES] = nonce2;
+  extseed[3][MLDSA_CRHBYTES] = nonce3;
+  extseed[0][MLDSA_CRHBYTES + 1] = 0;
+  extseed[1][MLDSA_CRHBYTES + 1] = 0;
+  extseed[2][MLDSA_CRHBYTES + 1] = 0;
+  extseed[3][MLDSA_CRHBYTES + 1] = 0;
+
+  mld_xof256_x4_init(&state);
+  mld_xof256_x4_absorb(&state, extseed, MLDSA_CRHBYTES + 2);
+
+  /*
+   * Initially, squeeze heuristic number of POLY_UNIFORM_ETA_NBLOCKS.
+   * This should generate the coefficients with high probability.
+   */
+  mld_xof256_x4_squeezeblocks(buf, POLY_UNIFORM_ETA_NBLOCKS, &state);
+  buflen = POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES;
+
+  ctr[0] = rej_eta(r0->coeffs, MLDSA_N, 0, buf[0], buflen);
+  ctr[1] = rej_eta(r1->coeffs, MLDSA_N, 0, buf[1], buflen);
+  ctr[2] = rej_eta(r2->coeffs, MLDSA_N, 0, buf[2], buflen);
+  ctr[3] = rej_eta(r3->coeffs, MLDSA_N, 0, buf[3], buflen);
+
+  /*
+   * So long as not all entries have been generated, squeeze
+   * one more block a time until we're done.
+   */
   buflen = STREAM256_BLOCKBYTES;
-  while (ctr < MLDSA_N)
-  __loop__(
-    assigns(ctr, state, memory_slice(a, sizeof(poly)), object_whole(buf))
-    invariant(ctr <= MLDSA_N)
-    invariant((state).pos <= SHAKE256_RATE)
-    invariant(array_abs_bound(a->coeffs, 0, ctr, MLDSA_ETA + 1)))
+  while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
+         ctr[3] < MLDSA_N)
   {
-    stream256_squeezeblocks(buf, 1, &state);
-    ctr = rej_eta(a->coeffs, MLDSA_N, ctr, buf, buflen);
+    mld_xof256_x4_squeezeblocks(buf, 1, &state);
+    ctr[0] = rej_eta(r0->coeffs, MLDSA_N, ctr[0], buf[0], buflen);
+    ctr[1] = rej_eta(r1->coeffs, MLDSA_N, ctr[1], buf[1], buflen);
+    ctr[2] = rej_eta(r2->coeffs, MLDSA_N, ctr[2], buf[2], buflen);
+    ctr[3] = rej_eta(r3->coeffs, MLDSA_N, ctr[3], buf[3], buflen);
   }
+
+  mld_xof256_x4_release(&state);
 }
+
 
 #define POLY_UNIFORM_GAMMA1_NBLOCKS \
   ((MLDSA_POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)

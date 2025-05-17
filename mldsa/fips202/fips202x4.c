@@ -11,8 +11,6 @@
 #include "fips202x4.h"
 #include "keccakf1600.h"
 
-typedef mld_shake128x4ctx mld_shake256x4_ctx;
-
 static void mld_keccak_absorb_once_x4(uint64_t *s, uint32_t r,
                                       const uint8_t *in0, const uint8_t *in1,
                                       const uint8_t *in2, const uint8_t *in3,
@@ -129,4 +127,31 @@ void mld_shake128x4_release(mld_shake128x4ctx *state)
    * @[FIPS203, Section 3.3, Destruction of intermediate values] */
   (void)state;
   /*mld_zeroize(state, sizeof(mld_shake128x4ctx));*/
+}
+
+
+void mld_shake256x4_absorb_once(mld_shake256x4ctx *state, const uint8_t *in0,
+                                const uint8_t *in1, const uint8_t *in2,
+                                const uint8_t *in3, size_t inlen)
+{
+  memset(state, 0, sizeof(mld_shake256x4ctx));
+  mld_keccak_absorb_once_x4(state->ctx, SHAKE256_RATE, in0, in1, in2, in3,
+                            inlen, 0x1F);
+}
+
+void mld_shake256x4_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2,
+                                  uint8_t *out3, size_t nblocks,
+                                  mld_shake256x4ctx *state)
+{
+  mld_keccak_squeezeblocks_x4(out0, out1, out2, out3, nblocks, state->ctx,
+                              SHAKE256_RATE);
+}
+
+void mld_shake256x4_init(mld_shake256x4ctx *state) { (void)state; }
+void mld_shake256x4_release(mld_shake256x4ctx *state)
+{
+  /* Specification: Partially implements
+   * @[FIPS203, Section 3.3, Destruction of intermediate values] */
+  (void)state;
+  /*mld_zeroize(state, sizeof(mld_shake256x4ctx));*/
 }
