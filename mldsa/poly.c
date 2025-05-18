@@ -350,6 +350,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
     mld_xof128_squeezeblocks(buf, 1, &state);
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
+  mld_xof128_release(&state);
 }
 
 void poly_uniform_4x(poly *vec,
@@ -554,12 +555,59 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
                          uint16_t nonce)
 {
   MLD_ALIGN uint8_t buf[POLY_UNIFORM_GAMMA1_NBLOCKS * STREAM256_BLOCKBYTES];
-  stream256_state state;
+  MLD_ALIGN uint8_t extseed[MLDSA_CRHBYTES + 2];
+  mld_xof256_ctx state;
 
-  stream256_init(&state, seed, nonce);
-  stream256_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
+  memcpy(extseed, seed, MLDSA_CRHBYTES);
+  extseed[MLDSA_CRHBYTES] = nonce & 0xFF;
+  extseed[MLDSA_CRHBYTES + 1] = nonce >> 8;
+
+  mld_xof256_init(&state);
+  mld_xof256_absorb(&state, extseed, MLDSA_CRHBYTES + 2);
+
+  mld_xof256_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
   polyz_unpack(a, buf);
+
+  mld_xof256_release(&state);
 }
+
+void poly_uniform_gamma1_4x(poly *r0, poly *r1, poly *r2, poly *r3,
+                            const uint8_t seed[MLDSA_CRHBYTES], uint16_t nonce0,
+                            uint16_t nonce1, uint16_t nonce2, uint16_t nonce3)
+{
+  /* Temporary buffers for XOF output before rejection sampling */
+  MLD_ALIGN uint8_t
+      buf[4][MLD_ALIGN_UP(POLY_UNIFORM_GAMMA1_NBLOCKS * STREAM256_BLOCKBYTES)];
+
+  MLD_ALIGN uint8_t extseed[4][MLD_ALIGN_UP(MLDSA_CRHBYTES + 2)];
+
+  /* Tracks the number of coefficients we have already sampled */
+  mld_xof256_x4_ctx state;
+
+  memcpy(extseed[0], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[1], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[2], seed, MLDSA_CRHBYTES);
+  memcpy(extseed[3], seed, MLDSA_CRHBYTES);
+  extseed[0][MLDSA_CRHBYTES] = nonce0 & 0xFF;
+  extseed[1][MLDSA_CRHBYTES] = nonce1 & 0xFF;
+  extseed[2][MLDSA_CRHBYTES] = nonce2 & 0xFF;
+  extseed[3][MLDSA_CRHBYTES] = nonce3 & 0xFF;
+  extseed[0][MLDSA_CRHBYTES + 1] = nonce0 >> 8;
+  extseed[1][MLDSA_CRHBYTES + 1] = nonce1 >> 8;
+  extseed[2][MLDSA_CRHBYTES + 1] = nonce2 >> 8;
+  extseed[3][MLDSA_CRHBYTES + 1] = nonce3 >> 8;
+
+  mld_xof256_x4_init(&state);
+  mld_xof256_x4_absorb(&state, extseed, MLDSA_CRHBYTES + 2);
+  mld_xof256_x4_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
+
+  polyz_unpack(r0, buf[0]);
+  polyz_unpack(r1, buf[1]);
+  polyz_unpack(r2, buf[2]);
+  polyz_unpack(r3, buf[3]);
+  mld_xof256_x4_release(&state);
+}
+
 
 void poly_challenge(poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
 {

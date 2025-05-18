@@ -435,6 +435,12 @@ void shake128_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state)
   keccak_squeezeblocks(out, nblocks, state->s, SHAKE128_RATE);
 }
 
+void shake128_release(keccak_state *state)
+{
+  (void)state;
+  /* TODO: add secure zeroization*/
+}
+
 /*************************************************
  * Name:        shake256_init
  *
@@ -525,6 +531,12 @@ void shake256_absorb_once(keccak_state *state, const uint8_t *in, size_t inlen)
 void shake256_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state)
 {
   keccak_squeezeblocks(out, nblocks, state->s, SHAKE256_RATE);
+}
+
+void shake256_release(keccak_state *state)
+{
+  (void)state;
+  /* TODO: add secure zeroization*/
 }
 
 /*************************************************

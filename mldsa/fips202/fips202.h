@@ -88,6 +88,9 @@ __contract__(
   ensures(state->pos <= SHAKE128_RATE)
 );
 
+#define shake128_release FIPS202_NAMESPACE(shake128_release)
+void shake128_release(keccak_state *state);
+
 #define shake256_init FIPS202_NAMESPACE(shake256_init)
 void shake256_init(keccak_state *state)
 __contract__(
@@ -147,6 +150,9 @@ __contract__(
   assigns(memory_slice(out, nblocks * SHAKE256_RATE))
   ensures(state->pos <= SHAKE256_RATE)
 );
+
+#define shake256_release FIPS202_NAMESPACE(shake256_release)
+void shake256_release(keccak_state *state);
 
 #define shake128 FIPS202_NAMESPACE(shake128)
 void shake128(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)

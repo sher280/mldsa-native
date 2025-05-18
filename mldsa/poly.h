@@ -346,7 +346,7 @@ void poly_uniform_eta_4x(poly *r0, poly *r1, poly *r2, poly *r3,
 
 #define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
 /*************************************************
- * Name:        poly_uniform_gamma1m1
+ * Name:        poly_uniform_gamma1
  *
  * Description: Sample polynomial with uniformly random coefficients
  *              in [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1] by unpacking output
@@ -365,6 +365,24 @@ __contract__(
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
 );
+
+
+#define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
+/*************************************************
+ * Name:        poly_uniform_gamma1_4x
+ *
+ * Description: Sample polynomial with uniformly random coefficients
+ *              in [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1] by unpacking output
+ *              stream of SHAKE256(seed|nonce)
+ *
+ * Arguments:   - poly *a: pointer to output polynomial
+ *              - const uint8_t seed[]: byte array with seed of length
+ *                MLDSA_CRHBYTES
+ *              - uint16_t nonce: 16-bit nonce
+ **************************************************/
+void poly_uniform_gamma1_4x(poly *r0, poly *r1, poly *r2, poly *r3,
+                            const uint8_t seed[MLDSA_CRHBYTES], uint16_t nonce0,
+                            uint16_t nonce1, uint16_t nonce2, uint16_t nonce3);
 
 #define poly_challenge MLD_NAMESPACE(poly_challenge)
 /*************************************************
