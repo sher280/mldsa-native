@@ -303,7 +303,8 @@ __contract__(
   assigns(memory_slice(a, sizeof(poly)))
   ensures(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
 );
-#define poly_rej_uniform_4x MLD_NAMESPACE(poly_rej_uniform_4x)
+
+#define poly_uniform_4x MLD_NAMESPACE(poly_uniform_4x)
 /*************************************************
  * Name:        poly_uniform_x4
  *
@@ -318,8 +319,16 @@ __contract__(
  *
  **************************************************/
 void poly_uniform_4x(poly *vec,
-                     uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]);
-
+                     uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
+__contract__(
+  requires(memory_no_alias(vec, 4 * sizeof(poly)))
+  requires(memory_no_alias(seed,  4 * MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)))
+  assigns(memory_slice(vec, 4 * sizeof(poly)))
+  ensures(array_bound(vec[0].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec[1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec[2].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec[3].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+);
 
 #define poly_uniform_eta_4x MLD_NAMESPACE(poly_uniform_eta_4x)
 /*************************************************
