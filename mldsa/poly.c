@@ -350,6 +350,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
     mld_xof128_squeezeblocks(buf, 1, &state);
     ctr = rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
+  mld_xof128_release(&state);
 }
 
 void poly_uniform_4x(poly *vec,
@@ -566,6 +567,8 @@ void poly_uniform_gamma1(poly *a, const uint8_t seed[MLDSA_CRHBYTES],
 
   mld_xof256_squeezeblocks(buf, POLY_UNIFORM_GAMMA1_NBLOCKS, &state);
   polyz_unpack(a, buf);
+
+  mld_xof256_release(&state);
 }
 
 void poly_uniform_gamma1_4x(poly *r0, poly *r1, poly *r2, poly *r3,

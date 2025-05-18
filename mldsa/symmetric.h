@@ -22,6 +22,7 @@
     shake256_absorb(CTX, IN, INBYTES);      \
     shake256_finalize(CTX);                 \
   } while (0)
+#define mld_xof256_release(CTX) shake256_release(CTX)
 
 #define mld_xof256_squeezeblocks(OUT, OUTBLOCKS, STATE) \
   shake256_squeezeblocks(OUT, OUTBLOCKS, STATE)
@@ -34,6 +35,7 @@
     shake128_absorb(CTX, IN, INBYTES);      \
     shake128_finalize(CTX);                 \
   } while (0)
+#define mld_xof128_release(CTX) shake128_release(CTX)
 
 
 #define mld_xof128_squeezeblocks(OUT, OUTBLOCKS, STATE) \
