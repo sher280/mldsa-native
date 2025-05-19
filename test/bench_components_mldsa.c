@@ -44,7 +44,7 @@ static int cmp_uint64_t(const void *a, const void *b)
 
 static int bench(void)
 {
-  int32_t data0[256];
+  MLD_ALIGN int32_t data0[256];
   uint64_t cyc[NTESTS];
   unsigned i, j;
   uint64_t t0, t1;
