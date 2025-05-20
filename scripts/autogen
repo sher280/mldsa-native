@@ -674,6 +674,107 @@ def gen_aarch64_zeta_file(dry_run=False):
     )
 
 
+def signed_reduce(a):
+    """Return signed canonical representative of a mod b"""
+    c = a % modulus
+    if c >= modulus / 2:
+        c -= modulus
+    return c
+
+
+def signed_reduce_u32(a):
+    """Return signed canonical representative of a mod b"""
+    c = a % 2**32
+    if c >= 2**31:
+        c -= 2**32
+    return c
+
+
+def prepare_root_for_montmul(root, mult):
+    """Takes a constant that the code needs to Montgomery-multiply with,
+    and returns the pair of (a) the signed canonical representative of its
+    Montgomery form, (b) the twisted constant used in the low-mul part of
+    the Montgomery multiplication."""
+
+    # Convert to Montgomery form and pick canonical signed representative
+    root = signed_reduce(root * montgomery_factor)
+    if mult:
+        root = signed_reduce_u32(root * pow(modulus, -1, 2**32))
+    return root
+
+
+def gen_avx2_root_of_unity_for_block(layer, block, mult=False):
+    # We are computing a negacyclic NTT; the twiddles needed here is
+    # the second half of the twiddles for a cyclic NTT of twice the size.
+    log = bitreverse(pow(2, layer) + block, 8)
+    root = pow(root_of_unity, log, modulus)
+    return prepare_root_for_montmul(root, mult)
+
+
+def gen_avx2_fwd_ntt_zetas(mult=False):
+
+    def gen_twiddles(layer, block, repeat, mult):
+        root = gen_avx2_root_of_unity_for_block(layer, block, mult)
+        return [root] * repeat
+
+    def gen_twiddles_many(layer, block_base, block_offsets, repeat, mult):
+        roots = list(
+            map(
+                lambda x: gen_twiddles(layer, block_base + x, repeat, mult),
+                block_offsets,
+            )
+        )
+        yield from (r for l in roots for r in l)
+
+    # embed the scaling of 1/256 and correction of the Montgomery factor
+    # from the basemul into last twiddle of the inverse NTT
+    # - root^-128 * 2^64/256
+    # In the forward NTT this twiddle is unused
+    f = signed_reduce(-pow(root_of_unity, -128, modulus) * 2**56)
+    if mult:
+        f = signed_reduce_u32(f * pow(modulus, -1, 2**32))
+
+    yield f
+
+    # Layers 1 twiddle
+    # In the inverse NTT this twiddle is unused
+    yield from gen_twiddles_many(0, 0, range(1), 1, mult)
+
+    # Layer 2-8 twiddles
+    yield from gen_twiddles_many(1, 0, range(2), 1, mult)
+    yield from gen_twiddles_many(2, 0, range(4), 1, mult)
+    yield from gen_twiddles_many(3, 0, range(8), 4, mult)
+    yield from gen_twiddles_many(4, 0, range(16), 2, mult)
+    yield from gen_twiddles_many(5, 0, range(32), 1, mult)
+    for i in range(32):
+        yield from gen_twiddles_many(6, i * 2, range(1), 1, mult)
+    for i in range(32):
+        yield from gen_twiddles_many(6, i * 2 + 1, range(1), 1, mult)
+
+    for k in range(4):
+        for i in range(32):
+            yield from gen_twiddles_many(7, i * 4 + k, range(1), 1, mult)
+
+
+def gen_avx2_zeta_file(dry_run=False):
+    def gen():
+        yield from gen_header()
+        yield "/*"
+        yield " * Table of zeta values used in the AVX2 NTTs"
+        yield " * See autogen for details."
+        yield " */"
+        yield "/* twiddles * q^-1 */"
+        yield from map(lambda t: str(t) + ",", gen_avx2_fwd_ntt_zetas(mult=True))
+        yield "/* twiddles */"
+        yield ""
+        yield from map(lambda t: str(t) + ",", gen_avx2_fwd_ntt_zetas(mult=False))
+        yield ""
+
+    update_file(
+        "mldsa/native/x86_64/src/x86_64_zetas.i", "\n".join(gen()), dry_run=dry_run
+    )
+
+
 def adjust_header_guard_for_filename(content, header_file):
 
     status_update("header guards", header_file)
@@ -772,6 +873,7 @@ def _main():
 
     gen_c_zeta_file(args.dry_run)
     gen_aarch64_zeta_file(args.dry_run)
+    gen_avx2_zeta_file(args.dry_run)
     gen_header_guards(args.dry_run)
     gen_preprocessor_comments(args.dry_run)
 
