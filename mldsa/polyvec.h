@@ -174,9 +174,14 @@ void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
  * Returns 0 if norm of all polynomials is strictly smaller than B <=
  *(MLDSA_Q-1)/8 and 1 otherwise.
  **************************************************/
-int polyvecl_chknorm(const polyvecl *v, int32_t B);
-
-
+int polyvecl_chknorm(const polyvecl *v, int32_t B)
+__contract__(
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
+  requires(forall(k0, 0, MLDSA_L, 
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+  ensures(return_value == 0 || return_value == 1)
+);
 
 /* Vectors of polynomials of length MLDSA_K */
 typedef struct
