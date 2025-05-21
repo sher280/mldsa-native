@@ -370,6 +370,9 @@ int polyveck_chknorm(const polyveck *v, int32_t bound)
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    invariant(i <= MLDSA_K)
+  )
   {
     if (poly_chknorm(&v->vec[i], bound))
     {
