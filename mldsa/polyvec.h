@@ -606,7 +606,16 @@ __contract__(
  *              - const uint8_t rho[]: byte array containing seed rho
  **************************************************/
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
-                           const uint8_t rho[MLDSA_SEEDBYTES]);
+                           const uint8_t rho[MLDSA_SEEDBYTES])
+__contract__(
+  requires(memory_no_alias(mat, MLDSA_K * sizeof(polyvecl)))
+  requires(memory_no_alias(rho, MLDSA_SEEDBYTES))
+  assigns(memory_slice(mat, MLDSA_K * sizeof(polyvecl)))
+  ensures(forall(k1, 0, MLDSA_K, forall(l1, 0, MLDSA_L,
+    array_bound(mat[k1].vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
+);
+
+
 
 #define polyvec_matrix_pointwise_montgomery \
   MLD_NAMESPACE(polyvec_matrix_pointwise_montgomery)
