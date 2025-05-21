@@ -191,14 +191,22 @@ void polyvecl_pointwise_poly_montgomery(polyvecl *r, const poly *a,
 void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
                                        const polyvecl *v)
 {
-  unsigned int i;
-  poly t;
+  unsigned int i, j;
+  /* The second input is bounded by 9q. Hence, we can safely accumulate
+   * in 64-bits without intermediate reductions as
+   * MLDSA_L * MLD_NTT_BOUND * INT32_MAX < INT64_MAX
+   * worst case is ML-DSA-87: 7 * 9 * q * 2**31 < 2**63
+   * (likewise for negative values)
+   */
 
-  poly_pointwise_montgomery(w, &u->vec[0], &v->vec[0]);
-  for (i = 1; i < MLDSA_L; ++i)
+  for (i = 0; i < MLDSA_N; i++)
   {
-    poly_pointwise_montgomery(&t, &u->vec[i], &v->vec[i]);
-    poly_add(w, w, &t);
+    int64_t t = 0;
+    for (j = 0; j < MLDSA_L; j++)
+    {
+      t += (int64_t)u->vec[j].coeffs[i] * (int64_t)v->vec[j].coeffs[i];
+    }
+    w->coeffs[i] = montgomery_reduce(t);
   }
 }
 
