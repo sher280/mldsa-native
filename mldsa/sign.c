@@ -143,71 +143,85 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   polyveck_ntt(&s2);
   polyveck_ntt(&t0);
 
-rej:
-  /* Sample intermediate vector y */
-  polyvecl_uniform_gamma1(&y, rhoprime, nonce++);
-
-  /* Matrix-vector multiplication */
-  z = y;
-  polyvecl_ntt(&z);
-  polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
-  polyveck_reduce(&w1);
-  polyveck_invntt_tomont(&w1);
-
-  /* Decompose w and call the random oracle */
-  polyveck_caddq(&w1);
-  polyveck_decompose(&w1, &w0, &w1);
-  polyveck_pack_w1(sig, &w1);
-
-  shake256_init(&state);
-  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
-  shake256_absorb(&state, sig, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
-  shake256_finalize(&state);
-  shake256_squeeze(sig, MLDSA_CTILDEBYTES, &state);
-  poly_challenge(&cp, sig);
-  poly_ntt(&cp);
-
-  /* Compute z, reject if it reveals secret */
-  polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
-  polyvecl_invntt_tomont(&z);
-  polyvecl_add(&z, &z, &y);
-  polyvecl_reduce(&z);
-  if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+  /* Reference: This code is re-structured using a while(1),  */
+  /* with explicit "continue" statements (rather than "goto") */
+  /* to implement rejection of invalid signatures.            */
+  /* The loop statement also supplies a syntactic location to */
+  /* place loop invariants for CBMC.                          */
+  while (1)
+  __loop__(
+    invariant(true); /* TODO */
+  )
   {
-    goto rej;
-  }
+    /* Sample intermediate vector y */
+    polyvecl_uniform_gamma1(&y, rhoprime, nonce++);
 
-  /* Check that subtracting cs2 does not change high bits of w and low bits
-   * do not reveal secret information */
-  polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
-  polyveck_invntt_tomont(&h);
-  polyveck_sub(&w0, &w0, &h);
-  polyveck_reduce(&w0);
-  if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
-  {
-    goto rej;
-  }
+    /* Matrix-vector multiplication */
+    z = y;
+    polyvecl_ntt(&z);
+    polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
+    polyveck_reduce(&w1);
+    polyveck_invntt_tomont(&w1);
 
-  /* Compute hints for w1 */
-  polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
-  polyveck_invntt_tomont(&h);
-  polyveck_reduce(&h);
-  if (polyveck_chknorm(&h, MLDSA_GAMMA2))
-  {
-    goto rej;
-  }
+    /* Decompose w and call the random oracle */
+    polyveck_caddq(&w1);
+    polyveck_decompose(&w1, &w0, &w1);
+    polyveck_pack_w1(sig, &w1);
 
-  polyveck_add(&w0, &w0, &h);
-  n = polyveck_make_hint(&h, &w0, &w1);
-  if (n > MLDSA_OMEGA)
-  {
-    goto rej;
-  }
+    shake256_init(&state);
+    shake256_absorb(&state, mu, MLDSA_CRHBYTES);
+    shake256_absorb(&state, sig, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
+    shake256_finalize(&state);
+    shake256_squeeze(sig, MLDSA_CTILDEBYTES, &state);
+    poly_challenge(&cp, sig);
+    poly_ntt(&cp);
 
-  /* Write signature */
-  pack_sig(sig, sig, &z, &h, n);
-  *siglen = CRYPTO_BYTES;
-  return 0;
+    /* Compute z, reject if it reveals secret */
+    polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
+    polyvecl_invntt_tomont(&z);
+    polyvecl_add(&z, &z, &y);
+    polyvecl_reduce(&z);
+    if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+    {
+      /* reject */
+      continue;
+    }
+
+    /* Check that subtracting cs2 does not change high bits of w and low bits
+     * do not reveal secret information */
+    polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
+    polyveck_invntt_tomont(&h);
+    polyveck_sub(&w0, &w0, &h);
+    polyveck_reduce(&w0);
+    if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
+    {
+      /* reject */
+      continue;
+    }
+
+    /* Compute hints for w1 */
+    polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
+    polyveck_invntt_tomont(&h);
+    polyveck_reduce(&h);
+    if (polyveck_chknorm(&h, MLDSA_GAMMA2))
+    {
+      /* reject */
+      continue;
+    }
+
+    polyveck_add(&w0, &w0, &h);
+    n = polyveck_make_hint(&h, &w0, &w1);
+    if (n > MLDSA_OMEGA)
+    {
+      /* reject */
+      continue;
+    }
+
+    /* Write signature */
+    pack_sig(sig, sig, &z, &h, n);
+    *siglen = CRYPTO_BYTES;
+    return 0;
+  }
 }
 
 int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
