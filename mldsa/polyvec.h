@@ -146,8 +146,12 @@ __contract__(
  * Name:        polyvecl_pointwise_acc_montgomery
  *
  * Description: Pointwise multiply vectors of polynomials of length MLDSA_L,
- *multiply resulting vector by 2^{-32} and add (accumulate) polynomials in it.
- *Input/output vectors are in NTT domain representation.
+ *              multiply resulting vector by 2^{-32} and add (accumulate)
+ *              polynomials in it.
+ *              Input/output vectors are in NTT domain representation.
+ *              The second input is assumed to be output of an NTT, and
+ *              hence must have coefficients bounded by (-9q, +9q).
+ *
  *
  * Arguments:   - poly *w: output polynomial
  *              - const polyvecl *u: pointer to first input vector
