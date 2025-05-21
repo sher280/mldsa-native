@@ -367,7 +367,7 @@ __contract__(
 );
 
 
-#define poly_uniform_gamma1 MLD_NAMESPACE(poly_uniform_gamma1)
+#define poly_uniform_gamma1_4x MLD_NAMESPACE(poly_uniform_gamma1_4x)
 /*************************************************
  * Name:        poly_uniform_gamma1_4x
  *
@@ -382,7 +382,23 @@ __contract__(
  **************************************************/
 void poly_uniform_gamma1_4x(poly *r0, poly *r1, poly *r2, poly *r3,
                             const uint8_t seed[MLDSA_CRHBYTES], uint16_t nonce0,
-                            uint16_t nonce1, uint16_t nonce2, uint16_t nonce3);
+                            uint16_t nonce1, uint16_t nonce2, uint16_t nonce3)
+__contract__(
+  requires(memory_no_alias(r0, sizeof(poly)))
+  requires(memory_no_alias(r1, sizeof(poly)))
+  requires(memory_no_alias(r2, sizeof(poly)))
+  requires(memory_no_alias(r3, sizeof(poly)))
+  requires(memory_no_alias(seed, MLDSA_CRHBYTES))
+  assigns(memory_slice(r0, sizeof(poly)))
+  assigns(memory_slice(r1, sizeof(poly)))
+  assigns(memory_slice(r2, sizeof(poly)))
+  assigns(memory_slice(r3, sizeof(poly)))
+  ensures(array_bound(r0->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+  ensures(array_bound(r1->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+  ensures(array_bound(r2->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+  ensures(array_bound(r3->coeffs, 0, MLDSA_N, -(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1 + 1))
+);
+
 
 #define poly_challenge MLD_NAMESPACE(poly_challenge)
 /*************************************************
