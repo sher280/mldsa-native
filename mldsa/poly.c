@@ -390,6 +390,14 @@ void poly_uniform_4x(poly *vec,
   buflen = STREAM128_BLOCKBYTES;
   while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
          ctr[3] < MLDSA_N)
+  __loop__(
+    assigns(ctr, state, memory_slice(vec, sizeof(poly) * 4), object_whole(buf))
+    invariant(ctr[0] <= MLDSA_N && ctr[1] <= MLDSA_N)
+    invariant(ctr[2] <= MLDSA_N && ctr[3] <= MLDSA_N)
+    invariant(array_bound(vec[0].coeffs, 0, ctr[0], 0, MLDSA_Q))
+    invariant(array_bound(vec[1].coeffs, 0, ctr[1], 0, MLDSA_Q))
+    invariant(array_bound(vec[2].coeffs, 0, ctr[2], 0, MLDSA_Q))
+    invariant(array_bound(vec[3].coeffs, 0, ctr[3], 0, MLDSA_Q)))
   {
     mld_xof128_x4_squeezeblocks(buf, 1, &state);
     ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, ctr[0], buf[0], buflen);
@@ -537,6 +545,18 @@ void poly_uniform_eta_4x(poly *r0, poly *r1, poly *r2, poly *r3,
   buflen = STREAM256_BLOCKBYTES;
   while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
          ctr[3] < MLDSA_N)
+  __loop__(
+    assigns(ctr, state, memory_slice(r0, sizeof(poly)),
+            memory_slice(r1, sizeof(poly)), memory_slice(r2, sizeof(poly)), 
+            memory_slice(r3, sizeof(poly)), object_whole(buf[0]),
+            object_whole(buf[1]), object_whole(buf[2]), 
+            object_whole(buf[3]))
+    invariant(ctr[0] <= MLDSA_N && ctr[1] <= MLDSA_N)
+    invariant(ctr[2] <= MLDSA_N && ctr[3] <= MLDSA_N)
+    invariant(array_abs_bound(r0->coeffs, 0, ctr[0], MLDSA_ETA + 1))
+    invariant(array_abs_bound(r1->coeffs, 0, ctr[1], MLDSA_ETA + 1))
+    invariant(array_abs_bound(r2->coeffs, 0, ctr[2], MLDSA_ETA + 1))
+    invariant(array_abs_bound(r3->coeffs, 0, ctr[3], MLDSA_ETA + 1)))
   {
     mld_xof256_x4_squeezeblocks(buf, 1, &state);
     ctr[0] = rej_eta(r0->coeffs, MLDSA_N, ctr[0], buf[0], buflen);
