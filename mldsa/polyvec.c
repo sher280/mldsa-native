@@ -216,6 +216,9 @@ int polyvecl_chknorm(const polyvecl *v, int32_t bound)
   unsigned int i;
 
   for (i = 0; i < MLDSA_L; ++i)
+  __loop__(
+    invariant(i <= MLDSA_L)
+  )
   {
     if (poly_chknorm(&v->vec[i], bound))
     {
