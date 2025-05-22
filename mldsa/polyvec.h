@@ -629,6 +629,14 @@ __contract__(
   MLD_NAMESPACE(polyvec_matrix_pointwise_montgomery)
 void polyvec_matrix_pointwise_montgomery(polyveck *t,
                                          const polyvecl mat[MLDSA_K],
-                                         const polyvecl *v);
+                                         const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(t, sizeof(polyveck)))
+  requires(memory_no_alias(mat, MLDSA_K*sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(l1, 0, MLDSA_L,
+    array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  assigns(object_whole(t))
+);
 
 #endif /* !MLD_POLYVEC_H */
