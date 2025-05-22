@@ -240,11 +240,21 @@ void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
    */
 
   for (i = 0; i < MLDSA_N; i++)
+  __loop__(
+    assigns(i, j, object_whole(w))
+    invariant(i <= MLDSA_N)
+  )
   {
     int64_t t = 0;
     for (j = 0; j < MLDSA_L; j++)
+    __loop__(
+      assigns(j, t)
+      invariant(j <= MLDSA_L)
+      invariant(t <= -(int64_t)j*INT32_MIN*MLD_NTT_BOUND)
+      invariant(t >= (int64_t)j*INT32_MIN*MLD_NTT_BOUND)
+    )
     {
-      t += (int64_t)u->vec[j].coeffs[i] * (int64_t)v->vec[j].coeffs[i];
+      t += (int64_t)u->vec[j].coeffs[i] * v->vec[j].coeffs[i];
     }
     w->coeffs[i] = montgomery_reduce(t);
   }

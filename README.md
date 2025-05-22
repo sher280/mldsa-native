@@ -8,7 +8,7 @@
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-mldsa-native is a work-in-progress implementation of the [ML-DSA](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf) post-quantum signature standard. It is a fork of the ML-DSA [reference implementation](https://github.com/pq-crystals/dilithium).
+mldsa-native is a work-in-progress implementation of the [ML-DSA](https://csrc.nist.gov/pubs/fips/204/final) post-quantum signature standard. It is a fork of the ML-DSA [reference implementation](https://github.com/pq-crystals/dilithium).
 
 The goal of mldsa-native is to be a secure, fast and portable C90 implementation of ML-DSA, paralleling [mlkem-native](https://github.com/pq-code-package/mlkem-native) for ML-KEM.
 

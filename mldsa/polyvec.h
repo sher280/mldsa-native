@@ -158,7 +158,15 @@ __contract__(
  *              - const polyvecl *v: pointer to second input vector
  **************************************************/
 void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
-                                       const polyvecl *v);
+                                       const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(poly)))
+  requires(memory_no_alias(u, sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(l1, 0, MLDSA_L,
+    array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  assigns(memory_slice(w, sizeof(poly)))
+);
 
 
 #define polyvecl_chknorm MLD_NAMESPACE(polyvecl_chknorm)
@@ -619,8 +627,29 @@ __contract__(
 
 #define polyvec_matrix_pointwise_montgomery \
   MLD_NAMESPACE(polyvec_matrix_pointwise_montgomery)
+/*************************************************
+ * Name:        polyvec_matrix_pointwise_montgomery
+ *
+ * Description: Compute matrix-vector multiplication in NTT domain with
+ *              pointwise multiplication and multiplication by 2^{-32}.
+ *              Input matrix and vector must be in NTT domain representation.
+ *              The input vector is assumed to be output of an NTT, and
+ *              hence must have coefficients bounded by (-9q, +9q).
+ *
+ * Arguments:   - polyveck *t: pointer to output vector t
+ *              - const polyvecl mat[MLDSA_K]: pointer to input matrix
+ *              - const polyvecl *v: pointer to input vector v
+ **************************************************/
 void polyvec_matrix_pointwise_montgomery(polyveck *t,
                                          const polyvecl mat[MLDSA_K],
-                                         const polyvecl *v);
+                                         const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(t, sizeof(polyveck)))
+  requires(memory_no_alias(mat, MLDSA_K*sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(l1, 0, MLDSA_L,
+    array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  assigns(object_whole(t))
+);
 
 #endif /* !MLD_POLYVEC_H */
