@@ -158,7 +158,15 @@ __contract__(
  *              - const polyvecl *v: pointer to second input vector
  **************************************************/
 void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
-                                       const polyvecl *v);
+                                       const polyvecl *v)
+__contract__(
+  requires(memory_no_alias(w, sizeof(poly)))
+  requires(memory_no_alias(u, sizeof(polyvecl)))
+  requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(l1, 0, MLDSA_L,
+    array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  assigns(memory_slice(w, sizeof(poly)))
+);
 
 
 #define polyvecl_chknorm MLD_NAMESPACE(polyvecl_chknorm)
