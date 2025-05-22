@@ -162,20 +162,24 @@ void polyvecl_reduce(polyvecl *v)
   }
 }
 
-void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v)
+/* Reference: We use destructive version (output=first input) to avoid
+ *            reasoning about aliasing in the CBMC specification */
+void polyvecl_add(polyvecl *u, const polyvecl *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
-    invariant(i <= MLDSA_L))
+    invariant(i <= MLDSA_L)
+    invariant(forall(k0, i, MLDSA_L, 
+              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
   {
-    poly t;
-    poly_add(&t, &u->vec[i], &v->vec[i]);
+    poly tmp = u->vec[i];
+    poly_add(&tmp, &v->vec[i]);
     /* Full struct assignment from local variables to simplify proof */
     /* TODO: eliminate once CBMC resolves
      * https://github.com/diffblue/cbmc/issues/8617 */
-    w->vec[i] = t;
+    u->vec[i] = tmp;
   }
 }
 
@@ -323,20 +327,24 @@ void polyveck_caddq(polyveck *v)
   }
 }
 
-void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v)
+/* Reference: We use destructive version (output=first input) to avoid
+ *            reasoning about aliasing in the CBMC specification */
+void polyveck_add(polyveck *u, const polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    invariant(i <= MLDSA_K))
+    invariant(i <= MLDSA_K)
+    invariant(forall(k0, i, MLDSA_K, 
+             forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
   {
-    poly t;
-    poly_add(&t, &u->vec[i], &v->vec[i]);
+    poly tmp = u->vec[i];
+    poly_add(&tmp, &v->vec[i]);
     /* Full struct assignment from local variables to simplify proof */
     /* TODO: eliminate once CBMC resolves
      * https://github.com/diffblue/cbmc/issues/8617 */
-    w->vec[i] = t;
+    u->vec[i] = tmp;
   }
 }
 

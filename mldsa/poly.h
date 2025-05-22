@@ -57,18 +57,23 @@ __contract__(
  *
  * Description: Add polynomials. No modular reduction is performed.
  *
- * Arguments:   - poly *c: pointer to output polynomial
- *              - const poly *a: pointer to first summand
- *              - const poly *b: pointer to second summand
+ * Arguments: - r: Pointer to input-output polynomial to be added to.
+ *            - b: Pointer to input polynomial that should be added
+ *                 to r. Must be disjoint from r.
  **************************************************/
-void poly_add(poly *c, const poly *a, const poly *b)
+
+/*
+ * NOTE: The reference implementation uses a 3-argument poly_add.
+ * We specialize to the accumulator form to avoid reasoning about aliasing.
+ */
+void poly_add(poly *r, const poly *b)
 __contract__(
-  requires(memory_no_alias(c, sizeof(poly)))
-  requires(memory_no_alias(a, sizeof(poly)))
   requires(memory_no_alias(b, sizeof(poly)))
-  requires(forall(k0, 0, MLDSA_N, (int64_t) a->coeffs[k0] + b->coeffs[k0] <= INT32_MAX))
-  requires(forall(k1, 0, MLDSA_N, (int64_t) a->coeffs[k1] + b->coeffs[k1] >= INT32_MIN))
-  assigns(memory_slice(c, sizeof(poly)))
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(forall(k0, 0, MLDSA_N, (int64_t) r->coeffs[k0] + b->coeffs[k0] <= INT32_MAX))
+  requires(forall(k1, 0, MLDSA_N, (int64_t) r->coeffs[k1] + b->coeffs[k1] >= INT32_MIN))
+  assigns(memory_slice(r, sizeof(poly)))
+  ensures(forall(k, 0, MLDSA_N, r->coeffs[k] == old(*r).coeffs[k] + b->coeffs[k]))
 );
 
 #define poly_sub MLD_NAMESPACE(poly_sub)

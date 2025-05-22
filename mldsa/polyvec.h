@@ -67,20 +67,18 @@ __contract__(
  * Description: Add vectors of polynomials of length MLDSA_L.
  *              No modular reduction is performed.
  *
- * Arguments:   - polyvecl *w: pointer to output vector
- *              - const polyvecl *u: pointer to first summand
- *              - const polyvecl *v: pointer to second summand
+ * Arguments:   - polyveck *u: pointer to input-output vector of polynomials to
+ *              be added to
+ *              - const polyveck *v: pointer to second input vector of
+ *              polynomials
  **************************************************/
-void polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v)
+void polyvecl_add(polyvecl *u, const polyvecl *v)
 __contract__(
-  requires(memory_no_alias(w, sizeof(polyvecl)))
   requires(memory_no_alias(u, sizeof(polyvecl)))
   requires(memory_no_alias(v, sizeof(polyvecl)))
-  requires(forall(k0, 0, MLDSA_L,
-    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
-  requires(forall(k2, 0, MLDSA_L,
-    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
-  assigns(memory_slice(w, sizeof(polyvecl)))
+  requires(forall(k0, 0, MLDSA_L, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_L, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(object_whole(u))
 );
 
 #define polyvecl_ntt MLD_NAMESPACE(polyvecl_ntt)
@@ -242,20 +240,18 @@ __contract__(
  * Description: Add vectors of polynomials of length MLDSA_K.
  *              No modular reduction is performed.
  *
- * Arguments:   - polyveck *w: pointer to output vector
- *              - const polyveck *u: pointer to first summand
- *              - const polyveck *v: pointer to second summand
+ * Arguments:   - polyveck *u: pointer to input-output vector of polynomials to
+ *              be added to
+ *              - const polyveck *v: pointer to second input vector of
+ *              polynomials
  **************************************************/
-void polyveck_add(polyveck *w, const polyveck *u, const polyveck *v)
+void polyveck_add(polyveck *u, const polyveck *v)
 __contract__(
-  requires(memory_no_alias(w, sizeof(polyveck)))
   requires(memory_no_alias(u, sizeof(polyveck)))
   requires(memory_no_alias(v, sizeof(polyveck)))
-  requires(forall(k0, 0, MLDSA_K,
-    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
-  requires(forall(k2, 0, MLDSA_K,
-    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
-  assigns(memory_slice(w, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_K, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(object_whole(u))
 );
 
 #define polyveck_sub MLD_NAMESPACE(polyveck_sub)
