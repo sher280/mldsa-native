@@ -627,6 +627,19 @@ __contract__(
 
 #define polyvec_matrix_pointwise_montgomery \
   MLD_NAMESPACE(polyvec_matrix_pointwise_montgomery)
+/*************************************************
+ * Name:        polyvec_matrix_pointwise_montgomery
+ *
+ * Description: Compute matrix-vector multiplication in NTT domain with
+ *              pointwise multiplication and multiplication by 2^{-32}.
+ *              Input matrix and vector must be in NTT domain representation.
+ *              The input vector is assumed to be output of an NTT, and
+ *              hence must have coefficients bounded by (-9q, +9q).
+ *
+ * Arguments:   - polyveck *t: pointer to output vector t
+ *              - const polyvecl mat[MLDSA_K]: pointer to input matrix
+ *              - const polyvecl *v: pointer to input vector v
+ **************************************************/
 void polyvec_matrix_pointwise_montgomery(polyveck *t,
                                          const polyvecl mat[MLDSA_K],
                                          const polyvecl *v)
