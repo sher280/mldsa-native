@@ -71,7 +71,7 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   polyveck_invntt_tomont(&t1);
 
   /* Add error vector s2 */
-  polyveck_add(&t1, &t1, &s2);
+  polyveck_add(&t1, &s2);
 
   /* Extract t1 and write public key */
   polyveck_caddq(&t1);
@@ -179,7 +179,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
     /* Compute z, reject if it reveals secret */
     polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
     polyvecl_invntt_tomont(&z);
-    polyvecl_add(&z, &z, &y);
+    polyvecl_add(&z, &y);
     polyvecl_reduce(&z);
     if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
     {
@@ -209,7 +209,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
       continue;
     }
 
-    polyveck_add(&w0, &w0, &h);
+    polyveck_add(&w0, &h);
     n = polyveck_make_hint(&h, &w0, &w1);
     if (n > MLDSA_OMEGA)
     {

@@ -50,20 +50,20 @@ void poly_caddq(poly *a)
 
   mld_assert_bound(a->coeffs, MLDSA_N, 0, MLDSA_Q);
 }
-
-void poly_add(poly *c, const poly *a, const poly *b)
+/* Reference: We use destructive version (output=first input) to avoid
+ *            reasoning about aliasing in the CBMC specification */
+void poly_add(poly *r, const poly *b)
 {
   unsigned int i;
-
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
-    invariant(i <= MLDSA_N)
-    invariant(forall(k1, 0, i, c->coeffs[k1] == a->coeffs[k1] + b->coeffs[k1])))
+      invariant(i <= MLDSA_N)
+      invariant(forall(k0, i, MLDSA_N, r->coeffs[k0] == loop_entry(*r).coeffs[k0]))
+      invariant(forall(k1, 0, i, r->coeffs[k1] == loop_entry(*r).coeffs[k1] + b->coeffs[k1]))
+    )
   {
-    c->coeffs[i] = a->coeffs[i] + b->coeffs[i];
+    r->coeffs[i] = r->coeffs[i] + b->coeffs[i];
   }
-
-  cassert(forall(k, 0, MLDSA_N, c->coeffs[k] == a->coeffs[k] + b->coeffs[k]));
 }
 
 void poly_sub(poly *c, const poly *a, const poly *b)
