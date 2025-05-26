@@ -359,7 +359,7 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   uint8_t c2[MLDSA_CTILDEBYTES];
   poly cp;
   polyvecl mat[MLDSA_K], z;
-  polyveck t1, w1, h;
+  polyveck t1, w1, tmp, h;
 
   if (siglen != CRYPTO_BYTES)
   {
@@ -379,8 +379,9 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   if (!externalmu)
   {
     /* Compute CRH(H(rho, t1), pre, msg) */
-    mld_H(mu, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES, NULL, 0, NULL, 0);
-    mld_H(mu, MLDSA_CRHBYTES, mu, MLDSA_TRBYTES, pre, prelen, m, mlen);
+    uint8_t hpk[MLDSA_CRHBYTES];
+    mld_H(hpk, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES, NULL, 0, NULL, 0);
+    mld_H(mu, MLDSA_CRHBYTES, hpk, MLDSA_TRBYTES, pre, prelen, m, mlen);
   }
   else
   {
@@ -398,28 +399,30 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   poly_ntt(&cp);
   polyveck_shiftl(&t1);
   polyveck_ntt(&t1);
-  polyveck_pointwise_poly_montgomery(&t1, &cp, &t1);
 
-  polyveck_sub(&w1, &t1);
+  polyveck_pointwise_poly_montgomery(&tmp, &cp, &t1);
+
+  polyveck_sub(&w1, &tmp);
   polyveck_reduce(&w1);
   polyveck_invntt_tomont(&w1);
 
   /* Reconstruct w1 */
   polyveck_caddq(&w1);
-  polyveck_use_hint(&w1, &w1, &h);
-  polyveck_pack_w1(buf, &w1);
-
+  polyveck_use_hint(&tmp, &w1, &h);
+  polyveck_pack_w1(buf, &tmp);
   /* Call random oracle and verify challenge */
   mld_H(c2, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, buf,
         MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
   for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
+  __loop__(
+    invariant(i <= MLDSA_CTILDEBYTES)
+  )
   {
     if (c[i] != c2[i])
     {
       return -1;
     }
   }
-
   return 0;
 }
 

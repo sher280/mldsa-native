@@ -4,30 +4,50 @@
 include ../Makefile_params.common
 
 HARNESS_ENTRY = harness
-HARNESS_FILE = polyveck_pointwise_poly_montgomery_harness
+HARNESS_FILE = crypto_sign_verify_internal_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = polyveck_pointwise_poly_montgomery
+PROOF_UID = crypto_sign_verify_internal
 
 DEFINES +=
 INCLUDES +=
 
 REMOVE_FUNCTION_BODY +=
+UNWINDSET +=
 
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
-PROJECT_SOURCES += $(SRCDIR)/mldsa/polyvec.c
+PROJECT_SOURCES += $(SRCDIR)/mldsa/sign.c
 
-CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyveck_pointwise_poly_montgomery
-USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)poly_pointwise_montgomery
+CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)verify_internal
+USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)unpack_pk
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)unpack_sig
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyvecl_chknorm
+USE_FUNCTION_CONTRACTS+=mld_H
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)poly_challenge
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyvec_matrix_expand
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyvecl_ntt
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyvec_matrix_pointwise_montgomery
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)poly_ntt
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_shiftl
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_ntt
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_pointwise_poly_montgomery
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_sub
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_reduce
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_invntt_tomont
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_caddq
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_use_hint
+USE_FUNCTION_CONTRACTS+=$(MLD_NAMESPACE)polyveck_pack_w1
+
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
 # Disable any setting of EXTERNAL_SAT_SOLVER, and choose SMT backend instead
 EXTERNAL_SAT_SOLVER=
-CBMCFLAGS=--smt2 --slice-formula
+CBMCFLAGS=--smt2
+CBMCFLAGS += --slice-formula
 
-FUNCTION_NAME = polyveck_pointwise_poly_montgomery
+FUNCTION_NAME = crypto_sign_verify_internal
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will
@@ -36,7 +56,7 @@ FUNCTION_NAME = polyveck_pointwise_poly_montgomery
 # EXPENSIVE = true
 
 # This function is large enough to need...
-CBMC_OBJECT_BITS = 9
+CBMC_OBJECT_BITS = 10
 
 # If you require access to a file-local ("static") function or object to conduct
 # your proof, set the following (and do not include the original source file
