@@ -15,7 +15,7 @@
 typedef struct
 {
   int32_t coeffs[MLDSA_N];
-} poly;
+} MLD_ALIGN poly;
 
 #define poly_reduce MLD_NAMESPACE(poly_reduce)
 /*************************************************

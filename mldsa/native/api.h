@@ -56,19 +56,47 @@ static MLD_INLINE void mld_ntt_native(int32_t p[MLDSA_N]);
 #endif /* MLD_USE_NATIVE_NTT */
 
 
-#if defined(MLD_USE_NATIVE_INTT)
+#if defined(MLD_USE_NATIVE_NTT_CUSTOM_ORDER)
+/*
+ * This must only be set if NTT and INTT have native implementations
+ * that are adapted to the custom order.
+ */
+#if !defined(MLD_USE_NATIVE_NTT) || !defined(MLD_USE_NATIVE_INTT)
+#error \
+    "Invalid native profile: MLD_USE_NATIVE_NTT_CUSTOM_ORDER can only be \
+set if there are native implementations for NTT and INTT."
+#endif
+
 /*************************************************
- * Name:        mld_intt_native
+ * Name:        mlD_poly_permute_bitrev_to_custom
  *
- * Description: Computes inverse of negacyclic number-theoretic transform (NTT)
- *              of a polynomial in place.
+ * Description: When MLD_USE_NATIVE_NTT_CUSTOM_ORDER is defined,
+ *              convert a polynomial in NTT domain from bitreversed
+ *              order to the custom order output by the native NTT.
  *
- *              The input polynomial is in bitreversed order.
- *              The output polynomial is assumed to be in normal order.
+ *              This must only be defined if there is native code for
+ *              both the NTT and INTT.
  *
- * Arguments:   - uint32_t p[MLDSA_N]: pointer to in/output polynomial
+ * Arguments:   - int32_t p[MLDSA_N]: pointer to in/output polynomial
+ *
  **************************************************/
-static MLD_INLINE void mld_intt_native(int16_t p[MLKEM_N])
+static MLD_INLINE void mld_poly_permute_bitrev_to_custom(int32_t p[MLDSA_N])
+#endif /* MLD_USE_NATIVE_NTT_CUSTOM_ORDER */
+
+
+#if defined(MLD_USE_NATIVE_INTT)
+    /*************************************************
+     * Name:        mld_intt_native
+     *
+     * Description: Computes inverse of negacyclic number-theoretic transform
+     *(NTT) of a polynomial in place.
+     *
+     *              The input polynomial is in bitreversed order.
+     *              The output polynomial is assumed to be in normal order.
+     *
+     * Arguments:   - uint32_t p[MLDSA_N]: pointer to in/output polynomial
+     **************************************************/
+    static MLD_INLINE void mld_intt_native(int16_t p[MLKEM_N])
 #endif /* MLD_USE_NATIVE_INTT */
 
 #endif /* !MLD_NATIVE_API_H */

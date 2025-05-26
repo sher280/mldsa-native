@@ -9,6 +9,18 @@
 #include "poly.h"
 #include "polyvec.h"
 
+#if !defined(MLD_USE_NATIVE_NTT_CUSTOM_ORDER)
+/* This namespacing is not done at the top to avoid a naming conflict
+ * with native backends, which are currently not yet namespaced. */
+#define mld_poly_permute_bitrev_to_custom \
+  MLD_NAMESPACE(mld_poly_permute_bitrev_to_custom)
+
+static MLD_INLINE void mld_poly_permute_bitrev_to_custom(int32_t data[MLDSA_N])
+{
+  ((void)data);
+}
+#endif /* !MLD_USE_NATIVE_NTT_CUSTOM_ORDER */
+
 
 void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
                            const uint8_t rho[MLDSA_SEEDBYTES])
@@ -104,6 +116,18 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
     mat[i / MLDSA_L].vec[i % MLDSA_L] = tmp;
 
     i++;
+  }
+
+  /*
+   * The public matrix is generated in NTT domain. If the native backend
+   * uses a custom order in NTT domain, permute A accordingly.
+   */
+  for (i = 0; i < MLDSA_K; i++)
+  {
+    for (j = 0; j < MLDSA_L; j++)
+    {
+      mld_poly_permute_bitrev_to_custom(mat[i].vec[j].coeffs);
+    }
   }
 }
 
