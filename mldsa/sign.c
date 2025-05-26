@@ -191,7 +191,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
      * do not reveal secret information */
     polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
     polyveck_invntt_tomont(&h);
-    polyveck_sub(&w0, &w0, &h);
+    polyveck_sub(&w0, &h);
     polyveck_reduce(&w0);
     if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
     {
@@ -355,7 +355,7 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   polyveck_ntt(&t1);
   polyveck_pointwise_poly_montgomery(&t1, &cp, &t1);
 
-  polyveck_sub(&w1, &w1, &t1);
+  polyveck_sub(&w1, &t1);
   polyveck_reduce(&w1);
   polyveck_invntt_tomont(&w1);
 

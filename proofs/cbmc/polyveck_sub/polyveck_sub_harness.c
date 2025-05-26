@@ -5,6 +5,6 @@
 
 void harness(void)
 {
-  polyveck *a, *b, *c;
-  polyveck_sub(a, b, c);
+  polyveck *u, *v;
+  polyveck_sub(u, v);
 }

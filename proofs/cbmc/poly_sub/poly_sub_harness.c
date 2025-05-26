@@ -5,6 +5,6 @@
 
 void harness(void)
 {
-  poly *c, *a, *b;
-  poly_sub(c, a, b);
+  poly *r, *b;
+  poly_sub(r, b);
 }
