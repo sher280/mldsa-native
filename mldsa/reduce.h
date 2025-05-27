@@ -10,20 +10,37 @@
 #include "common.h"
 
 #define MONT -4186625 /* 2^32 % MLDSA_Q */
-#define REDUCE_DOMAIN_MAX (INT32_MAX - (1 << 22))
-#define REDUCE_RANGE_MAX 6283009
+
+/* Upper bound for domain of reduce32() */
+#define REDUCE32_DOMAIN_MAX (INT32_MAX - (1 << 22))
+
+/* Absolute bound for range of reduce32() */
+#define REDUCE32_RANGE_MAX 6283009
+
+/* Absolute bound for domain of montgomery_reduce() */
 #define MONTGOMERY_REDUCE_DOMAIN_MAX ((int64_t)INT32_MIN * INT32_MIN)
+
+/* Absolute bound for tight domain of montgomery_reduce() */
+#define MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX ((int64_t)INT32_MIN * -MLDSA_Q)
+
 
 #define montgomery_reduce MLD_NAMESPACE(montgomery_reduce)
 /*************************************************
  * Name:        montgomery_reduce
  *
- * Description: For finite field element a with
- *              -2^{31}MLDSA_Q <= a <= MLDSA_Q*2^31,
- *              compute r \equiv a*2^{-32} (mod MLDSA_Q) such that
- *              -MLDSA_Q < r < MLDSA_Q.
- *              If the output bounds are not required, the inputs can be larger
- *              (up to INT64_MAX - (2^31 * MLDSA_Q) > INT32_MAX^2)
+ * Description:
+ *      For finite field element a with
+ *        -MONTGOMERY_REDUCE_DOMAIN_MAX <= a <= MONTGOMERY_REDUCE_DOMAIN_MAX,
+ *      compute r == a*2^{-32} (mod MLDSA_Q) such that
+ *        INT32_MIN <= r < REDUCE32_DOMAIN_MAX
+ *
+ *      The upper-bound on the result ensures that a result from this
+ *      function can be used as an input to reduce32() declared below.
+ *
+ *      Additionally, as a special case, if the input a is in range
+ *        -MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX < a <
+ *          MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX
+ *      then the result satisfies -MLDSA_Q < r < MLDSA_Q.
  *
  * Arguments:   - int64_t: finite field element a
  *
@@ -32,6 +49,11 @@
 int32_t montgomery_reduce(int64_t a)
 __contract__(
   requires(a >= -MONTGOMERY_REDUCE_DOMAIN_MAX && a <= MONTGOMERY_REDUCE_DOMAIN_MAX)
+  ensures(return_value >= INT32_MIN && return_value < REDUCE32_DOMAIN_MAX)
+
+  /* Special case - for stronger input bounds, we can ensure stronger bounds on the output */
+  ensures((a >= -MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX && a < MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX) ==>
+          (return_value > -MLDSA_Q && return_value < MLDSA_Q))
 );
 
 #define reduce32 MLD_NAMESPACE(reduce32)
@@ -40,7 +62,7 @@ __contract__(
  *
  * Description: For finite field element a with a <= 2^{31} - 2^{22} - 1,
  *              compute r \equiv a (mod MLDSA_Q) such that
- *              -REDUCE_RANGE_MAX <= r < REDUCE_RANGE_MAX.
+ *              -REDUCE32_RANGE_MAX <= r < REDUCE32_RANGE_MAX.
  *
  * Arguments:   - int32_t: finite field element a
  *
@@ -48,9 +70,9 @@ __contract__(
  **************************************************/
 int32_t reduce32(int32_t a)
 __contract__(
-  requires(a <= REDUCE_DOMAIN_MAX)
-  ensures(return_value >= -REDUCE_RANGE_MAX)
-  ensures(return_value <   REDUCE_RANGE_MAX)
+  requires(a <= REDUCE32_DOMAIN_MAX)
+  ensures(return_value >= -REDUCE32_RANGE_MAX)
+  ensures(return_value <   REDUCE32_RANGE_MAX)
 );
 
 #define caddq MLD_NAMESPACE(caddq)
