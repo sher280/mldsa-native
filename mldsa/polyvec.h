@@ -261,21 +261,17 @@ __contract__(
  * Description: Subtract vectors of polynomials of length MLDSA_K.
  *              No modular reduction is performed.
  *
- * Arguments:   - polyveck *w: pointer to output vector
- *              - const polyveck *u: pointer to first input vector
+ * Arguments:   - polyveck *u: pointer to first input vector
  *              - const polyveck *v: pointer to second input vector to be
  *                                   subtracted from first input vector
  **************************************************/
-void polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v)
+void polyveck_sub(polyveck *u, const polyveck *v)
 __contract__(
-  requires(memory_no_alias(w, sizeof(polyveck)))
   requires(memory_no_alias(u, sizeof(polyveck)))
   requires(memory_no_alias(v, sizeof(polyveck)))
-  requires(forall(k0, 0, MLDSA_K,
-    forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] - v->vec[k0].coeffs[k1] <= INT32_MAX)))
-  requires(forall(k2, 0, MLDSA_K,
-    forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] - v->vec[k2].coeffs[k3] >= INT32_MIN)))
-  assigns(memory_slice(w, sizeof(polyveck)))
+  requires(forall(k0, 0, MLDSA_K, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] - v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k2, 0, MLDSA_K, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] - v->vec[k2].coeffs[k3] >= INT32_MIN)))
+  assigns(object_whole(u))
 );
 
 #define polyveck_shiftl MLD_NAMESPACE(polyveck_shiftl)

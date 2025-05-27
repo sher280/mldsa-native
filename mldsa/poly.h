@@ -83,19 +83,23 @@ __contract__(
  * Description: Subtract polynomials. No modular reduction is
  *              performed.
  *
- * Arguments:   - poly *c: pointer to output polynomial
- *              - const poly *a: pointer to first input polynomial
- *              - const poly *b: pointer to second input polynomial to be
- *                               subtraced from first input polynomial
+ * Arguments:   - poly *r: Pointer to input-output polynomial.
+ *              - const poly *b: Pointer to input polynomial that should be
+ *                               subtracted from r. Must be disjoint from r.
  **************************************************/
-void poly_sub(poly *c, const poly *a, const poly *b)
+/*
+ * NOTE: The reference implementation uses a 3-argument poly_sub.
+ * We specialize to the accumulator form to avoid reasoning about aliasing.
+ */
+void poly_sub(poly *r, const poly *b)
 __contract__(
-  requires(memory_no_alias(c, sizeof(poly)))
-  requires(memory_no_alias(a, sizeof(poly)))
   requires(memory_no_alias(b, sizeof(poly)))
-  requires(forall(k0, 0, MLDSA_N, (int64_t) a->coeffs[k0] - b->coeffs[k0] <= INT32_MAX))
-  requires(forall(k1, 0, MLDSA_N, (int64_t) a->coeffs[k1] - b->coeffs[k1] >= INT32_MIN))
-  assigns(memory_slice(c, sizeof(poly))));
+  requires(memory_no_alias(r, sizeof(poly)))
+  requires(forall(k0, 0, MLDSA_N, (int64_t) r->coeffs[k0] - b->coeffs[k0] <= INT32_MAX))
+  requires(forall(k1, 0, MLDSA_N, (int64_t) r->coeffs[k1] - b->coeffs[k1] >= INT32_MIN))
+  assigns(memory_slice(r, sizeof(poly)))
+  ensures(forall(k, 0, MLDSA_N, r->coeffs[k] == old(*r).coeffs[k] - b->coeffs[k]))
+);
 
 #define poly_shiftl MLD_NAMESPACE(poly_shiftl)
 /*************************************************
