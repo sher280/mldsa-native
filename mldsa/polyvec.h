@@ -185,7 +185,7 @@ int polyvecl_chknorm(const polyvecl *v, int32_t B)
 __contract__(
   requires(memory_no_alias(v, sizeof(polyvecl)))
   requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
-  requires(forall(k0, 0, MLDSA_L, 
+  requires(forall(k0, 0, MLDSA_L,
     array_bound(v->vec[k0].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
   ensures(return_value == 0 || return_value == 1)
 );
@@ -422,8 +422,8 @@ __contract__(
   requires(memory_no_alias(v, sizeof(polyveck)))
   requires(forall(k0, 0, MLDSA_K,
     array_bound(v->vec[k0].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
-  assigns(object_whole(v1))
-  assigns(object_whole(v0))
+  assigns(memory_slice(v1, sizeof(polyveck)))
+  assigns(memory_slice(v0, sizeof(polyveck)))
   ensures(forall(k1, 0, MLDSA_K,
                  array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)) &&
                  array_abs_bound(v0->vec[k1].coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1)))
