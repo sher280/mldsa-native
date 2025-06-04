@@ -7,7 +7,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "../mldsa/api.h"
+#include "../mldsa/sys.h"
 #include "notrandombytes/notrandombytes.h"
+
+#if defined(MLD_SYS_WINDOWS)
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 #define MAXMLEN 2048
 #define CTXLEN 0
@@ -35,6 +41,11 @@ int main(void)
   size_t smlen;
   size_t slen;
   size_t mlen;
+
+#if defined(MLD_SYS_WINDOWS)
+  /* Disable automatic CRLF conversion on Windows to match testvector hashes */
+  _setmode(_fileno(stdout), _O_BINARY);
+#endif
 
   for (i = 0; i < MAXMLEN; i = (i == 0) ? i + 1 : i << 2)
   {
