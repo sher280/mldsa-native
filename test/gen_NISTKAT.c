@@ -10,7 +10,12 @@
 
 #include "../mldsa/api.h"
 #include "../mldsa/randombytes.h"
+#include "../mldsa/sys.h"
 
+#if defined(MLD_SYS_WINDOWS)
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 
 #if MLDSA_MODE == 2
@@ -49,6 +54,11 @@ int main(void)
   uint8_t sm[33 + CRYPTO_BYTES];
   uint8_t i;
   int rc;
+
+#if defined(MLD_SYS_WINDOWS)
+  /* Disable automatic CRLF conversion on Windows to match testvector hashes */
+  _setmode(_fileno(stdout), _O_BINARY);
+#endif
 
   for (i = 0; i < 48; i++)
   {

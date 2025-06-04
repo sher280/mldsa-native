@@ -50,7 +50,7 @@
 #define MLD_SYS_RISCV64
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN64) || defined(_WIN32)
 #define MLD_SYS_WINDOWS
 #endif
 
