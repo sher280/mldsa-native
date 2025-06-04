@@ -96,7 +96,7 @@ static MLD_INLINE void mld_poly_permute_bitrev_to_custom(int32_t p[MLDSA_N])
      *
      * Arguments:   - uint32_t p[MLDSA_N]: pointer to in/output polynomial
      **************************************************/
-    static MLD_INLINE void mld_intt_native(int16_t p[MLKEM_N])
+    static MLD_INLINE void mld_intt_native(int16_t p[MLDSA_N])
 #endif /* MLD_USE_NATIVE_INTT */
 
 #endif /* !MLD_NATIVE_API_H */

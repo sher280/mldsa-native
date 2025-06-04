@@ -45,4 +45,21 @@
 #define MLD_CONFIG_ARITH_BACKEND_FILE "native/meta.h"
 #endif
 
+/******************************************************************************
+ * Name:        MLD_CONFIG_FIPS202_BACKEND_FILE
+ *
+ * Description: The FIPS-202 backend to use.
+ *
+ *              If MLD_CONFIG_USE_NATIVE_BACKEND_FIPS202 is set, this option
+ *              must either be undefined or the filename of a FIPS202 backend.
+ *              If unset, the default backend will be used.
+ *
+ *              This can be set using CFLAGS.
+ *
+ *****************************************************************************/
+#if defined(MLD_CONFIG_USE_NATIVE_BACKEND_FIPS202) && \
+    !defined(MLD_CONFIG_FIPS202_BACKEND_FILE)
+#define MLD_CONFIG_FIPS202_BACKEND_FILE "fips202/native/auto.h"
+#endif
+
 #endif /* !MLD_CONFIG_H */
