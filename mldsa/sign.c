@@ -91,6 +91,55 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
   return crypto_sign_keypair_internal(pk, sk, seed);
 }
 
+/*************************************************
+ * Name:        mld_H
+ *
+ * Description: Abstracts application of SHAKE256 to
+ *              one, two or three blocks of data,
+ *              yielding a user-requested size of
+ *              output.
+ *
+ * Arguments:   - uint8_t *out: pointer to output
+ *              - size_t outlen: requested output length in bytes
+ *              - const uint8_t *in1: pointer to input block 1
+ *                                    Must NOT be NULL
+ *              - size_t in1len: length of input in1 bytes
+ *              - const uint8_t *in2: pointer to input block 2
+ *                                    May be NULL, in which case
+ *                                    this block is ignored
+ *              - size_t in2len: length of input in2 bytes
+ *              - const uint8_t *in3: pointer to input block 3
+ *                                    May be NULL, in which case
+ *                                    this block is ignored
+ *              - size_t in3len: length of input in3 bytes
+ **************************************************/
+static void mld_H(uint8_t *out, size_t outlen, const uint8_t *in1,
+                  size_t in1len, const uint8_t *in2, size_t in2len,
+                  const uint8_t *in3, size_t in3len)
+__contract__(
+  requires(outlen <= 8 * SHAKE256_RATE /* somewhat arbitrary bound */)
+  requires(memory_no_alias(in1, in1len))
+  requires(in2 == NULL || memory_no_alias(in2, in2len))
+  requires(in3 == NULL || memory_no_alias(in3, in3len))
+  requires(memory_no_alias(out, outlen))
+  assigns(memory_slice(out, outlen))
+)
+{
+  keccak_state state;
+  shake256_init(&state);
+  shake256_absorb(&state, in1, in1len);
+  if (in2 != NULL)
+  {
+    shake256_absorb(&state, in2, in2len);
+  }
+  if (in3 != NULL)
+  {
+    shake256_absorb(&state, in3, in3len);
+  }
+  shake256_finalize(&state);
+  shake256_squeeze(out, outlen, &state);
+}
+
 int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
                                    const uint8_t *m, size_t mlen,
                                    const uint8_t *pre, size_t prelen,
@@ -104,7 +153,6 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   polyvecl mat[MLDSA_K], s1, y, z;
   polyveck t0, s2, w1, w0, h;
   poly cp;
-  keccak_state state;
 
   rho = seedbuf;
   tr = rho + MLDSA_SEEDBYTES;
@@ -116,12 +164,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   if (!externalmu)
   {
     /* Compute mu = CRH(tr, pre, msg) */
-    shake256_init(&state);
-    shake256_absorb(&state, tr, MLDSA_TRBYTES);
-    shake256_absorb(&state, pre, prelen);
-    shake256_absorb(&state, m, mlen);
-    shake256_finalize(&state);
-    shake256_squeeze(mu, MLDSA_CRHBYTES, &state);
+    mld_H(mu, MLDSA_CRHBYTES, tr, MLDSA_TRBYTES, pre, prelen, m, mlen);
   }
   else
   {
@@ -130,12 +173,8 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   }
 
   /* Compute rhoprime = CRH(key, rnd, mu) */
-  shake256_init(&state);
-  shake256_absorb(&state, key, MLDSA_SEEDBYTES);
-  shake256_absorb(&state, rnd, MLDSA_RNDBYTES);
-  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
-  shake256_finalize(&state);
-  shake256_squeeze(rhoprime, MLDSA_CRHBYTES, &state);
+  mld_H(rhoprime, MLDSA_CRHBYTES, key, MLDSA_SEEDBYTES, rnd, MLDSA_RNDBYTES, mu,
+        MLDSA_CRHBYTES);
 
   /* Expand matrix and transform vectors */
   polyvec_matrix_expand(mat, rho);
@@ -150,7 +189,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   /* place loop invariants for CBMC.                          */
   while (1)
   __loop__(
-    invariant(true); /* TODO */
+    invariant(1) /* TODO */
   )
   {
     /* Sample intermediate vector y */
@@ -168,11 +207,8 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
     polyveck_decompose(&w1, &w0, &w1);
     polyveck_pack_w1(sig, &w1);
 
-    shake256_init(&state);
-    shake256_absorb(&state, mu, MLDSA_CRHBYTES);
-    shake256_absorb(&state, sig, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
-    shake256_finalize(&state);
-    shake256_squeeze(sig, MLDSA_CTILDEBYTES, &state);
+    mld_H(sig, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, sig,
+          MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
     poly_challenge(&cp, sig);
     poly_ntt(&cp);
 
@@ -309,7 +345,6 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   poly cp;
   polyvecl mat[MLDSA_K], z;
   polyveck t1, w1, h;
-  keccak_state state;
 
   if (siglen != CRYPTO_BYTES)
   {
@@ -329,13 +364,8 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   if (!externalmu)
   {
     /* Compute CRH(H(rho, t1), pre, msg) */
-    shake256(mu, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
-    shake256_init(&state);
-    shake256_absorb(&state, mu, MLDSA_TRBYTES);
-    shake256_absorb(&state, pre, prelen);
-    shake256_absorb(&state, m, mlen);
-    shake256_finalize(&state);
-    shake256_squeeze(mu, MLDSA_CRHBYTES, &state);
+    mld_H(mu, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES, NULL, 0, NULL, 0);
+    mld_H(mu, MLDSA_CRHBYTES, mu, MLDSA_TRBYTES, pre, prelen, m, mlen);
   }
   else
   {
@@ -365,11 +395,8 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   polyveck_pack_w1(buf, &w1);
 
   /* Call random oracle and verify challenge */
-  shake256_init(&state);
-  shake256_absorb(&state, mu, MLDSA_CRHBYTES);
-  shake256_absorb(&state, buf, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES);
-  shake256_finalize(&state);
-  shake256_squeeze(c2, MLDSA_CTILDEBYTES, &state);
+  mld_H(c2, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, buf,
+        MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
   for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
   {
     if (c[i] != c2[i])
