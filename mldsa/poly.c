@@ -120,7 +120,7 @@ void poly_invntt_tomont(poly *a)
 {
   mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
   invntt_tomont(a->coeffs);
-  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLDSA_Q);
+  mld_assert_abs_bound(a->coeffs, MLDSA_N, MLD_INTT_BOUND);
 }
 #else  /* !MLD_USE_NATIVE_INTT */
 void poly_invntt_tomont(poly *a)

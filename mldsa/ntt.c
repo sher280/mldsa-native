@@ -17,6 +17,28 @@ __contract__(
   /* TODO: reason about bounds */
 }
 
+/*************************************************
+ * Name:        mld_fqsacle
+ *
+ * Description: Scales a field element by mont/256 , i.e., performs Montgomery
+ *              multiplication by mont^2/256.
+ *              Input is expected to have absolute value smaller than
+ *              256 * MLDSA_Q.
+ *              Output has absolute value smaller than MLD_INTT_BOUND (4211139).
+ *
+ * Arguments:   - int32_t a: Field element to be scaled.
+ **************************************************/
+static int32_t mld_fqscale(int32_t a)
+__contract__(
+  requires(a > -256*MLDSA_Q && a < 256*MLDSA_Q)
+  ensures(return_value > -MLD_INTT_BOUND && return_value < MLD_INTT_BOUND)
+)
+{
+  const int32_t f = 41978; /* mont^2/256 */
+  return montgomery_reduce((int64_t)a * f);
+  /* TODO: reason about bounds */
+}
+
 #include "zetas.inc"
 
 
@@ -183,19 +205,19 @@ __contract__(
 /*************************************************
  * Name:        invntt_tomont
  *
- * Description: Inverse NTT and multiplication by Montgomery factor 2^32.
- *              In-place. No modular reductions after additions or
- *              subtractions; input coefficients need to be smaller than
- *              MLDSA_Q in absolute value. Output coefficient are smaller than
- *              MLDSA_Q in absolute value.
+ * Description: Inverse NTT and multiplication by Montgomery factor mont^2 /256.
+ *              In-place. No modular reductions after additions or subtractions;
+ *              Input coefficients need to be smaller than MLDSA_Q
+ *              in absolute value.
+ *              Output coefficient are smaller than MLD_INTT_BOUND
+ *              in absolute value.
  *
- * Arguments:   - uint32_t a[MLDSA_N]: input/output coefficient array
+ * Arguments:   - int32_t a[MLDSA_N]: input/output coefficient array
  **************************************************/
 void invntt_tomont(int32_t a[MLDSA_N])
 
 {
   unsigned int layer, j;
-  const int32_t f = 41978; /* mont^2/256 */
 
   for (layer = 8; layer >= 1; layer--)
   __loop__(
@@ -207,13 +229,19 @@ void invntt_tomont(int32_t a[MLDSA_N])
     mld_invntt_layer(a, layer);
   }
 
-  /* Coefficient bounds are now at 256Q. We now invert and reduce  */
-  /* each coefficient to bring them back to be bounded by 1Q       */
+  /* Coefficient bounds are now at 256Q. We now scale by mont / 256,
+   * i.e., compute the Montgomery multiplication by mont^2 / 256.
+   * mont corrects the mont^-1  factor introduced in the basemul.
+   * 1/256 performs that scaling of the inverse NTT.
+   * The reduced value is bounded by  MLD_INTT_BOUND (4211139) in absolute
+   * value.*/
   for (j = 0; j < MLDSA_N; ++j)
   __loop__(
     invariant(j <= MLDSA_N)
-    invariant(array_abs_bound(a, 0, j, MLDSA_Q)))
+    invariant(array_abs_bound(a, 0, j, MLD_INTT_BOUND))
+    invariant(array_abs_bound(a, j, MLDSA_N, MLDSA_N * MLDSA_Q))
+  )
   {
-    a[j] = mld_fqmul(a[j], f);
+    a[j] = mld_fqscale(a[j]);
   }
 }

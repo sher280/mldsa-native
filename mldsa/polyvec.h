@@ -104,7 +104,8 @@ __contract__(
  *
  * Description: Inplace inverse NTT and multiplication by 2^{32}.
  *              Input coefficients need to be less than MLDSA_Q in absolute
- *              value and output coefficients are again bounded by MLDSA_Q.
+ *              value and output coefficients are bounded by
+ *              MLD_INTT_BOUND.
  *
  * Arguments:   - polyvecl *v: pointer to input/output vector
  **************************************************/
@@ -113,7 +114,7 @@ __contract__(
   requires(memory_no_alias(v, sizeof(polyvecl)))
   requires(forall(k0, 0, MLDSA_L, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
   assigns(memory_slice(v, sizeof(polyvecl)))
-  ensures(forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0 , MLDSA_N, MLDSA_Q)))
+  ensures(forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0 , MLDSA_N, MLD_INTT_BOUND)))
 );
 
 #define polyvecl_pointwise_poly_montgomery \
@@ -313,9 +314,9 @@ __contract__(
  * Name:        polyveck_invntt_tomont
  *
  * Description: Inverse NTT and multiplication by 2^{32} of polynomials
- *              in vector of length MLDSA_K. Input coefficients need to be less
- *              than 2*MLDSA_Q.
- *
+ *              in vector of length MLDSA_K.
+ *              Input coefficients need to be less than MLDSA_Q, and
+ *              Output coefficients are bounded by MLD_INTT_BOUND.
  * Arguments:   - polyveck *v: pointer to input/output vector
  **************************************************/
 void polyveck_invntt_tomont(polyveck *v)
@@ -323,7 +324,7 @@ __contract__(
   requires(memory_no_alias(v, sizeof(polyveck)))
   requires(forall(k0, 0, MLDSA_K, array_abs_bound(v->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
   assigns(memory_slice(v, sizeof(polyveck)))
-  ensures(forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  ensures(forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_INTT_BOUND)))
 );
 
 #define polyveck_pointwise_poly_montgomery \

@@ -141,7 +141,8 @@ __contract__(
  *
  * Description: Inplace inverse NTT and multiplication by 2^{32}.
  *              Input coefficients need to be less than MLDSA_Q in absolute
- *              value and output coefficients are again bounded by MLDSA_Q.
+ *              value and output coefficients are bounded by
+ *              MLD_INTT_BOUND.
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
@@ -150,7 +151,7 @@ __contract__(
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
   assigns(memory_slice(a, sizeof(poly)))
-  ensures(array_abs_bound(a->coeffs, 0, MLDSA_N, MLDSA_Q))
+  ensures(array_abs_bound(a->coeffs, 0, MLDSA_N, MLD_INTT_BOUND))
 );
 
 #define poly_pointwise_montgomery MLD_NAMESPACE(poly_pointwise_montgomery)
