@@ -172,8 +172,9 @@ void polyvecl_add(polyvecl *u, const polyvecl *v)
   __loop__(
     assigns(i, memory_slice(u, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
-    invariant(forall(k0, i, MLDSA_L,
-              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
+    invariant(forall(k0, i, MLDSA_L, 
+              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
+    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5]))))
   {
     poly_add(&u->vec[i], &v->vec[i]);
   }
@@ -317,8 +318,9 @@ void polyveck_add(polyveck *u, const polyveck *v)
   __loop__(
     assigns(i, memory_slice(u, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
-    invariant(forall(k0, i, MLDSA_K,
-             forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
+    invariant(forall(k0, i, MLDSA_K, 
+              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
+    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5]))))
   {
     poly_add(&u->vec[i], &v->vec[i]);
   }
