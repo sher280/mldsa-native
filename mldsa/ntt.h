@@ -11,6 +11,8 @@
 
 /* Absolute exclusive upper bound for the output of the forward NTT */
 #define MLD_NTT_BOUND (9 * MLDSA_Q)
+/* Absolute exclusive upper bound for the output of the inverse NTT*/
+#define MLD_INTT_BOUND 4211139
 
 #define ntt MLD_NAMESPACE(ntt)
 /*************************************************
@@ -45,20 +47,22 @@ __contract__(
 /*************************************************
  * Name:        invntt_tomont
  *
- * Description: Inverse NTT and multiplication by Montgomery factor 2^32.
- *              In-place. No modular reductions after additions or
- *              subtractions; input coefficients need to be smaller than
- *              MLDSA_Q in absolute value. Output coefficient are smaller than
- *              MLDSA_Q in absolute value.
+ * Description: Inverse NTT and multiplication by
+ *              Montgomery factor mont^2 /256. In-place.
+ *              No modular reductions after additions or subtractions;
+ *              input coefficients need to be smaller than MLDSA_Q in
+ *              absolute value.
+ *              Output coefficient are smaller than MLD_INTT_BOUND in
+ *              absolute value.
  *
- * Arguments:   - uint32_t a[MLDSA_N]: input/output coefficient array
+ * Arguments:   - int32_t a[MLDSA_N]: input/output coefficient array
  **************************************************/
 void invntt_tomont(int32_t a[MLDSA_N])
 __contract__(
   requires(memory_no_alias(a, MLDSA_N * sizeof(int32_t)))
   requires(array_abs_bound(a, 0, MLDSA_N, MLDSA_Q))
   assigns(memory_slice(a, MLDSA_N * sizeof(int32_t)))
-  ensures(array_abs_bound(a, 0, MLDSA_N, MLDSA_Q))
+  ensures(array_abs_bound(a, 0, MLDSA_N, MLD_INTT_BOUND))
 );
 
 #endif /* !MLD_NTT_H */
