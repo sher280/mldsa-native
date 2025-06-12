@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 FIPS202_SRCS = $(wildcard mldsa/fips202/*.c)
+ifeq ($(OPT),1)
+	FIPS202_SRCS += $(wildcard mldsa/fips202/native/aarch64/src/*.S) $(wildcard mldsa/fips202/native/aarch64/src/*.c) $(wildcard mldsa/fips202/native/x86_64/src/*.c)
+endif
+
 
 SOURCES += $(wildcard mldsa/*.c)
 ifeq ($(OPT),1)
