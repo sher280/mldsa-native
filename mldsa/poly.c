@@ -452,14 +452,23 @@ void poly_uniform_4x(poly *vec0, poly *vec1, poly *vec2, poly *vec3,
  *              target buffer. This avoids shifting the buffer base in the
  *              caller, which appears tricky to reason about. */
 #if MLDSA_ETA == 2
-#define POLY_UNIFORM_ETA_NBLOCKS \
-  ((136 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
+/*
+ * Sampling 256 coefficients mod 15 using rejection sampling from 4 bits.
+ * Expected number of required bytes: (256 * (16/15))/2 = 136.5 bytes.
+ * We sample 1 block (=136 bytes) of SHAKE256_RATE output initially.
+ * Sampling 2 blocks initially results in slightly worse performance.
+ */
+#define POLY_UNIFORM_ETA_NBLOCKS 1
 #elif MLDSA_ETA == 4
-#define POLY_UNIFORM_ETA_NBLOCKS \
-  ((227 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
-#else
+/*
+ * Sampling 256 coefficients mod 9 using rejection sampling from 4 bits.
+ * Expected number of required bytes: (256 * (16/9))/2 = 227.5 bytes.
+ * We sample 2 blocks (=272 bytes) of SHAKE256_RATE output initially.
+ */
+#define POLY_UNIFORM_ETA_NBLOCKS 2
+#else /* MLDSA_ETA == 4 */
 #error "Invalid value of MLDSA_ETA"
-#endif
+#endif /* MLDSA_ETA != 2 && MLDSA_ETA != 4 */
 static unsigned int rej_eta(int32_t *a, unsigned int target,
                             unsigned int offset, const uint8_t *buf,
                             unsigned int buflen)
@@ -476,6 +485,33 @@ __contract__(
 {
   unsigned int ctr, pos;
   uint32_t t0, t1;
+
+/* TODO: CBMC proof based on mld_rej_uniform_eta2_native */
+#if MLDSA_ETA == 2 && defined(MLD_USE_NATIVE_REJ_UNIFORM_ETA2)
+  if (offset == 0)
+  {
+    int ret = mld_rej_uniform_eta2_native(a, target, buf, buflen);
+    if (ret != -1)
+    {
+      unsigned res = (unsigned)ret;
+      mld_assert_abs_bound(a, res, MLDSA_ETA + 1);
+      return res;
+    }
+  }
+/* TODO: CBMC proof based on mld_rej_uniform_eta4_native */
+#elif MLDSA_ETA == 4 && defined(MLD_USE_NATIVE_REJ_UNIFORM_ETA4)
+  if (offset == 0)
+  {
+    int ret = mld_rej_uniform_eta4_native(a, target, buf, buflen);
+    if (ret != -1)
+    {
+      unsigned res = (unsigned)ret;
+      mld_assert_abs_bound(a, res, MLDSA_ETA + 1);
+      return res;
+    }
+  }
+#endif /* !(MLDSA_ETA == 2 && MLD_USE_NATIVE_REJ_UNIFORM_ETA2) && MLDSA_ETA == \
+          4 && MLD_USE_NATIVE_REJ_UNIFORM_ETA4 */
 
   ctr = offset;
   pos = 0;
