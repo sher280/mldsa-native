@@ -14,8 +14,7 @@ ifeq ($(OPT),1)
 	CFLAGS += -DMLD_CONFIG_USE_NATIVE_BACKEND_ARITH -DMLD_CONFIG_USE_NATIVE_BACKEND_FIPS202
 endif
 
-ALL_TESTS = test_mldsa acvp_mldsa bench_mldsa bench_components_mldsa gen_NISTKAT gen_KAT
-NON_NIST_TESTS = $(filter-out gen_NISTKAT,$(ALL_TESTS))
+ALL_TESTS = test_mldsa acvp_mldsa bench_mldsa bench_components_mldsa gen_KAT
 
 MLDSA44_DIR = $(BUILD_DIR)/mldsa44
 MLDSA65_DIR = $(BUILD_DIR)/mldsa65
@@ -64,15 +63,6 @@ $(foreach scheme,mldsa44 mldsa65 mldsa87, \
 	) \
 )
 
-# nistkat tests require special RNG
-$(MLDSA44_DIR)/bin/gen_NISTKAT44: CFLAGS += -Itest/nistrng
-$(MLDSA44_DIR)/bin/gen_NISTKAT44: $(call MAKE_OBJS, $(MLDSA44_DIR), $(wildcard test/nistrng/*.c))
-$(MLDSA65_DIR)/bin/gen_NISTKAT65: CFLAGS += -Itest/nistrng
-$(MLDSA65_DIR)/bin/gen_NISTKAT65: $(call MAKE_OBJS, $(MLDSA65_DIR), $(wildcard test/nistrng/*.c))
-$(MLDSA87_DIR)/bin/gen_NISTKAT87: CFLAGS += -Itest/nistrng
-$(MLDSA87_DIR)/bin/gen_NISTKAT87: $(call MAKE_OBJS, $(MLDSA87_DIR), $(wildcard test/nistrng/*.c))
-
-# All other tests use test-only RNG
-$(NON_NIST_TESTS:%=$(MLDSA44_DIR)/bin/%44): $(call MAKE_OBJS, $(MLDSA44_DIR), $(wildcard test/notrandombytes/*.c))
-$(NON_NIST_TESTS:%=$(MLDSA65_DIR)/bin/%65): $(call MAKE_OBJS, $(MLDSA65_DIR), $(wildcard test/notrandombytes/*.c))
-$(NON_NIST_TESTS:%=$(MLDSA87_DIR)/bin/%87): $(call MAKE_OBJS, $(MLDSA87_DIR), $(wildcard test/notrandombytes/*.c))
+$(ALL_TESTS:%=$(MLDSA44_DIR)/bin/%44): $(call MAKE_OBJS, $(MLDSA44_DIR), $(wildcard test/notrandombytes/*.c))
+$(ALL_TESTS:%=$(MLDSA65_DIR)/bin/%65): $(call MAKE_OBJS, $(MLDSA65_DIR), $(wildcard test/notrandombytes/*.c))
+$(ALL_TESTS:%=$(MLDSA87_DIR)/bin/%87): $(call MAKE_OBJS, $(MLDSA87_DIR), $(wildcard test/notrandombytes/*.c))
