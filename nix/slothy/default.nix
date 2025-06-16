@@ -7,6 +7,7 @@
 , python3
 , pkgs
 , llvm
+, gcc
 }:
 
 let
@@ -18,13 +19,13 @@ let
 in
 stdenvNoCC.mkDerivation rec {
   pname = "slothy-cli";
-  version = "5fafd8048c3ba7c5924cbd2e16e77040fa847447";
+  version = "915c224166207ce07b31152194305c3b6687d09b";
 
   src = fetchFromGitHub {
     owner = "slothy-optimizer";
     repo = "slothy";
     rev = version;
-    sha256 = "sha256-3X8Z4Wgb+sGrDYTffBrG4hF3UAIVwab60XMiijtZlIY";
+    sha256 = "sha256-ebZjm+nhmML/+DZF78eN1ezoxbv5Rrc5kWsh0Ycww4U=";
   };
 
   nativeBuildInputs = [ pkgs.makeWrapper ];
@@ -42,7 +43,7 @@ stdenvNoCC.mkDerivation rec {
 
   dontStrip = true;
   noAuditTmpdir = true;
-  propagatedBuildInputs = [ pythonEnv llvm ];
+  propagatedBuildInputs = [ pythonEnv llvm gcc ];
 
   meta = {
     description = "Slothy: assembly-level superoptimizer";
