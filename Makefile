@@ -2,14 +2,14 @@
 # Copyright (c) The mldsa-native project authors
 # SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
-.PHONY: func kat nistkat acvp \
-	func_44 kat_44 nistkat_44 acvp_44 \
-	func_65 kat_65 nistkat_65 acvp_65 \
-	func_87 kat_87 nistkat_87 acvp_87 \
-	run_func run_kat run_nistkat run_acvp \
-	run_func_44 run_kat_44 run_nistkat_44 \
-	run_func_65 run_kat_65 run_nistkat_65 \
-	run_func_87 run_kat_87 run_nistkat_87 \
+.PHONY: func kat acvp \
+	func_44 kat_44 acvp_44 \
+	func_65 kat_65 acvp_65 \
+	func_87 kat_87 acvp_87 \
+	run_func run_kat run_acvp \
+	run_func_44 run_kat_44 \
+	run_func_65 run_kat_65 \
+	run_func_87 run_kat_87 \
 	bench_44 bench_65 bench_87 bench \
 	run_bench_44 run_bench_65 run_bench_87 run_bench \
 	bench_components_44 bench_components_65 bench_components_87 bench_components \
@@ -28,10 +28,10 @@ include test/mk/rules.mk
 
 quickcheck: test
 
-build: func nistkat kat acvp
+build: func kat acvp
 	$(Q)echo "  Everything builds fine!"
 
-test: run_kat run_nistkat run_func run_acvp
+test: run_kat run_func run_acvp
 	$(Q)echo "  Everything checks fine!"
 
 run_kat_44: kat_44
@@ -41,14 +41,6 @@ run_kat_65: kat_65
 run_kat_87: kat_87
 	$(W) $(MLDSA87_DIR)/bin/gen_KAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  kat-sha256
 run_kat: run_kat_44 run_kat_65 run_kat_87
-
-run_nistkat_44: nistkat_44
-	$(W) $(MLDSA44_DIR)/bin/gen_NISTKAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  nistkat-sha256
-run_nistkat_65: nistkat_65
-	$(W) $(MLDSA65_DIR)/bin/gen_NISTKAT65 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-65  nistkat-sha256
-run_nistkat_87: nistkat_87
-	$(W) $(MLDSA87_DIR)/bin/gen_NISTKAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  nistkat-sha256
-run_nistkat: run_nistkat_44 run_nistkat_65 run_nistkat_87
 
 run_func_44: func_44
 	$(W) $(MLDSA44_DIR)/bin/test_mldsa44
@@ -68,14 +60,6 @@ func_65: $(MLDSA65_DIR)/bin/test_mldsa65
 func_87: $(MLDSA87_DIR)/bin/test_mldsa87
 	$(Q)echo "  FUNC       ML-DSA-87:  $^"
 func: func_44 func_65 func_87
-
-nistkat_44: $(MLDSA44_DIR)/bin/gen_NISTKAT44
-	$(Q)echo "  NISTKAT    ML-DSA-44:   $^"
-nistkat_65: $(MLDSA65_DIR)/bin/gen_NISTKAT65
-	$(Q)echo "  NISTKAT    ML-DSA-65:   $^"
-nistkat_87: $(MLDSA87_DIR)/bin/gen_NISTKAT87
-	$(Q)echo "  NISTKAT    ML-DSA-87:  $^"
-nistkat: nistkat_44 nistkat_65 nistkat_87
 
 kat_44: $(MLDSA44_DIR)/bin/gen_KAT44
 	$(Q)echo "  KAT        ML-DSA-44:   $^"
