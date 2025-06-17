@@ -12,9 +12,9 @@
 #include "../mldsa/sign.h"
 #include "hal.h"
 
-#define NWARMUP 10
-#define NITERATIONS 25
-#define NTESTS 250
+#define NWARMUP 3
+#define NITERATIONS 5
+#define NTESTS 1000
 #define MLEN 59
 #define CTXLEN 1
 
@@ -35,10 +35,18 @@ static int cmp_uint64_t(const void *a, const void *b)
   return (int)((*((const uint64_t *)a)) - (*((const uint64_t *)b)));
 }
 
-static void print_median(const char *txt, uint64_t cyc[NTESTS])
+static void print_avg(const char *txt, uint64_t cyc[NTESTS])
 {
-  printf("%10s cycles = %" PRIu64 "\n", txt, cyc[NTESTS >> 1] / NITERATIONS);
+  uint64_t avg = 0;
+  int i;
+  for (i = 0; i < NTESTS; i++)
+  {
+    avg += cyc[i];
+  }
+  avg /= (NTESTS * NITERATIONS);
+  printf("%10s cycles (avg) = %" PRIu64 "\n", txt, avg);
 }
+
 
 static int percentiles[] = {1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99};
 
@@ -142,15 +150,16 @@ static int bench(void)
     CHECK(ret == 0);
   }
 
+  print_avg("keypair", cycles_kg);
+  print_avg("sign", cycles_sign);
+  print_avg("verify", cycles_verify);
+
+  printf("\n");
+
   qsort(cycles_kg, NTESTS, sizeof(uint64_t), cmp_uint64_t);
   qsort(cycles_sign, NTESTS, sizeof(uint64_t), cmp_uint64_t);
   qsort(cycles_verify, NTESTS, sizeof(uint64_t), cmp_uint64_t);
 
-  print_median("keypair", cycles_kg);
-  print_median("sign", cycles_sign);
-  print_median("verify", cycles_verify);
-
-  printf("\n");
 
   print_percentile_legend();
 
