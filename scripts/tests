@@ -567,7 +567,7 @@ class Tests:
                         {
                             "name": f"{schemeStr} {primitive}",
                             "unit": "cycles",
-                            "value": d[f"{primitive} cycles"],
+                            "value": d[f"{primitive} cycles (avg)"],
                         }
                     )
 
