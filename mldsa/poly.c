@@ -355,7 +355,7 @@ void poly_uniform(poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
   mld_xof128_release(&state);
 }
 
-void poly_uniform_4x(poly *vec,
+void poly_uniform_4x(poly *vec0, poly *vec1, poly *vec2, poly *vec3,
                      uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
 {
   /* Temporary buffers for XOF output before rejection sampling */
@@ -367,7 +367,6 @@ void poly_uniform_4x(poly *vec,
   mld_xof128_x4_ctx state;
   unsigned buflen;
 
-
   mld_xof128_x4_init(&state);
   mld_xof128_x4_absorb(&state, seed, MLDSA_SEEDBYTES + 2);
 
@@ -376,14 +375,12 @@ void poly_uniform_4x(poly *vec,
    * This should generate the matrix entries with high probability.
    */
 
-
   mld_xof128_x4_squeezeblocks(buf, POLY_UNIFORM_NBLOCKS, &state);
   buflen = POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES;
-  ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, 0, buf[0], buflen);
-  ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, 0, buf[1], buflen);
-  ctr[2] = rej_uniform(vec[2].coeffs, MLDSA_N, 0, buf[2], buflen);
-  ctr[3] = rej_uniform(vec[3].coeffs, MLDSA_N, 0, buf[3], buflen);
-
+  ctr[0] = rej_uniform(vec0->coeffs, MLDSA_N, 0, buf[0], buflen);
+  ctr[1] = rej_uniform(vec1->coeffs, MLDSA_N, 0, buf[1], buflen);
+  ctr[2] = rej_uniform(vec2->coeffs, MLDSA_N, 0, buf[2], buflen);
+  ctr[3] = rej_uniform(vec3->coeffs, MLDSA_N, 0, buf[3], buflen);
 
   /*
    * So long as not all matrix entries have been generated, squeeze
@@ -393,19 +390,21 @@ void poly_uniform_4x(poly *vec,
   while (ctr[0] < MLDSA_N || ctr[1] < MLDSA_N || ctr[2] < MLDSA_N ||
          ctr[3] < MLDSA_N)
   __loop__(
-    assigns(ctr, state, memory_slice(vec, sizeof(poly) * 4), object_whole(buf))
+    assigns(ctr, state, object_whole(buf),
+            memory_slice(vec0, sizeof(poly)), memory_slice(vec1, sizeof(poly)),
+            memory_slice(vec2, sizeof(poly)), memory_slice(vec3, sizeof(poly)))
     invariant(ctr[0] <= MLDSA_N && ctr[1] <= MLDSA_N)
     invariant(ctr[2] <= MLDSA_N && ctr[3] <= MLDSA_N)
-    invariant(array_bound(vec[0].coeffs, 0, ctr[0], 0, MLDSA_Q))
-    invariant(array_bound(vec[1].coeffs, 0, ctr[1], 0, MLDSA_Q))
-    invariant(array_bound(vec[2].coeffs, 0, ctr[2], 0, MLDSA_Q))
-    invariant(array_bound(vec[3].coeffs, 0, ctr[3], 0, MLDSA_Q)))
+    invariant(array_bound(vec0->coeffs, 0, ctr[0], 0, MLDSA_Q))
+    invariant(array_bound(vec1->coeffs, 0, ctr[1], 0, MLDSA_Q))
+    invariant(array_bound(vec2->coeffs, 0, ctr[2], 0, MLDSA_Q))
+    invariant(array_bound(vec3->coeffs, 0, ctr[3], 0, MLDSA_Q)))
   {
     mld_xof128_x4_squeezeblocks(buf, 1, &state);
-    ctr[0] = rej_uniform(vec[0].coeffs, MLDSA_N, ctr[0], buf[0], buflen);
-    ctr[1] = rej_uniform(vec[1].coeffs, MLDSA_N, ctr[1], buf[1], buflen);
-    ctr[2] = rej_uniform(vec[2].coeffs, MLDSA_N, ctr[2], buf[2], buflen);
-    ctr[3] = rej_uniform(vec[3].coeffs, MLDSA_N, ctr[3], buf[3], buflen);
+    ctr[0] = rej_uniform(vec0->coeffs, MLDSA_N, ctr[0], buf[0], buflen);
+    ctr[1] = rej_uniform(vec1->coeffs, MLDSA_N, ctr[1], buf[1], buflen);
+    ctr[2] = rej_uniform(vec2->coeffs, MLDSA_N, ctr[2], buf[2], buflen);
+    ctr[3] = rej_uniform(vec3->coeffs, MLDSA_N, ctr[3], buf[3], buflen);
   }
   mld_xof128_x4_release(&state);
 }
@@ -549,9 +548,9 @@ void poly_uniform_eta_4x(poly *r0, poly *r1, poly *r2, poly *r3,
          ctr[3] < MLDSA_N)
   __loop__(
     assigns(ctr, state, memory_slice(r0, sizeof(poly)),
-            memory_slice(r1, sizeof(poly)), memory_slice(r2, sizeof(poly)), 
+            memory_slice(r1, sizeof(poly)), memory_slice(r2, sizeof(poly)),
             memory_slice(r3, sizeof(poly)), object_whole(buf[0]),
-            object_whole(buf[1]), object_whole(buf[2]), 
+            object_whole(buf[1]), object_whole(buf[2]),
             object_whole(buf[3]))
     invariant(ctr[0] <= MLDSA_N && ctr[1] <= MLDSA_N)
     invariant(ctr[2] <= MLDSA_N && ctr[3] <= MLDSA_N)

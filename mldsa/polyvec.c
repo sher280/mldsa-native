@@ -55,8 +55,6 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
       array_bound(mat[k2].vec[l2].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
   )
   {
-    poly tmpvec[4];
-
     for (j = 0; j < 4; j++)
     __loop__(
       assigns(j, object_whole(seed_ext))
@@ -70,28 +68,10 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
       seed_ext[j][MLDSA_SEEDBYTES + 1] = x;
     }
 
-    /*
-     * This call writes across polyvec boundaries for L=5 and L=7.
-     */
-    /* TODO: This is actually not safe; we cannot be sure that the compiler
-     * does not introduce any padding here. Need to refactor the data type to
-     * polymat as in mlkem-native.
-     */
-
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    poly_uniform_4x(tmpvec, seed_ext);
-    mat[i / MLDSA_L].vec[i % MLDSA_L] = tmpvec[0];
-    mat[(i + 1) / MLDSA_L].vec[(i + 1) % MLDSA_L] = tmpvec[1];
-    mat[(i + 2) / MLDSA_L].vec[(i + 2) % MLDSA_L] = tmpvec[2];
-    mat[(i + 3) / MLDSA_L].vec[(i + 3) % MLDSA_L] = tmpvec[3];
-
-    /* Here is the call without the work-around. This confuses CBMC, since it
-     * writes across struct boundaries:
-     *      poly_uniform_4x(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], seed_ext);
-     */
-
+    poly_uniform_4x(&mat[i / MLDSA_L].vec[i % MLDSA_L],
+                    &mat[(i + 1) / MLDSA_L].vec[(i + 1) % MLDSA_L],
+                    &mat[(i + 2) / MLDSA_L].vec[(i + 2) % MLDSA_L],
+                    &mat[(i + 3) / MLDSA_L].vec[(i + 3) % MLDSA_L], seed_ext);
   }
 
   /* For MLDSA_K=6, MLDSA_L=5, process the last two entries individually */

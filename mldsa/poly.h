@@ -321,23 +321,29 @@ __contract__(
  * Description: Generate four polynomials using rejection sampling
  *              on (pseudo-)uniformly random bytes sampled from a seed.
  *
- * Arguments:   - poly *vec:
- *                Pointer to an array of 4 polynomials to be sampled.
+ * Arguments:   - poly *vec0, *vec1, *vec2, *vec3:
+ *                Pointers to 4 polynomials to be sampled.
  *              - uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)]:
  *                Pointer consecutive array of seed buffers of size
  *                MLDSA_SEEDBYTES + 2 each, plus padding for alignment.
  *
  **************************************************/
-void poly_uniform_4x(poly *vec,
+void poly_uniform_4x(poly *vec0, poly *vec1, poly *vec2, poly *vec3,
                      uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)])
 __contract__(
-  requires(memory_no_alias(vec, 4 * sizeof(poly)))
+  requires(memory_no_alias(vec0, sizeof(poly)))
+  requires(memory_no_alias(vec1, sizeof(poly)))
+  requires(memory_no_alias(vec2, sizeof(poly)))
+  requires(memory_no_alias(vec3, sizeof(poly)))
   requires(memory_no_alias(seed,  4 * MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)))
-  assigns(memory_slice(vec, 4 * sizeof(poly)))
-  ensures(array_bound(vec[0].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
-  ensures(array_bound(vec[1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
-  ensures(array_bound(vec[2].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
-  ensures(array_bound(vec[3].coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  assigns(memory_slice(vec0, sizeof(poly)))
+  assigns(memory_slice(vec1, sizeof(poly)))
+  assigns(memory_slice(vec2, sizeof(poly)))
+  assigns(memory_slice(vec3, sizeof(poly)))
+  ensures(array_bound(vec0->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec1->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec2->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
+  ensures(array_bound(vec3->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
 );
 
 #define poly_uniform_eta_4x MLD_NAMESPACE(poly_uniform_eta_4x)
