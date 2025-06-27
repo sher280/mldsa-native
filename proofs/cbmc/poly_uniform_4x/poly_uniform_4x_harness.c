@@ -9,7 +9,7 @@ void harness(void)
   poly *r1;
   poly *r2;
   poly *r3;
-  uint8_t seed[4][MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)];
+  uint8_t(*seed)[MLD_ALIGN_UP(MLDSA_SEEDBYTES + 2)];
 
   poly_uniform_4x(r0, r1, r2, r3, seed);
 }
