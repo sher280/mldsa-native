@@ -86,6 +86,12 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
     mat[(i + 1) / MLDSA_L].vec[(i + 1) % MLDSA_L] = tmpvec[1];
     mat[(i + 2) / MLDSA_L].vec[(i + 2) % MLDSA_L] = tmpvec[2];
     mat[(i + 3) / MLDSA_L].vec[(i + 3) % MLDSA_L] = tmpvec[3];
+
+    /* Here is the call without the work-around. This confuses CBMC, since it
+     * writes across struct boundaries:
+     *      poly_uniform_4x(&mat[(i) / MLDSA_L].vec[(i) % MLDSA_L], seed_ext);
+     */
+
   }
 
   /* For MLDSA_K=6, MLDSA_L=5, process the last two entries individually */
@@ -101,20 +107,14 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
       array_bound(mat[k2].vec[l2].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
   )
   {
-    poly tmp;
     uint8_t x = i / MLDSA_L;
     uint8_t y = i % MLDSA_L;
+    poly *this_poly = &mat[i / MLDSA_L].vec[i % MLDSA_L];
 
     seed_ext[0][MLDSA_SEEDBYTES + 0] = y;
     seed_ext[0][MLDSA_SEEDBYTES + 1] = x;
 
-
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    poly_uniform(&tmp, seed_ext[0]);
-    mat[i / MLDSA_L].vec[i % MLDSA_L] = tmp;
-
+    poly_uniform(this_poly, seed_ext[0]);
     i++;
   }
 
@@ -172,17 +172,13 @@ void polyvecl_reduce(polyvecl *v)
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
     invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k2, 0, i,
       array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))))
   {
-    poly t = v->vec[i];
-    poly_reduce(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_reduce(&v->vec[i]);
   }
 }
 
@@ -194,16 +190,12 @@ void polyvecl_add(polyvecl *u, const polyvecl *v)
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
+    assigns(i, memory_slice(u, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
-    invariant(forall(k0, i, MLDSA_L, 
+    invariant(forall(k0, i, MLDSA_L,
               forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
   {
-    poly tmp = u->vec[i];
-    poly_add(&tmp, &v->vec[i]);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    u->vec[i] = tmp;
+    poly_add(&u->vec[i], &v->vec[i]);
   }
 }
 
@@ -213,16 +205,12 @@ void polyvecl_ntt(polyvecl *v)
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
     invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND))))
   {
-    poly t = v->vec[i];
-    poly_ntt(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_ntt(&v->vec[i]);
   }
 }
 
@@ -232,16 +220,12 @@ void polyvecl_invntt_tomont(polyvecl *v)
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
     invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_INTT_BOUND))))
   {
-    poly t = v->vec[i];
-    poly_invntt_tomont(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_invntt_tomont(&v->vec[i]);
   }
 }
 
@@ -317,18 +301,14 @@ void polyveck_reduce(polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k2, 0, i,
       array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
   )
   {
-    poly t = v->vec[i];
-    poly_reduce(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_reduce(&v->vec[i]);
   }
 }
 
@@ -338,16 +318,12 @@ void polyveck_caddq(polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_bound(v->vec[k1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
   {
-    poly t = v->vec[i];
-    poly_caddq(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_caddq(&v->vec[i]);
   }
 }
 
@@ -359,16 +335,12 @@ void polyveck_add(polyveck *u, const polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(u, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
-    invariant(forall(k0, i, MLDSA_K, 
+    invariant(forall(k0, i, MLDSA_K,
              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
   {
-    poly tmp = u->vec[i];
-    poly_add(&tmp, &v->vec[i]);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    u->vec[i] = tmp;
+    poly_add(&u->vec[i], &v->vec[i]);
   }
 }
 
@@ -378,16 +350,12 @@ void polyveck_sub(polyveck *u, const polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(u, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
-    invariant(forall(k0, i, MLDSA_K, 
+    invariant(forall(k0, i, MLDSA_K,
              forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1]))))
   {
-    poly tmp = u->vec[i];
-    poly_sub(&tmp, &v->vec[i]);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    u->vec[i] = tmp;
+    poly_sub(&u->vec[i], &v->vec[i]);
   }
 }
 
@@ -407,16 +375,12 @@ void polyveck_ntt(polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND))))
   {
-    poly t = v->vec[i];
-    poly_ntt(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_ntt(&v->vec[i]);
   }
 }
 
@@ -426,16 +390,12 @@ void polyveck_invntt_tomont(polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(v, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_INTT_BOUND))))
   {
-    poly t = v->vec[i];
-    poly_invntt_tomont(&t);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v->vec[i] = t;
+    poly_invntt_tomont(&v->vec[i]);
   }
 }
 
@@ -475,18 +435,12 @@ void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(v0, sizeof(polyveck)), memory_slice(v1, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i, array_bound(v0->vec[k1].coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1)))
     invariant(forall(k2, 0, i, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1))))
   {
-    poly a1, a0;
-    poly_power2round(&a1, &a0, &v->vec[i]);
-
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v1->vec[i] = a1;
-    v0->vec[i] = a0;
+    poly_power2round(&v1->vec[i], &v0->vec[i], &v->vec[i]);
   }
 }
 
@@ -496,22 +450,14 @@ void polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, object_whole(v0), object_whole(v1))
+    assigns(i, memory_slice(v0, sizeof(polyveck)), memory_slice(v1, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i,
                      array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)) &&
                      array_abs_bound(v0->vec[k1].coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1)))
   )
   {
-    poly c0, c1;
-
-    poly_decompose(&c1, &c0, &v->vec[i]);
-
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    v0->vec[i] = c0;
-    v1->vec[i] = c1;
+    poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);
   }
 }
 
@@ -539,14 +485,10 @@ void polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h)
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
+    assigns(i, memory_slice(w, sizeof(polyveck)))
     invariant(i <= MLDSA_K))
   {
-    poly t;
-    poly_use_hint(&t, &u->vec[i], &h->vec[i]);
-    /* Full struct assignment from local variables to simplify proof */
-    /* TODO: eliminate once CBMC resolves
-     * https://github.com/diffblue/cbmc/issues/8617 */
-    w->vec[i] = t;
+    poly_use_hint(&w->vec[i], &u->vec[i], &h->vec[i]);
   }
 }
 

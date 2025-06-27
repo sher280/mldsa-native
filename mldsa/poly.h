@@ -221,8 +221,8 @@ __contract__(
   requires(memory_no_alias(a0, sizeof(poly)))
   requires(memory_no_alias(a, sizeof(poly)))
   requires(array_bound(a->coeffs, 0, MLDSA_N, 0, MLDSA_Q))
-  assigns(object_whole(a1))
-  assigns(object_whole(a0))
+  assigns(memory_slice(a1, sizeof(poly)))
+  assigns(memory_slice(a0, sizeof(poly)))
   ensures(array_bound(a1->coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)))
   ensures(array_abs_bound(a0->coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1))
 );
