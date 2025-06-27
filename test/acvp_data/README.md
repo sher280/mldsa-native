@@ -2,7 +2,7 @@
 
 This directory contains the ACVP test vectors from
 https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files
-(Version v1.1.0.39, https://github.com/usnistgov/ACVP-Server/tree/v1.1.0.39).
+(Version v1.1.0.40, https://github.com/usnistgov/ACVP-Server/tree/v1.1.0.40).
 
 
 
