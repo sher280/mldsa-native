@@ -197,6 +197,7 @@ class TEST_TYPES(Enum):
     KAT = 3
     BENCH_COMPONENTS = 4
     ACVP = 5
+    STACK = 6
 
     def is_benchmark(self):
         return self in [TEST_TYPES.BENCH, TEST_TYPES.BENCH_COMPONENTS]
@@ -231,6 +232,8 @@ class TEST_TYPES(Enum):
             return "Kat Test"
         if self == TEST_TYPES.ACVP:
             return "ACVP Test"
+        if self == TEST_TYPES.STACK:
+            return "Stack Usage Test"
 
     def make_dir(self):
         return ""
@@ -246,6 +249,8 @@ class TEST_TYPES(Enum):
             return "kat"
         if self == TEST_TYPES.ACVP:
             return "acvp"
+        if self == TEST_TYPES.STACK:
+            return "stack"
 
     def make_run_target(self, scheme):
         t = self.make_target()
@@ -405,6 +410,16 @@ class Tests:
         env_update = {}
         if len(self.cmd_prefix()) > 0:
             env_update["EXEC_WRAPPER"] = " ".join(self.cmd_prefix())
+
+        # Add stack analysis flags for stack tests
+        if test_type == TEST_TYPES.STACK:
+            stack_flags = []
+            if hasattr(self.args, "peak_only") and self.args.peak_only:
+                stack_flags.append("--peak-only")
+            if hasattr(self.args, "dump_massif") and self.args.dump_massif:
+                stack_flags.append("--dump-massif")
+            if stack_flags:
+                env_update["STACK_ANALYSIS_FLAGS"] = " ".join(stack_flags)
 
         env = os.environ.copy()
         env.update(env_update)
@@ -576,11 +591,25 @@ class Tests:
 
         self.check_fail()
 
+    def stack(self):
+        def _stack(opt):
+            self._compile_schemes(TEST_TYPES.STACK, opt)
+            if self.args.run:
+                self._run_schemes(TEST_TYPES.STACK, opt, suppress_output=False)
+
+        if self.do_no_opt():
+            _stack(False)
+        if self.do_opt():
+            _stack(True)
+
+        self.check_fail()
+
     def all(self):
         func = self.args.func
         kat = self.args.kat
         acvp = self.args.acvp
         examples = self.args.examples
+        stack = self.args.stack
 
         def _all(opt):
             if func is True:
@@ -589,6 +618,8 @@ class Tests:
                 self._compile_schemes(TEST_TYPES.KAT, opt)
             if acvp is True:
                 self._compile_schemes(TEST_TYPES.ACVP, opt)
+            if stack is True:
+                self._compile_schemes(TEST_TYPES.STACK, opt)
 
             if self.args.run is False:
                 return
@@ -599,6 +630,8 @@ class Tests:
                 self._run_schemes(TEST_TYPES.KAT, opt)
             if acvp is True:
                 self._run_scheme(TEST_TYPES.ACVP, opt, None)
+            if stack is True:
+                self._run_schemes(TEST_TYPES.STACK, opt, suppress_output=False)
 
         if self.do_no_opt():
             _all(False)
@@ -829,6 +862,21 @@ def cli():
         help="Do not run examples",
     )
 
+    stack_group = all_parser.add_mutually_exclusive_group()
+    stack_group.add_argument(
+        "--stack",
+        action="store_true",
+        dest="stack",
+        help="Run stack analysis",
+        default=False,
+    )
+    stack_group.add_argument(
+        "--no-stack",
+        action="store_false",
+        dest="stack",
+        help="Do not run stack analysis",
+    )
+
     # acvp arguments
     acvp_parser = cmd_subparsers.add_parser(
         "acvp", help="Run ACVP client", parents=[common_parser]
@@ -950,6 +998,25 @@ def cli():
         "kat", help="Run the kat tests for all parameter sets", parents=[common_parser]
     )
 
+    # stack arguments
+    stack_parser = cmd_subparsers.add_parser(
+        "stack",
+        help="Analyze stack usage for all parameter sets",
+        parents=[common_parser],
+    )
+    stack_parser.add_argument(
+        "--peak-only",
+        action="store_true",
+        help="Show only runtime peak stack usage (skip per-function analysis)",
+        default=False,
+    )
+    stack_parser.add_argument(
+        "--dump-massif",
+        action="store_true",
+        help="Dump full massif log for debugging",
+        default=False,
+    )
+
     args = main_parser.parse_args()
 
     if not hasattr(args, "mac_taskpolicy"):
@@ -971,6 +1038,8 @@ def cli():
         Tests(args).func()
     elif args.cmd == "kat":
         Tests(args).kat()
+    elif args.cmd == "stack":
+        Tests(args).stack()
 
 
 if __name__ == "__main__":

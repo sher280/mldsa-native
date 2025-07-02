@@ -14,7 +14,7 @@ ifeq ($(OPT),1)
 	CFLAGS += -DMLD_CONFIG_USE_NATIVE_BACKEND_ARITH -DMLD_CONFIG_USE_NATIVE_BACKEND_FIPS202
 endif
 
-ALL_TESTS = test_mldsa acvp_mldsa bench_mldsa bench_components_mldsa gen_KAT
+ALL_TESTS = test_mldsa acvp_mldsa bench_mldsa bench_components_mldsa gen_KAT test_stack
 
 MLDSA44_DIR = $(BUILD_DIR)/mldsa44
 MLDSA65_DIR = $(BUILD_DIR)/mldsa65
@@ -39,6 +39,10 @@ $(MLDSA87_DIR)/bin/bench_mldsa87: CFLAGS += -Itest/hal
 $(MLDSA44_DIR)/bin/bench_components_mldsa44: CFLAGS += -Itest/hal
 $(MLDSA65_DIR)/bin/bench_components_mldsa65: CFLAGS += -Itest/hal
 $(MLDSA87_DIR)/bin/bench_components_mldsa87: CFLAGS += -Itest/hal
+
+$(MLDSA44_DIR)/bin/test_stack44: CFLAGS += -Imldsa -fstack-usage
+$(MLDSA65_DIR)/bin/test_stack65: CFLAGS += -Imldsa -fstack-usage
+$(MLDSA87_DIR)/bin/test_stack87: CFLAGS += -Imldsa -fstack-usage
 
 $(MLDSA44_DIR)/bin/bench_mldsa44: $(MLDSA44_DIR)/test/hal/hal.c.o
 $(MLDSA65_DIR)/bin/bench_mldsa65: $(MLDSA65_DIR)/test/hal/hal.c.o
