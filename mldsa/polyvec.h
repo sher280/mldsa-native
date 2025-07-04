@@ -54,10 +54,10 @@ void polyvecl_reduce(polyvecl *v)
 __contract__(
   requires(memory_no_alias(v, sizeof(polyvecl)))
   requires(forall(k0, 0, MLDSA_L,
-    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX)))
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX)))
   assigns(memory_slice(v, sizeof(polyvecl)))
   ensures(forall(k1, 0, MLDSA_L,
-    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
 );
 
 #define polyvecl_add MLD_NAMESPACE(polyvecl_add)
@@ -76,7 +76,7 @@ void polyvecl_add(polyvecl *u, const polyvecl *v)
 __contract__(
   requires(memory_no_alias(u, sizeof(polyvecl)))
   requires(memory_no_alias(v, sizeof(polyvecl)))
-  requires(forall(k0, 0, MLDSA_L, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k0, 0, MLDSA_L, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] < REDUCE32_DOMAIN_MAX)))
   requires(forall(k2, 0, MLDSA_L, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
   assigns(object_whole(u))
   ensures(forall(k4, 0, MLDSA_L, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == old(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
@@ -149,8 +149,14 @@ __contract__(
  *              multiply resulting vector by 2^{-32} and add (accumulate)
  *              polynomials in it.
  *              Input/output vectors are in NTT domain representation.
- *              The second input is assumed to be output of an NTT, and
- *              hence must have coefficients bounded by (-9q, +9q).
+ *
+ *              The first input "u" must be the output of
+ *              polyvec_matrix_expand() and so have coefficients in [0, Q-1]
+ *              inclusive.
+ *
+ *              The second input "v" is assumed to be output of an NTT, and
+ *              hence must have coefficients bounded by [-9q+1, +9q-1]
+ *              inclusive.
  *
  *
  * Arguments:   - poly *w: output polynomial
@@ -163,9 +169,12 @@ __contract__(
   requires(memory_no_alias(w, sizeof(poly)))
   requires(memory_no_alias(u, sizeof(polyvecl)))
   requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(l0, 0, MLDSA_L,
+                  array_bound(u->vec[l0].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
   requires(forall(l1, 0, MLDSA_L,
     array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
   assigns(memory_slice(w, sizeof(poly)))
+  ensures(array_abs_bound(w->coeffs, 0, MLDSA_N, MLDSA_Q))
 );
 
 
@@ -180,15 +189,16 @@ __contract__(
  *              - int32_t B: norm bound
  *
  * Returns 0 if norm of all polynomials is strictly smaller than B <=
- *(MLDSA_Q-1)/8 and 1 otherwise.
+ * (MLDSA_Q-1)/8 and 1 otherwise.
  **************************************************/
 int polyvecl_chknorm(const polyvecl *v, int32_t B)
 __contract__(
   requires(memory_no_alias(v, sizeof(polyvecl)))
   requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
   requires(forall(k0, 0, MLDSA_L,
-    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
   ensures(return_value == 0 || return_value == 1)
+  ensures((return_value == 0) == forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, B)))
 );
 
 /* Vectors of polynomials of length MLDSA_K */
@@ -210,10 +220,10 @@ void polyveck_reduce(polyveck *v)
 __contract__(
   requires(memory_no_alias(v, sizeof(polyveck)))
   requires(forall(k0, 0, MLDSA_K,
-    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX)))
+    array_bound(v->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX)))
   assigns(memory_slice(v, sizeof(polyveck)))
   ensures(forall(k1, 0, MLDSA_K,
-    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+    array_bound(v->vec[k1].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
 );
 
 #define polyveck_caddq MLD_NAMESPACE(polyveck_caddq)
@@ -251,7 +261,7 @@ void polyveck_add(polyveck *u, const polyveck *v)
 __contract__(
   requires(memory_no_alias(u, sizeof(polyveck)))
   requires(memory_no_alias(v, sizeof(polyveck)))
-  requires(forall(k0, 0, MLDSA_K, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] <= INT32_MAX)))
+  requires(forall(k0, 0, MLDSA_K, forall(k1, 0, MLDSA_N, (int64_t) u->vec[k0].coeffs[k1] + v->vec[k0].coeffs[k1] < REDUCE32_DOMAIN_MAX)))
   requires(forall(k2, 0, MLDSA_K, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
   assigns(object_whole(u))
   ensures(forall(k4, 0, MLDSA_K, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == old(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
@@ -370,8 +380,9 @@ __contract__(
   requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
   requires(forall(k0, 0, MLDSA_K,
                   array_bound(v->vec[k0].coeffs, 0, MLDSA_N,
-                              -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+                              -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
   ensures(return_value == 0 || return_value == 1)
+  ensures((return_value == 0) == forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, B)))
 );
 
 #define polyveck_power2round MLD_NAMESPACE(polyveck_power2round)
@@ -398,7 +409,7 @@ __contract__(
   assigns(memory_slice(v1, sizeof(polyveck)))
   assigns(memory_slice(v0, sizeof(polyveck)))
   ensures(forall(k1, 0, MLDSA_K, array_bound(v0->vec[k1].coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1)))
-  ensures(forall(k2, 0, MLDSA_K, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1)))
+  ensures(forall(k2, 0, MLDSA_K, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, ((MLDSA_Q - 1) / MLD_2_POW_D) + 1)))
 );
 
 #define polyveck_decompose MLD_NAMESPACE(polyveck_decompose)
@@ -628,8 +639,14 @@ __contract__(
  * Description: Compute matrix-vector multiplication in NTT domain with
  *              pointwise multiplication and multiplication by 2^{-32}.
  *              Input matrix and vector must be in NTT domain representation.
- *              The input vector is assumed to be output of an NTT, and
- *              hence must have coefficients bounded by (-9q, +9q).
+ *
+ *              The first input "mat" must be the output of
+ *              polyvec_matrix_expand() and so have coefficients in [0, Q-1]
+ *              inclusive.
+ *
+ *              The second input "v" is assumed to be output of an NTT, and
+ *              hence must have coefficients bounded by [-9q+1, +9q-1]
+ *              inclusive.
  *
  * Arguments:   - polyveck *t: pointer to output vector t
  *              - const polyvecl mat[MLDSA_K]: pointer to input matrix
@@ -642,9 +659,13 @@ __contract__(
   requires(memory_no_alias(t, sizeof(polyveck)))
   requires(memory_no_alias(mat, MLDSA_K*sizeof(polyvecl)))
   requires(memory_no_alias(v, sizeof(polyvecl)))
+  requires(forall(k1, 0, MLDSA_K, forall(l1, 0, MLDSA_L,
+                                         array_bound(mat[k1].vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
   requires(forall(l1, 0, MLDSA_L,
-    array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+                  array_abs_bound(v->vec[l1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
   assigns(object_whole(t))
+  ensures(forall(k0, 0, MLDSA_K,
+                 array_abs_bound(t->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
 );
 
 #endif /* !MLD_POLYVEC_H */

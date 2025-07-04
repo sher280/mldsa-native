@@ -19,18 +19,18 @@ void poly_reduce(poly *a)
   unsigned int i;
   /* TODO: Introduce the following after using inclusive lower bounds in
    * the underlying debug function mld_debug_check_bounds(). */
-  /* mld_assert_bound(a->coeffs, MLDSA_N, INT32_MIN, REDUCE_DOMAIN_MAX); */
+  /* mld_assert_bound(a->coeffs, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX); */
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
     invariant(i <= MLDSA_N)
     invariant(forall(k0, i, MLDSA_N, a->coeffs[k0] == loop_entry(*a).coeffs[k0]))
-    invariant(array_bound(a->coeffs, 0, i, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+    invariant(array_bound(a->coeffs, 0, i, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
   {
     a->coeffs[i] = reduce32(a->coeffs[i]);
   }
 
-  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX);
+  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX);
 }
 
 void poly_caddq(poly *a)
@@ -57,10 +57,13 @@ void poly_add(poly *r, const poly *b)
   unsigned int i;
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
-      invariant(i <= MLDSA_N)
-      invariant(forall(k0, i, MLDSA_N, r->coeffs[k0] == loop_entry(*r).coeffs[k0]))
-      invariant(forall(k1, 0, i, r->coeffs[k1] == loop_entry(*r).coeffs[k1] + b->coeffs[k1]))
-    )
+    assigns(i, memory_slice(r, sizeof(poly)))
+    invariant(i <= MLDSA_N)
+    invariant(forall(k0, i, MLDSA_N, r->coeffs[k0] == loop_entry(*r).coeffs[k0]))
+    invariant(forall(k1, 0, i, r->coeffs[k1] == loop_entry(*r).coeffs[k1] + b->coeffs[k1]))
+    invariant(forall(k2, 0, i, r->coeffs[k2] < REDUCE32_DOMAIN_MAX))
+    invariant(forall(k2, 0, i, r->coeffs[k2] >= INT32_MIN))
+  )
   {
     r->coeffs[i] = r->coeffs[i] + b->coeffs[i];
   }
@@ -153,7 +156,7 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
     assigns(i, memory_slice(a0, sizeof(poly)), memory_slice(a1, sizeof(poly)))
     invariant(i <= MLDSA_N)
     invariant(array_bound(a0->coeffs, 0, i, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1))
-    invariant(array_bound(a1->coeffs, 0, i, 0, (MLD_2_POW_D/2)+1))
+    invariant(array_bound(a1->coeffs, 0, i, 0, ((MLDSA_Q - 1) / MLD_2_POW_D) + 1))
   )
   {
     power2round(&a0->coeffs[i], &a1->coeffs[i], a->coeffs[i]);
@@ -161,7 +164,7 @@ void poly_power2round(poly *a1, poly *a0, const poly *a)
 
   mld_assert_bound(a0->coeffs, MLDSA_N, -(MLD_2_POW_D / 2) + 1,
                    (MLD_2_POW_D / 2) + 1);
-  mld_assert_bound(a1->coeffs, MLDSA_N, 0, (MLD_2_POW_D / 2) + 1);
+  mld_assert_bound(a1->coeffs, MLDSA_N, 0, ((MLDSA_Q - 1) / MLD_2_POW_D) + 1);
 }
 
 void poly_decompose(poly *a1, poly *a0, const poly *a)
@@ -230,7 +233,7 @@ int poly_chknorm(const poly *a, int32_t B)
   unsigned int i;
   int rc = 0;
   int32_t t;
-  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX);
+  mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX);
 
   /* It is ok to leak which coefficient violates the bound since
      the probability for each coefficient is independent of secret

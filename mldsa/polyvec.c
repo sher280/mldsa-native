@@ -118,6 +118,12 @@ void polyvec_matrix_pointwise_montgomery(polyveck *t,
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
+  __loop__(
+    assigns(i, memory_slice(t, sizeof(polyveck)))
+    invariant(i <= MLDSA_K)
+    invariant(forall(k0, 0, i,
+                     array_abs_bound(t->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
+  )
   {
     polyvecl_pointwise_acc_montgomery(&t->vec[i], &mat[i], v);
   }
@@ -156,7 +162,7 @@ void polyvecl_reduce(polyvecl *v)
     invariant(i <= MLDSA_L)
     invariant(forall(k0, i, MLDSA_L, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k2, 0, i,
-      array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX))))
+      array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX))))
   {
     poly_reduce(&v->vec[i]);
   }
@@ -172,9 +178,10 @@ void polyvecl_add(polyvecl *u, const polyvecl *v)
   __loop__(
     assigns(i, memory_slice(u, sizeof(polyvecl)))
     invariant(i <= MLDSA_L)
-    invariant(forall(k0, i, MLDSA_L, 
+    invariant(forall(k0, i, MLDSA_L,
               forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
-    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5]))))
+    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
+  )
   {
     poly_add(&u->vec[i], &v->vec[i]);
   }
@@ -225,31 +232,51 @@ void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
                                        const polyvecl *v)
 {
   unsigned int i, j;
-  /* The second input is bounded by 9q. Hence, we can safely accumulate
-   * in 64-bits without intermediate reductions as
-   * MLDSA_L * MLD_NTT_BOUND * INT32_MAX < INT64_MAX
-   * worst case is ML-DSA-87: 7 * 9 * q * 2**31 < 2**63
-   * (likewise for negative values)
+  /* The first input is bounded by [0, Q-1] inclusive
+   * The second input is bounded by [-9Q+1, 9Q-1] inclusive . Hence, we can
+   * safely accumulate in 64-bits without intermediate reductions as
+   * MLDSA_L * (MLD_NTT_BOUND-1) * (Q-1) < INT64_MAX
+   *
+   * The worst case is ML-DSA-87: 7 * (9Q-1) * (Q-1) < 2**52
+   * (and likewise for negative values)
    */
 
   for (i = 0; i < MLDSA_N; i++)
   __loop__(
     assigns(i, j, object_whole(w))
     invariant(i <= MLDSA_N)
+    invariant(array_abs_bound(w->coeffs, 0, i, MLDSA_Q))
   )
   {
     int64_t t = 0;
+    int32_t r;
     for (j = 0; j < MLDSA_L; j++)
     __loop__(
       assigns(j, t)
       invariant(j <= MLDSA_L)
-      invariant(t <= -(int64_t)j*INT32_MIN*MLD_NTT_BOUND)
-      invariant(t >= (int64_t)j*INT32_MIN*MLD_NTT_BOUND)
+      invariant(t >= -(int64_t)j*(MLDSA_Q - 1)*(MLD_NTT_BOUND - 1))
+      invariant(t <= (int64_t)j*(MLDSA_Q - 1)*(MLD_NTT_BOUND - 1))
     )
     {
       t += (int64_t)u->vec[j].coeffs[i] * v->vec[j].coeffs[i];
     }
-    w->coeffs[i] = montgomery_reduce(t);
+
+    /* Substitute j == MLSDA_L into the loop invariant to get... */
+    cassert(j == MLDSA_L);
+    cassert(t >= -(int64_t)MLDSA_L * (MLDSA_Q - 1) * (MLD_NTT_BOUND - 1));
+    cassert(t <= (int64_t)MLDSA_L * (MLDSA_Q - 1) * (MLD_NTT_BOUND - 1));
+
+    /* ...and therefore... */
+    cassert(t >= -MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX);
+    cassert(t < MONTGOMERY_REDUCE_STRONG_DOMAIN_MAX);
+
+    /* ...which meets the "strong" case of montgomery_reduce() */
+    r = montgomery_reduce(t);
+
+    /* ...and therefore we can assert a stronger bound on r */
+    cassert(r > -MLDSA_Q);
+    cassert(r < MLDSA_Q);
+    w->coeffs[i] = r;
   }
 }
 
@@ -261,6 +288,7 @@ int polyvecl_chknorm(const polyvecl *v, int32_t bound)
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
     invariant(i <= MLDSA_L)
+    invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
   )
   {
     if (poly_chknorm(&v->vec[i], bound))
@@ -286,7 +314,7 @@ void polyveck_reduce(polyveck *v)
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k2, 0, i,
-      array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE_RANGE_MAX, REDUCE_RANGE_MAX)))
+      array_bound(v->vec[k2].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
   )
   {
     poly_reduce(&v->vec[i]);
@@ -318,9 +346,10 @@ void polyveck_add(polyveck *u, const polyveck *v)
   __loop__(
     assigns(i, memory_slice(u, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
-    invariant(forall(k0, i, MLDSA_K, 
+    invariant(forall(k0, i, MLDSA_K,
               forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
-    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5]))))
+    invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
+  )
   {
     poly_add(&u->vec[i], &v->vec[i]);
   }
@@ -400,6 +429,7 @@ int polyveck_chknorm(const polyveck *v, int32_t bound)
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
     invariant(i <= MLDSA_K)
+    invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
   )
   {
     if (poly_chknorm(&v->vec[i], bound))
@@ -420,7 +450,8 @@ void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v)
     assigns(i, memory_slice(v0, sizeof(polyveck)), memory_slice(v1, sizeof(polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i, array_bound(v0->vec[k1].coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1)))
-    invariant(forall(k2, 0, i, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, (MLD_2_POW_D/2)+1))))
+    invariant(forall(k2, 0, i, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, ((MLDSA_Q - 1) / MLD_2_POW_D) + 1)))
+  )
   {
     poly_power2round(&v1->vec[i], &v0->vec[i], &v->vec[i]);
   }
