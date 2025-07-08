@@ -11,6 +11,8 @@
 #define MLD_USE_NATIVE_NTT
 #define MLD_USE_NATIVE_INTT
 #define MLD_USE_NATIVE_REJ_UNIFORM
+#define MLD_USE_NATIVE_REJ_UNIFORM_ETA2
+#define MLD_USE_NATIVE_REJ_UNIFORM_ETA4
 
 /* Identifier for this backend so that source and assembly files
  * in the build can be appropriately guarded. */
@@ -41,6 +43,34 @@ static MLD_INLINE int mld_rej_uniform_native(int32_t *r, unsigned len,
     return -1;
   }
   return (int)mld_rej_uniform_asm(r, buf, buflen, mld_rej_uniform_table);
+}
+
+static MLD_INLINE int mld_rej_uniform_eta2_native(int32_t *r, unsigned len,
+                                                  const uint8_t *buf,
+                                                  unsigned buflen)
+{
+  /* AArch64 implementation assumes specific buffer lengths */
+  if (len != MLDSA_N || buflen != MLD_AARCH64_REJ_UNIFORM_ETA2_BUFLEN)
+  {
+    return -1;
+  }
+
+  return (int)mld_rej_uniform_eta2_asm(r, buf, buflen,
+                                       mld_rej_uniform_eta_table);
+}
+
+static MLD_INLINE int mld_rej_uniform_eta4_native(int32_t *r, unsigned len,
+                                                  const uint8_t *buf,
+                                                  unsigned buflen)
+{
+  /* AArch64 implementation assumes specific buffer lengths */
+  if (len != MLDSA_N || buflen != MLD_AARCH64_REJ_UNIFORM_ETA4_BUFLEN)
+  {
+    return -1;
+  }
+
+  return (int)mld_rej_uniform_eta4_asm(r, buf, buflen,
+                                       mld_rej_uniform_eta_table);
 }
 
 #endif /* !__ASSEMBLER__ */
