@@ -14,21 +14,60 @@
 #include "sign.h"
 #include "symmetric.h"
 
+static void mld_sample_s1_s2(polyvecl *s1, polyveck *s2,
+                             const uint8_t seed[MLDSA_CRHBYTES])
+__contract__(
+  requires(memory_no_alias(s1, sizeof(polyvecl)))
+  requires(memory_no_alias(s2, sizeof(polyveck)))
+  requires(memory_no_alias(seed, MLDSA_CRHBYTES))
+  assigns(object_whole(s1), object_whole(s2))
+  ensures(forall(l0, 0, MLDSA_L, array_abs_bound(s1->vec[l0].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
+  ensures(forall(k0, 0, MLDSA_K, array_abs_bound(s2->vec[k0].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
+)
+{
+/* Sample short vectors s1 and s2 */
+#if MLDSA_MODE == 2
+  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3], seed,
+                      4, 5, 6, 7);
+#elif MLDSA_MODE == 3
+  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s1->vec[4], &s2->vec[0], &s2->vec[1],
+                      &s2->vec[2] /* irrelevant */, seed, 4, 5, 6,
+                      0xFF /* irrelevant */);
+  poly_uniform_eta_4x(&s2->vec[2], &s2->vec[3], &s2->vec[4], &s2->vec[5], seed,
+                      7, 8, 9, 10);
+#elif MLDSA_MODE == 5
+  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
+                      0, 1, 2, 3);
+  poly_uniform_eta_4x(&s1->vec[4], &s1->vec[5], &s1->vec[6],
+                      &s2->vec[0] /* irrelevant */, seed, 4, 5, 6,
+                      0xFF /* irrelevant */);
+  poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3], seed,
+                      7, 8, 9, 10);
+  poly_uniform_eta_4x(&s2->vec[4], &s2->vec[5], &s2->vec[6], &s2->vec[7], seed,
+                      11, 12, 13, 14);
+#endif /* MLDSA_MODE == 5 */
+}
+
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
                                  const uint8_t seed[MLDSA_SEEDBYTES])
 {
   uint8_t seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_CRHBYTES];
+  uint8_t inbuf[MLDSA_SEEDBYTES + 2];
   uint8_t tr[MLDSA_TRBYTES];
   const uint8_t *rho, *rhoprime, *key;
   polyvecl mat[MLDSA_K];
   polyvecl s1, s1hat;
-  polyveck s2, t1, t0;
+  polyveck s2, t2, t1, t0;
 
   /* Get randomness for rho, rhoprime and key */
-  memcpy(seedbuf, seed, MLDSA_SEEDBYTES);
-  seedbuf[MLDSA_SEEDBYTES + 0] = MLDSA_K;
-  seedbuf[MLDSA_SEEDBYTES + 1] = MLDSA_L;
-  shake256(seedbuf, 2 * MLDSA_SEEDBYTES + MLDSA_CRHBYTES, seedbuf,
+  memcpy(inbuf, seed, MLDSA_SEEDBYTES);
+  inbuf[MLDSA_SEEDBYTES + 0] = MLDSA_K;
+  inbuf[MLDSA_SEEDBYTES + 1] = MLDSA_L;
+  shake256(seedbuf, 2 * MLDSA_SEEDBYTES + MLDSA_CRHBYTES, inbuf,
            MLDSA_SEEDBYTES + 2);
   rho = seedbuf;
   rhoprime = rho + MLDSA_SEEDBYTES;
@@ -37,31 +76,7 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   /* Expand matrix */
   polyvec_matrix_expand(mat, rho);
 
-/* Sample short vectors s1 and s2 */
-#if MLDSA_MODE == 2
-  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s2.vec[0], &s2.vec[1], &s2.vec[2], &s2.vec[3], rhoprime,
-                      4, 5, 6, 7);
-#elif MLDSA_MODE == 3
-  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s1.vec[4], &s2.vec[0], &s2.vec[1],
-                      &s2.vec[2] /* irrelevant */, rhoprime, 4, 5, 6,
-                      0xFF /* irrelevant */);
-  poly_uniform_eta_4x(&s2.vec[2], &s2.vec[3], &s2.vec[4], &s2.vec[5], rhoprime,
-                      7, 8, 9, 10);
-#elif MLDSA_MODE == 5
-  poly_uniform_eta_4x(&s1.vec[0], &s1.vec[1], &s1.vec[2], &s1.vec[3], rhoprime,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s1.vec[4], &s1.vec[5], &s1.vec[6],
-                      &s2.vec[0] /* irrelevant */, rhoprime, 4, 5, 6,
-                      0xFF /* irrelevant */);
-  poly_uniform_eta_4x(&s2.vec[0], &s2.vec[1], &s2.vec[2], &s2.vec[3], rhoprime,
-                      7, 8, 9, 10);
-  poly_uniform_eta_4x(&s2.vec[4], &s2.vec[5], &s2.vec[6], &s2.vec[7], rhoprime,
-                      11, 12, 13, 14);
-#endif /* MLDSA_MODE == 5 */
+  mld_sample_s1_s2(&s1, &s2, rhoprime);
 
   /* Matrix-vector multiplication */
   s1hat = s1;
@@ -75,8 +90,8 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
 
   /* Extract t1 and write public key */
   polyveck_caddq(&t1);
-  polyveck_power2round(&t1, &t0, &t1);
-  pack_pk(pk, rho, &t1);
+  polyveck_power2round(&t2, &t0, &t1);
+  pack_pk(pk, rho, &t2);
 
   /* Compute H(rho, t1) and write secret key */
   shake256(tr, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
