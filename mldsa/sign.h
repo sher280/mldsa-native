@@ -7,11 +7,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "cbmc.h"
 #include "common.h"
 #include "poly.h"
 #include "polyvec.h"
 
-#define crypto_sign_keypair_internal MLD_NAMESPACE(keypair_internal)
+#define crypto_sign_keypair_internal MLD_NAMESPACE(crypto_sign_keypair_internal)
 /*************************************************
  * Name:        crypto_sign_keypair_internal
  *
@@ -28,7 +29,14 @@
  * Returns 0 (success)
  **************************************************/
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
-                                 const uint8_t seed[MLDSA_SEEDBYTES]);
+                                 const uint8_t seed[MLDSA_SEEDBYTES])
+__contract__(
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  requires(memory_no_alias(seed, MLDSA_SEEDBYTES))
+  assigns(object_whole(pk))
+  assigns(object_whole(sk))
+);
 
 #define crypto_sign_keypair MLD_NAMESPACE(keypair)
 /*************************************************
