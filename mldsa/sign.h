@@ -24,7 +24,7 @@
  *              - uint8_t *sk:   pointer to output private key (allocated
  *                               array of CRYPTO_SECRETKEYBYTES bytes)
  *              - uint8_t *seed: pointer to input random seed (MLDSA_SEEDBYTES
- *bytes)
+ *                               bytes)
  *
  * Returns 0 (success)
  **************************************************/
@@ -52,7 +52,13 @@ __contract__(
  *
  * Returns 0 (success)
  **************************************************/
-int crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
+int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
+__contract__(
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  assigns(object_whole(pk))
+  assigns(object_whole(sk))
+);
 
 #define crypto_sign_signature_internal MLD_NAMESPACE(signature_internal)
 /*************************************************
