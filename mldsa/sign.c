@@ -456,7 +456,8 @@ int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,
                              const uint8_t mu[MLDSA_CRHBYTES],
                              const uint8_t *pk)
 {
-  return crypto_sign_verify_internal(sig, siglen, mu, 0, NULL, 0, pk, 1);
+  return crypto_sign_verify_internal(sig, siglen, mu, MLDSA_CRHBYTES, NULL, 0,
+                                     pk, 1);
 }
 
 int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,

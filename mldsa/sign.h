@@ -173,7 +173,7 @@ __contract__(
   requires(memory_no_alias(sig, siglen))
   requires(memory_no_alias(m, mlen))
   requires(externalmu == 0 || (externalmu == 1 && mlen == MLDSA_CRHBYTES))
-  requires(memory_no_alias(pre, prelen))
+  requires(externalmu == 1 || memory_no_alias(pre, prelen))
   requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
   ensures(return_value == 0 || return_value == -1)
 );
@@ -222,7 +222,13 @@ __contract__(
  **************************************************/
 int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,
                              const uint8_t mu[MLDSA_CRHBYTES],
-                             const uint8_t *pk);
+                             const uint8_t *pk)
+__contract__(
+  requires(memory_no_alias(sig, siglen))
+  requires(memory_no_alias(mu, MLDSA_CRHBYTES))
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  ensures(return_value == 0 || return_value == -1)
+);
 
 #define crypto_sign_open MLD_NAMESPACE(open)
 /*************************************************
