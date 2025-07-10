@@ -197,7 +197,14 @@ __contract__(
  **************************************************/
 int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
                        size_t mlen, const uint8_t *ctx, size_t ctxlen,
-                       const uint8_t *pk);
+                       const uint8_t *pk)
+__contract__(
+  requires(memory_no_alias(sig, siglen))
+  requires(memory_no_alias(m, mlen))
+  requires(memory_no_alias(ctx, ctxlen))
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  ensures(return_value == 0 || return_value == -1)
+);
 
 #define crypto_sign_verify_extmu MLD_NAMESPACE(verify_extmu)
 /*************************************************
