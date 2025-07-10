@@ -480,6 +480,10 @@ int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
   {
     /* All good, copy msg, return 0 */
     for (i = 0; i < *mlen; ++i)
+    __loop__(
+      assigns(i, memory_slice(m, *mlen))
+      invariant(i <= *mlen)
+    )
     {
       m[i] = sm[CRYPTO_BYTES + i];
     }
@@ -490,6 +494,10 @@ badsig:
   /* Signature verification failed */
   *mlen = 0;
   for (i = 0; i < smlen; ++i)
+  __loop__(
+    assigns(i, memory_slice(m, smlen))
+    invariant(i <= smlen)
+  )
   {
     m[i] = 0;
   }
