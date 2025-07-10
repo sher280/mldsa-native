@@ -168,7 +168,15 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
 int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
                                 const uint8_t *m, size_t mlen,
                                 const uint8_t *pre, size_t prelen,
-                                const uint8_t *pk, int externalmu);
+                                const uint8_t *pk, int externalmu)
+__contract__(
+  requires(memory_no_alias(sig, siglen))
+  requires(memory_no_alias(m, mlen))
+  requires(externalmu == 0 || (externalmu == 1 && mlen == MLDSA_CRHBYTES))
+  requires(memory_no_alias(pre, prelen))
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  ensures(return_value == 0 || return_value == -1)
+);
 
 #define crypto_sign_verify MLD_NAMESPACE(verify)
 /*************************************************
