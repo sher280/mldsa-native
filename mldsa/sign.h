@@ -248,6 +248,16 @@ __contract__(
  * Returns 0 if signed message could be verified correctly and -1 otherwise
  **************************************************/
 int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
-                     const uint8_t *ctx, size_t ctxlen, const uint8_t *pk);
+                     const uint8_t *ctx, size_t ctxlen, const uint8_t *pk)
+__contract__(
+  requires(memory_no_alias(m, smlen))
+  requires(memory_no_alias(mlen, sizeof(size_t)))
+  requires(memory_no_alias(sm, smlen))
+  requires(memory_no_alias(ctx, ctxlen))
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  assigns(memory_slice(m, smlen))
+  assigns(memory_slice(mlen, sizeof(size_t)))
+  ensures(return_value == 0 || return_value == -1)
+);
 
 #endif /* !MLD_SIGN_H */
