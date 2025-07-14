@@ -111,7 +111,7 @@ void polyvec_matrix_expand(mld_polyvecl mat[MLDSA_K],
   }
 }
 
-void polyvec_matrix_pointwise_montgomery(polyveck *t,
+void polyvec_matrix_pointwise_montgomery(mld_polyveck *t,
                                          const mld_polyvecl mat[MLDSA_K],
                                          const mld_polyvecl *v)
 {
@@ -119,7 +119,7 @@ void polyvec_matrix_pointwise_montgomery(polyveck *t,
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(t, sizeof(polyveck)))
+    assigns(i, memory_slice(t, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, 0, i,
                      array_abs_bound(t->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
@@ -309,13 +309,13 @@ int polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
 /************ Vectors of polynomials of length MLDSA_K **************/
 /**************************************************************/
 
-void polyveck_reduce(polyveck *v)
+void polyveck_reduce(mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v, sizeof(polyveck)))
+    assigns(i, memory_slice(v, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k2, 0, i,
@@ -326,13 +326,13 @@ void polyveck_reduce(polyveck *v)
   }
 }
 
-void polyveck_caddq(polyveck *v)
+void polyveck_caddq(mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v, sizeof(polyveck)))
+    assigns(i, memory_slice(v, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_bound(v->vec[k1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
@@ -343,13 +343,13 @@ void polyveck_caddq(polyveck *v)
 
 /* Reference: We use destructive version (output=first input) to avoid
  *            reasoning about aliasing in the CBMC specification */
-void polyveck_add(polyveck *u, const polyveck *v)
+void polyveck_add(mld_polyveck *u, const mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(u, sizeof(polyveck)))
+    assigns(i, memory_slice(u, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K,
               forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
@@ -360,13 +360,13 @@ void polyveck_add(polyveck *u, const polyveck *v)
   }
 }
 
-void polyveck_sub(polyveck *u, const polyveck *v)
+void polyveck_sub(mld_polyveck *u, const mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(u, sizeof(polyveck)))
+    assigns(i, memory_slice(u, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, 0, i,
                      array_bound(u->vec[k0].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX)))
@@ -377,13 +377,13 @@ void polyveck_sub(polyveck *u, const polyveck *v)
   }
 }
 
-void polyveck_shiftl(polyveck *v)
+void polyveck_shiftl(mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v, sizeof(polyveck)))
+    assigns(i, memory_slice(v, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i, array_bound(v->vec[k1].coeffs, 0, MLDSA_N, 0, MLDSA_Q)))
     invariant(forall(k1, i, MLDSA_K,
@@ -394,13 +394,13 @@ void polyveck_shiftl(polyveck *v)
   }
 }
 
-void polyveck_ntt(polyveck *v)
+void polyveck_ntt(mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v, sizeof(polyveck)))
+    assigns(i, memory_slice(v, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_NTT_BOUND))))
@@ -409,13 +409,13 @@ void polyveck_ntt(polyveck *v)
   }
 }
 
-void polyveck_invntt_tomont(polyveck *v)
+void polyveck_invntt_tomont(mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v, sizeof(polyveck)))
+    assigns(i, memory_slice(v, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k0, i, MLDSA_K, forall(k1, 0, MLDSA_N, v->vec[k0].coeffs[k1] == loop_entry(*v).vec[k0].coeffs[k1])))
     invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, MLD_INTT_BOUND))))
@@ -424,14 +424,14 @@ void polyveck_invntt_tomont(polyveck *v)
   }
 }
 
-void polyveck_pointwise_poly_montgomery(polyveck *r, const mld_poly *a,
-                                        const polyveck *v)
+void polyveck_pointwise_poly_montgomery(mld_polyveck *r, const mld_poly *a,
+                                        const mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(r, sizeof(polyveck)))
+    assigns(i, memory_slice(r, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k2, 0, i, array_abs_bound(r->vec[k2].coeffs, 0, MLDSA_N, MLDSA_Q)))
   )
@@ -441,7 +441,7 @@ void polyveck_pointwise_poly_montgomery(polyveck *r, const mld_poly *a,
 }
 
 
-int polyveck_chknorm(const polyveck *v, int32_t bound)
+int polyveck_chknorm(const mld_polyveck *v, int32_t bound)
 {
   unsigned int i;
 
@@ -460,13 +460,14 @@ int polyveck_chknorm(const polyveck *v, int32_t bound)
   return 0;
 }
 
-void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v)
+void polyveck_power2round(mld_polyveck *v1, mld_polyveck *v0,
+                          const mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v0, sizeof(polyveck)), memory_slice(v1, sizeof(polyveck)))
+    assigns(i, memory_slice(v0, sizeof(mld_polyveck)), memory_slice(v1, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i, array_bound(v0->vec[k1].coeffs, 0, MLDSA_N, -(MLD_2_POW_D/2)+1, (MLD_2_POW_D/2)+1)))
     invariant(forall(k2, 0, i, array_bound(v1->vec[k2].coeffs, 0, MLDSA_N, 0, ((MLDSA_Q - 1) / MLD_2_POW_D) + 1)))
@@ -476,13 +477,14 @@ void polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v)
   }
 }
 
-void polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v)
+void polyveck_decompose(mld_polyveck *v1, mld_polyveck *v0,
+                        const mld_polyveck *v)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(v0, sizeof(polyveck)), memory_slice(v1, sizeof(polyveck)))
+    assigns(i, memory_slice(v0, sizeof(mld_polyveck)), memory_slice(v1, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k1, 0, i,
                      array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)) &&
@@ -493,8 +495,8 @@ void polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v)
   }
 }
 
-unsigned int polyveck_make_hint(polyveck *h, const polyveck *v0,
-                                const polyveck *v1)
+unsigned int polyveck_make_hint(mld_polyveck *h, const mld_polyveck *v0,
+                                const mld_polyveck *v1)
 {
   unsigned int i, s = 0;
 
@@ -511,13 +513,14 @@ unsigned int polyveck_make_hint(polyveck *h, const polyveck *v0,
   return s;
 }
 
-void polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h)
+void polyveck_use_hint(mld_polyveck *w, const mld_polyveck *u,
+                       const mld_polyveck *h)
 {
   unsigned int i;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
-    assigns(i, memory_slice(w, sizeof(polyveck)))
+    assigns(i, memory_slice(w, sizeof(mld_polyveck)))
     invariant(i <= MLDSA_K)
     invariant(forall(k2, 0, i,
                      array_bound(w->vec[k2].coeffs, 0, MLDSA_N, 0,
@@ -529,7 +532,7 @@ void polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h)
 }
 
 void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
-                      const polyveck *w1)
+                      const mld_polyveck *w1)
 {
   unsigned int i;
 
@@ -540,7 +543,7 @@ void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
 }
 
 void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
-                       const polyveck *p)
+                       const mld_polyveck *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
@@ -571,7 +574,7 @@ void polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
 
 
 void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
-                      const polyveck *p)
+                      const mld_polyveck *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
@@ -600,7 +603,7 @@ void polyvecl_unpack_z(mld_polyvecl *z,
   }
 }
 
-void polyveck_unpack_eta(polyveck *p,
+void polyveck_unpack_eta(mld_polyveck *p,
                          const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
 {
   unsigned int i;
@@ -610,7 +613,7 @@ void polyveck_unpack_eta(polyveck *p,
   }
 }
 
-void polyveck_unpack_t0(polyveck *p,
+void polyveck_unpack_t0(mld_polyveck *p,
                         const uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES])
 {
   unsigned int i;
