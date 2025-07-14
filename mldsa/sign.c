@@ -167,7 +167,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   uint16_t nonce = 0;
   polyvecl mat[MLDSA_K], s1, y, z;
   polyveck t0, s2, w1, w0, h;
-  poly cp;
+  mld_poly cp;
 
   rho = seedbuf;
   tr = rho + MLDSA_SEEDBYTES;
@@ -357,7 +357,7 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   uint8_t mu[MLDSA_CRHBYTES];
   uint8_t c[MLDSA_CTILDEBYTES];
   uint8_t c2[MLDSA_CTILDEBYTES];
-  poly cp;
+  mld_poly cp;
   polyvecl mat[MLDSA_K], z;
   polyveck t1, w1, tmp, h;
 

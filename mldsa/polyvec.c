@@ -89,7 +89,7 @@ void polyvec_matrix_expand(polyvecl mat[MLDSA_K],
   {
     uint8_t x = i / MLDSA_L;
     uint8_t y = i % MLDSA_L;
-    poly *this_poly = &mat[i / MLDSA_L].vec[i % MLDSA_L];
+    mld_poly *this_poly = &mat[i / MLDSA_L].vec[i % MLDSA_L];
 
     seed_ext[0][MLDSA_SEEDBYTES + 0] = y;
     seed_ext[0][MLDSA_SEEDBYTES + 1] = x;
@@ -217,7 +217,7 @@ void polyvecl_invntt_tomont(polyvecl *v)
   }
 }
 
-void polyvecl_pointwise_poly_montgomery(polyvecl *r, const poly *a,
+void polyvecl_pointwise_poly_montgomery(polyvecl *r, const mld_poly *a,
                                         const polyvecl *v)
 {
   unsigned int i;
@@ -233,7 +233,7 @@ void polyvecl_pointwise_poly_montgomery(polyvecl *r, const poly *a,
   }
 }
 
-void polyvecl_pointwise_acc_montgomery(poly *w, const polyvecl *u,
+void polyvecl_pointwise_acc_montgomery(mld_poly *w, const polyvecl *u,
                                        const polyvecl *v)
 {
   unsigned int i, j;
@@ -424,7 +424,7 @@ void polyveck_invntt_tomont(polyveck *v)
   }
 }
 
-void polyveck_pointwise_poly_montgomery(polyveck *r, const poly *a,
+void polyveck_pointwise_poly_montgomery(polyveck *r, const mld_poly *a,
                                         const polyveck *v)
 {
   unsigned int i;
