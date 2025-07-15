@@ -22,8 +22,8 @@ static MLD_INLINE void mld_poly_permute_bitrev_to_custom(int32_t data[MLDSA_N])
 #endif /* !MLD_USE_NATIVE_NTT_CUSTOM_ORDER */
 
 
-void polyvec_matrix_expand(mld_polyvecl mat[MLDSA_K],
-                           const uint8_t rho[MLDSA_SEEDBYTES])
+void mld_polyvec_matrix_expand(mld_polyvecl mat[MLDSA_K],
+                               const uint8_t rho[MLDSA_SEEDBYTES])
 {
   unsigned int i, j;
   /*
@@ -112,9 +112,9 @@ void polyvec_matrix_expand(mld_polyvecl mat[MLDSA_K],
   }
 }
 
-void polyvec_matrix_pointwise_montgomery(mld_polyveck *t,
-                                         const mld_polyvecl mat[MLDSA_K],
-                                         const mld_polyvecl *v)
+void mld_polyvec_matrix_pointwise_montgomery(mld_polyveck *t,
+                                             const mld_polyvecl mat[MLDSA_K],
+                                             const mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -126,15 +126,16 @@ void polyvec_matrix_pointwise_montgomery(mld_polyveck *t,
                      array_abs_bound(t->vec[k0].coeffs, 0, MLDSA_N, MLDSA_Q)))
   )
   {
-    polyvecl_pointwise_acc_montgomery(&t->vec[i], &mat[i], v);
+    mld_polyvecl_pointwise_acc_montgomery(&t->vec[i], &mat[i], v);
   }
 }
 
 /**************************************************************/
 /************ Vectors of polynomials of length MLDSA_L **************/
 /**************************************************************/
-void polyvecl_uniform_gamma1(mld_polyvecl *v,
-                             const uint8_t seed[MLDSA_CRHBYTES], uint16_t nonce)
+void mld_polyvecl_uniform_gamma1(mld_polyvecl *v,
+                                 const uint8_t seed[MLDSA_CRHBYTES],
+                                 uint16_t nonce)
 {
   nonce = MLDSA_L * nonce;
 #if MLDSA_L == 4
@@ -153,7 +154,7 @@ void polyvecl_uniform_gamma1(mld_polyvecl *v,
 #endif /* MLDSA_L == 7 */
 }
 
-void polyvecl_reduce(mld_polyvecl *v)
+void mld_polyvecl_reduce(mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -171,7 +172,7 @@ void polyvecl_reduce(mld_polyvecl *v)
 
 /* Reference: We use destructive version (output=first input) to avoid
  *            reasoning about aliasing in the CBMC specification */
-void polyvecl_add(mld_polyvecl *u, const mld_polyvecl *v)
+void mld_polyvecl_add(mld_polyvecl *u, const mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -188,7 +189,7 @@ void polyvecl_add(mld_polyvecl *u, const mld_polyvecl *v)
   }
 }
 
-void polyvecl_ntt(mld_polyvecl *v)
+void mld_polyvecl_ntt(mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -203,7 +204,7 @@ void polyvecl_ntt(mld_polyvecl *v)
   }
 }
 
-void polyvecl_invntt_tomont(mld_polyvecl *v)
+void mld_polyvecl_invntt_tomont(mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -218,8 +219,8 @@ void polyvecl_invntt_tomont(mld_polyvecl *v)
   }
 }
 
-void polyvecl_pointwise_poly_montgomery(mld_polyvecl *r, const mld_poly *a,
-                                        const mld_polyvecl *v)
+void mld_polyvecl_pointwise_poly_montgomery(mld_polyvecl *r, const mld_poly *a,
+                                            const mld_polyvecl *v)
 {
   unsigned int i;
 
@@ -234,8 +235,8 @@ void polyvecl_pointwise_poly_montgomery(mld_polyvecl *r, const mld_poly *a,
   }
 }
 
-void polyvecl_pointwise_acc_montgomery(mld_poly *w, const mld_polyvecl *u,
-                                       const mld_polyvecl *v)
+void mld_polyvecl_pointwise_acc_montgomery(mld_poly *w, const mld_polyvecl *u,
+                                           const mld_polyvecl *v)
 {
   unsigned int i, j;
   /* The first input is bounded by [0, Q-1] inclusive
@@ -287,7 +288,7 @@ void polyvecl_pointwise_acc_montgomery(mld_poly *w, const mld_polyvecl *u,
 }
 
 
-int polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
+int mld_polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
 {
   unsigned int i;
 
@@ -310,7 +311,7 @@ int polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
 /************ Vectors of polynomials of length MLDSA_K **************/
 /**************************************************************/
 
-void polyveck_reduce(mld_polyveck *v)
+void mld_polyveck_reduce(mld_polyveck *v)
 {
   unsigned int i;
 
@@ -327,7 +328,7 @@ void polyveck_reduce(mld_polyveck *v)
   }
 }
 
-void polyveck_caddq(mld_polyveck *v)
+void mld_polyveck_caddq(mld_polyveck *v)
 {
   unsigned int i;
 
@@ -344,7 +345,7 @@ void polyveck_caddq(mld_polyveck *v)
 
 /* Reference: We use destructive version (output=first input) to avoid
  *            reasoning about aliasing in the CBMC specification */
-void polyveck_add(mld_polyveck *u, const mld_polyveck *v)
+void mld_polyveck_add(mld_polyveck *u, const mld_polyveck *v)
 {
   unsigned int i;
 
@@ -361,7 +362,7 @@ void polyveck_add(mld_polyveck *u, const mld_polyveck *v)
   }
 }
 
-void polyveck_sub(mld_polyveck *u, const mld_polyveck *v)
+void mld_polyveck_sub(mld_polyveck *u, const mld_polyveck *v)
 {
   unsigned int i;
 
@@ -378,7 +379,7 @@ void polyveck_sub(mld_polyveck *u, const mld_polyveck *v)
   }
 }
 
-void polyveck_shiftl(mld_polyveck *v)
+void mld_polyveck_shiftl(mld_polyveck *v)
 {
   unsigned int i;
 
@@ -395,7 +396,7 @@ void polyveck_shiftl(mld_polyveck *v)
   }
 }
 
-void polyveck_ntt(mld_polyveck *v)
+void mld_polyveck_ntt(mld_polyveck *v)
 {
   unsigned int i;
 
@@ -410,7 +411,7 @@ void polyveck_ntt(mld_polyveck *v)
   }
 }
 
-void polyveck_invntt_tomont(mld_polyveck *v)
+void mld_polyveck_invntt_tomont(mld_polyveck *v)
 {
   unsigned int i;
 
@@ -425,8 +426,8 @@ void polyveck_invntt_tomont(mld_polyveck *v)
   }
 }
 
-void polyveck_pointwise_poly_montgomery(mld_polyveck *r, const mld_poly *a,
-                                        const mld_polyveck *v)
+void mld_polyveck_pointwise_poly_montgomery(mld_polyveck *r, const mld_poly *a,
+                                            const mld_polyveck *v)
 {
   unsigned int i;
 
@@ -442,7 +443,7 @@ void polyveck_pointwise_poly_montgomery(mld_polyveck *r, const mld_poly *a,
 }
 
 
-int polyveck_chknorm(const mld_polyveck *v, int32_t bound)
+int mld_polyveck_chknorm(const mld_polyveck *v, int32_t bound)
 {
   unsigned int i;
 
@@ -461,8 +462,8 @@ int polyveck_chknorm(const mld_polyveck *v, int32_t bound)
   return 0;
 }
 
-void polyveck_power2round(mld_polyveck *v1, mld_polyveck *v0,
-                          const mld_polyveck *v)
+void mld_polyveck_power2round(mld_polyveck *v1, mld_polyveck *v0,
+                              const mld_polyveck *v)
 {
   unsigned int i;
 
@@ -478,8 +479,8 @@ void polyveck_power2round(mld_polyveck *v1, mld_polyveck *v0,
   }
 }
 
-void polyveck_decompose(mld_polyveck *v1, mld_polyveck *v0,
-                        const mld_polyveck *v)
+void mld_polyveck_decompose(mld_polyveck *v1, mld_polyveck *v0,
+                            const mld_polyveck *v)
 {
   unsigned int i;
 
@@ -496,8 +497,8 @@ void polyveck_decompose(mld_polyveck *v1, mld_polyveck *v0,
   }
 }
 
-unsigned int polyveck_make_hint(mld_polyveck *h, const mld_polyveck *v0,
-                                const mld_polyveck *v1)
+unsigned int mld_polyveck_make_hint(mld_polyveck *h, const mld_polyveck *v0,
+                                    const mld_polyveck *v1)
 {
   unsigned int i, s = 0;
 
@@ -514,8 +515,8 @@ unsigned int polyveck_make_hint(mld_polyveck *h, const mld_polyveck *v0,
   return s;
 }
 
-void polyveck_use_hint(mld_polyveck *w, const mld_polyveck *u,
-                       const mld_polyveck *h)
+void mld_polyveck_use_hint(mld_polyveck *w, const mld_polyveck *u,
+                           const mld_polyveck *h)
 {
   unsigned int i;
 
@@ -532,8 +533,8 @@ void polyveck_use_hint(mld_polyveck *w, const mld_polyveck *u,
   }
 }
 
-void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
-                      const mld_polyveck *w1)
+void mld_polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
+                          const mld_polyveck *w1)
 {
   unsigned int i;
 
@@ -543,8 +544,8 @@ void polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
   }
 }
 
-void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
-                       const mld_polyveck *p)
+void mld_polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
+                           const mld_polyveck *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
@@ -553,8 +554,8 @@ void polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
   }
 }
 
-void polyvecl_pack_eta(uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES],
-                       const mld_polyvecl *p)
+void mld_polyvecl_pack_eta(uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES],
+                           const mld_polyvecl *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_L; ++i)
@@ -563,8 +564,8 @@ void polyvecl_pack_eta(uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES],
   }
 }
 
-void polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
-                     const mld_polyvecl *p)
+void mld_polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
+                         const mld_polyvecl *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_L; ++i)
@@ -574,8 +575,8 @@ void polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
 }
 
 
-void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
-                      const mld_polyveck *p)
+void mld_polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
+                          const mld_polyveck *p)
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
@@ -584,8 +585,8 @@ void polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
   }
 }
 
-void polyvecl_unpack_eta(mld_polyvecl *p,
-                         const uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES])
+void mld_polyvecl_unpack_eta(
+    mld_polyvecl *p, const uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES])
 {
   unsigned int i;
   for (i = 0; i < MLDSA_L; ++i)
@@ -594,8 +595,8 @@ void polyvecl_unpack_eta(mld_polyvecl *p,
   }
 }
 
-void polyvecl_unpack_z(mld_polyvecl *z,
-                       const uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES])
+void mld_polyvecl_unpack_z(mld_polyvecl *z,
+                           const uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES])
 {
   unsigned int i;
   for (i = 0; i < MLDSA_L; ++i)
@@ -604,8 +605,8 @@ void polyvecl_unpack_z(mld_polyvecl *z,
   }
 }
 
-void polyveck_unpack_eta(mld_polyveck *p,
-                         const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
+void mld_polyveck_unpack_eta(
+    mld_polyveck *p, const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
@@ -614,8 +615,8 @@ void polyveck_unpack_eta(mld_polyveck *p,
   }
 }
 
-void polyveck_unpack_t0(mld_polyveck *p,
-                        const uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES])
+void mld_polyveck_unpack_t0(mld_polyveck *p,
+                            const uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES])
 {
   unsigned int i;
   for (i = 0; i < MLDSA_K; ++i)
