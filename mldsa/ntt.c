@@ -13,7 +13,7 @@ __contract__(
   ensures(return_value > -MLDSA_Q && return_value < MLDSA_Q)
 )
 {
-  return montgomery_reduce((int64_t)a * (int64_t)b);
+  return mld_montgomery_reduce((int64_t)a * (int64_t)b);
   /* TODO: reason about bounds */
 }
 
@@ -35,7 +35,7 @@ __contract__(
 )
 {
   const int32_t f = 41978; /* mont^2/256 */
-  return montgomery_reduce((int64_t)a * f);
+  return mld_montgomery_reduce((int64_t)a * f);
   /* TODO: reason about bounds */
 }
 
@@ -139,13 +139,13 @@ __contract__(
     invariant(array_abs_bound(r, 0, start, layer * MLDSA_Q + MLDSA_Q))
     invariant(array_abs_bound(r, start, MLDSA_N, layer * MLDSA_Q)))
   {
-    int32_t zeta = zetas[k++];
+    int32_t zeta = mld_zetas[k++];
     mld_ntt_butterfly_block(r, zeta, start, len, layer * MLDSA_Q);
   }
 }
 
 
-void ntt(int32_t a[MLDSA_N])
+void mld_ntt(int32_t a[MLDSA_N])
 {
   unsigned int layer;
 
@@ -184,7 +184,7 @@ __contract__(
     invariant(array_abs_bound(r, start, MLDSA_N, (MLDSA_N >> layer) * MLDSA_Q)))
   {
     unsigned j;
-    int32_t zeta = -zetas[k--];
+    int32_t zeta = -mld_zetas[k--];
 
     for (j = start; j < start + len; j++)
     __loop__(
@@ -202,20 +202,7 @@ __contract__(
   }
 }
 
-/*************************************************
- * Name:        invntt_tomont
- *
- * Description: Inverse NTT and multiplication by Montgomery factor mont^2 /256.
- *              In-place. No modular reductions after additions or subtractions;
- *              Input coefficients need to be smaller than MLDSA_Q
- *              in absolute value.
- *              Output coefficient are smaller than MLD_INTT_BOUND
- *              in absolute value.
- *
- * Arguments:   - int32_t a[MLDSA_N]: input/output coefficient array
- **************************************************/
-void invntt_tomont(int32_t a[MLDSA_N])
-
+void mld_invntt_tomont(int32_t a[MLDSA_N])
 {
   unsigned int layer, j;
 

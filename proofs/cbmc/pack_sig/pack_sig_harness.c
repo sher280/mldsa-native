@@ -7,8 +7,8 @@
 void harness(void)
 {
   uint8_t *a, *b;
-  polyveck *h;
-  polyvecl *z;
+  mld_polyveck *h;
+  mld_polyvecl *z;
   unsigned int nh;
-  pack_sig(a, b, z, h, nh);
+  mld_pack_sig(a, b, z, h, nh);
 }

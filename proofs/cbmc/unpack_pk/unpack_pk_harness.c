@@ -7,6 +7,6 @@
 void harness(void)
 {
   uint8_t *a, *b;
-  polyveck *c;
-  unpack_pk(a, c, b);
+  mld_polyveck *c;
+  mld_unpack_pk(a, c, b);
 }

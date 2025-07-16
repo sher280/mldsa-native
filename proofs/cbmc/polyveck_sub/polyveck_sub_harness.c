@@ -5,6 +5,6 @@
 
 void harness(void)
 {
-  polyveck *u, *v;
-  polyveck_sub(u, v);
+  mld_polyveck *u, *v;
+  mld_polyveck_sub(u, v);
 }

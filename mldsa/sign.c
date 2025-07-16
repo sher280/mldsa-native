@@ -14,11 +14,11 @@
 #include "sign.h"
 #include "symmetric.h"
 
-static void mld_sample_s1_s2(polyvecl *s1, polyveck *s2,
+static void mld_sample_s1_s2(mld_polyvecl *s1, mld_polyveck *s2,
                              const uint8_t seed[MLDSA_CRHBYTES])
 __contract__(
-  requires(memory_no_alias(s1, sizeof(polyvecl)))
-  requires(memory_no_alias(s2, sizeof(polyveck)))
+  requires(memory_no_alias(s1, sizeof(mld_polyvecl)))
+  requires(memory_no_alias(s2, sizeof(mld_polyveck)))
   requires(memory_no_alias(seed, MLDSA_CRHBYTES))
   assigns(object_whole(s1), object_whole(s2))
   ensures(forall(l0, 0, MLDSA_L, array_abs_bound(s1->vec[l0].coeffs, 0, MLDSA_N, MLDSA_ETA + 1)))
@@ -27,28 +27,28 @@ __contract__(
 {
 /* Sample short vectors s1 and s2 */
 #if MLDSA_MODE == 2
-  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3], seed,
-                      4, 5, 6, 7);
+  mld_poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3],
+                          seed, 0, 1, 2, 3);
+  mld_poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3],
+                          seed, 4, 5, 6, 7);
 #elif MLDSA_MODE == 3
-  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s1->vec[4], &s2->vec[0], &s2->vec[1],
-                      &s2->vec[2] /* irrelevant */, seed, 4, 5, 6,
-                      0xFF /* irrelevant */);
-  poly_uniform_eta_4x(&s2->vec[2], &s2->vec[3], &s2->vec[4], &s2->vec[5], seed,
-                      7, 8, 9, 10);
+  mld_poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3],
+                          seed, 0, 1, 2, 3);
+  mld_poly_uniform_eta_4x(&s1->vec[4], &s2->vec[0], &s2->vec[1],
+                          &s2->vec[2] /* irrelevant */, seed, 4, 5, 6,
+                          0xFF /* irrelevant */);
+  mld_poly_uniform_eta_4x(&s2->vec[2], &s2->vec[3], &s2->vec[4], &s2->vec[5],
+                          seed, 7, 8, 9, 10);
 #elif MLDSA_MODE == 5
-  poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3], seed,
-                      0, 1, 2, 3);
-  poly_uniform_eta_4x(&s1->vec[4], &s1->vec[5], &s1->vec[6],
-                      &s2->vec[0] /* irrelevant */, seed, 4, 5, 6,
-                      0xFF /* irrelevant */);
-  poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3], seed,
-                      7, 8, 9, 10);
-  poly_uniform_eta_4x(&s2->vec[4], &s2->vec[5], &s2->vec[6], &s2->vec[7], seed,
-                      11, 12, 13, 14);
+  mld_poly_uniform_eta_4x(&s1->vec[0], &s1->vec[1], &s1->vec[2], &s1->vec[3],
+                          seed, 0, 1, 2, 3);
+  mld_poly_uniform_eta_4x(&s1->vec[4], &s1->vec[5], &s1->vec[6],
+                          &s2->vec[0] /* irrelevant */, seed, 4, 5, 6,
+                          0xFF /* irrelevant */);
+  mld_poly_uniform_eta_4x(&s2->vec[0], &s2->vec[1], &s2->vec[2], &s2->vec[3],
+                          seed, 7, 8, 9, 10);
+  mld_poly_uniform_eta_4x(&s2->vec[4], &s2->vec[5], &s2->vec[6], &s2->vec[7],
+                          seed, 11, 12, 13, 14);
 #endif /* MLDSA_MODE == 5 */
 }
 
@@ -59,9 +59,9 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   uint8_t inbuf[MLDSA_SEEDBYTES + 2];
   uint8_t tr[MLDSA_TRBYTES];
   const uint8_t *rho, *rhoprime, *key;
-  polyvecl mat[MLDSA_K];
-  polyvecl s1, s1hat;
-  polyveck s2, t2, t1, t0;
+  mld_polyvecl mat[MLDSA_K];
+  mld_polyvecl s1, s1hat;
+  mld_polyveck s2, t2, t1, t0;
 
   /* Get randomness for rho, rhoprime and key */
   memcpy(inbuf, seed, MLDSA_SEEDBYTES);
@@ -74,35 +74,35 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   key = rhoprime + MLDSA_CRHBYTES;
 
   /* Expand matrix */
-  polyvec_matrix_expand(mat, rho);
+  mld_polyvec_matrix_expand(mat, rho);
 
   mld_sample_s1_s2(&s1, &s2, rhoprime);
 
   /* Matrix-vector multiplication */
   s1hat = s1;
-  polyvecl_ntt(&s1hat);
-  polyvec_matrix_pointwise_montgomery(&t1, mat, &s1hat);
-  polyveck_reduce(&t1);
-  polyveck_invntt_tomont(&t1);
+  mld_polyvecl_ntt(&s1hat);
+  mld_polyvec_matrix_pointwise_montgomery(&t1, mat, &s1hat);
+  mld_polyveck_reduce(&t1);
+  mld_polyveck_invntt_tomont(&t1);
 
   /* Add error vector s2 */
-  polyveck_add(&t1, &s2);
+  mld_polyveck_add(&t1, &s2);
 
   /* Extract t1 and write public key */
-  polyveck_caddq(&t1);
-  polyveck_power2round(&t2, &t0, &t1);
-  pack_pk(pk, rho, &t2);
+  mld_polyveck_caddq(&t1);
+  mld_polyveck_power2round(&t2, &t0, &t1);
+  mld_pack_pk(pk, rho, &t2);
 
   /* Compute H(rho, t1) and write secret key */
   shake256(tr, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
-  pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
+  mld_pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
   return 0;
 }
 
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
   uint8_t seed[MLDSA_SEEDBYTES];
-  randombytes(seed, MLDSA_SEEDBYTES);
+  mld_randombytes(seed, MLDSA_SEEDBYTES);
   return crypto_sign_keypair_internal(pk, sk, seed);
 }
 
@@ -165,16 +165,16 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   uint8_t seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_TRBYTES + 2 * MLDSA_CRHBYTES];
   uint8_t *rho, *tr, *key, *mu, *rhoprime;
   uint16_t nonce = 0;
-  polyvecl mat[MLDSA_K], s1, y, z;
-  polyveck t0, s2, w1, w0, h;
-  poly cp;
+  mld_polyvecl mat[MLDSA_K], s1, y, z;
+  mld_polyveck t0, s2, w1, w0, h;
+  mld_poly cp;
 
   rho = seedbuf;
   tr = rho + MLDSA_SEEDBYTES;
   key = tr + MLDSA_TRBYTES;
   mu = key + MLDSA_SEEDBYTES;
   rhoprime = mu + MLDSA_CRHBYTES;
-  unpack_sk(rho, tr, key, &t0, &s1, &s2, sk);
+  mld_unpack_sk(rho, tr, key, &t0, &s1, &s2, sk);
 
   if (!externalmu)
   {
@@ -192,10 +192,10 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
         MLDSA_CRHBYTES);
 
   /* Expand matrix and transform vectors */
-  polyvec_matrix_expand(mat, rho);
-  polyvecl_ntt(&s1);
-  polyveck_ntt(&s2);
-  polyveck_ntt(&t0);
+  mld_polyvec_matrix_expand(mat, rho);
+  mld_polyvecl_ntt(&s1);
+  mld_polyveck_ntt(&s2);
+  mld_polyveck_ntt(&t0);
 
   /* Reference: This code is re-structured using a while(1),  */
   /* with explicit "continue" statements (rather than "goto") */
@@ -208,31 +208,31 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   )
   {
     /* Sample intermediate vector y */
-    polyvecl_uniform_gamma1(&y, rhoprime, nonce++);
+    mld_polyvecl_uniform_gamma1(&y, rhoprime, nonce++);
 
     /* Matrix-vector multiplication */
     z = y;
-    polyvecl_ntt(&z);
-    polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
-    polyveck_reduce(&w1);
-    polyveck_invntt_tomont(&w1);
+    mld_polyvecl_ntt(&z);
+    mld_polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
+    mld_polyveck_reduce(&w1);
+    mld_polyveck_invntt_tomont(&w1);
 
     /* Decompose w and call the random oracle */
-    polyveck_caddq(&w1);
-    polyveck_decompose(&w1, &w0, &w1);
-    polyveck_pack_w1(sig, &w1);
+    mld_polyveck_caddq(&w1);
+    mld_polyveck_decompose(&w1, &w0, &w1);
+    mld_polyveck_pack_w1(sig, &w1);
 
     mld_H(sig, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, sig,
           MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
-    poly_challenge(&cp, sig);
-    poly_ntt(&cp);
+    mld_poly_challenge(&cp, sig);
+    mld_poly_ntt(&cp);
 
     /* Compute z, reject if it reveals secret */
-    polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
-    polyvecl_invntt_tomont(&z);
-    polyvecl_add(&z, &y);
-    polyvecl_reduce(&z);
-    if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+    mld_polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
+    mld_polyvecl_invntt_tomont(&z);
+    mld_polyvecl_add(&z, &y);
+    mld_polyvecl_reduce(&z);
+    if (mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
     {
       /* reject */
       continue;
@@ -240,28 +240,28 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
 
     /* Check that subtracting cs2 does not change high bits of w and low bits
      * do not reveal secret information */
-    polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
-    polyveck_invntt_tomont(&h);
-    polyveck_sub(&w0, &h);
-    polyveck_reduce(&w0);
-    if (polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
+    mld_polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
+    mld_polyveck_invntt_tomont(&h);
+    mld_polyveck_sub(&w0, &h);
+    mld_polyveck_reduce(&w0);
+    if (mld_polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
     {
       /* reject */
       continue;
     }
 
     /* Compute hints for w1 */
-    polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
-    polyveck_invntt_tomont(&h);
-    polyveck_reduce(&h);
-    if (polyveck_chknorm(&h, MLDSA_GAMMA2))
+    mld_polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
+    mld_polyveck_invntt_tomont(&h);
+    mld_polyveck_reduce(&h);
+    if (mld_polyveck_chknorm(&h, MLDSA_GAMMA2))
     {
       /* reject */
       continue;
     }
 
-    polyveck_add(&w0, &h);
-    n = polyveck_make_hint(&h, &w0, &w1);
+    mld_polyveck_add(&w0, &h);
+    n = mld_polyveck_make_hint(&h, &w0, &w1);
     if (n > MLDSA_OMEGA)
     {
       /* reject */
@@ -269,7 +269,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
     }
 
     /* Write signature */
-    pack_sig(sig, sig, &z, &h, n);
+    mld_pack_sig(sig, sig, &z, &h, n);
     *siglen = CRYPTO_BYTES;
     return 0;
   }
@@ -297,7 +297,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   }
 
 #ifdef MLD_RANDOMIZED_SIGNING
-  randombytes(rnd, MLDSA_RNDBYTES);
+  mld_randombytes(rnd, MLDSA_RNDBYTES);
 #else
   for (i = 0; i < MLDSA_RNDBYTES; i++)
   {
@@ -317,7 +317,7 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
   uint8_t rnd[MLDSA_RNDBYTES];
 
 #ifdef MLD_RANDOMIZED_SIGNING
-  randombytes(rnd, MLDSA_RNDBYTES);
+  mld_randombytes(rnd, MLDSA_RNDBYTES);
 #else
   size_t i;
   for (i = 0; i < MLDSA_RNDBYTES; i++)
@@ -357,21 +357,21 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   uint8_t mu[MLDSA_CRHBYTES];
   uint8_t c[MLDSA_CTILDEBYTES];
   uint8_t c2[MLDSA_CTILDEBYTES];
-  poly cp;
-  polyvecl mat[MLDSA_K], z;
-  polyveck t1, w1, tmp, h;
+  mld_poly cp;
+  mld_polyvecl mat[MLDSA_K], z;
+  mld_polyveck t1, w1, tmp, h;
 
   if (siglen != CRYPTO_BYTES)
   {
     return -1;
   }
 
-  unpack_pk(rho, &t1, pk);
-  if (unpack_sig(c, &z, &h, sig))
+  mld_unpack_pk(rho, &t1, pk);
+  if (mld_unpack_sig(c, &z, &h, sig))
   {
     return -1;
   }
-  if (polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+  if (mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
   {
     return -1;
   }
@@ -390,26 +390,26 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   }
 
   /* Matrix-vector multiplication; compute Az - c2^dt1 */
-  poly_challenge(&cp, c);
-  polyvec_matrix_expand(mat, rho);
+  mld_poly_challenge(&cp, c);
+  mld_polyvec_matrix_expand(mat, rho);
 
-  polyvecl_ntt(&z);
-  polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
+  mld_polyvecl_ntt(&z);
+  mld_polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
 
-  poly_ntt(&cp);
-  polyveck_shiftl(&t1);
-  polyveck_ntt(&t1);
+  mld_poly_ntt(&cp);
+  mld_polyveck_shiftl(&t1);
+  mld_polyveck_ntt(&t1);
 
-  polyveck_pointwise_poly_montgomery(&tmp, &cp, &t1);
+  mld_polyveck_pointwise_poly_montgomery(&tmp, &cp, &t1);
 
-  polyveck_sub(&w1, &tmp);
-  polyveck_reduce(&w1);
-  polyveck_invntt_tomont(&w1);
+  mld_polyveck_sub(&w1, &tmp);
+  mld_polyveck_reduce(&w1);
+  mld_polyveck_invntt_tomont(&w1);
 
   /* Reconstruct w1 */
-  polyveck_caddq(&w1);
-  polyveck_use_hint(&tmp, &w1, &h);
-  polyveck_pack_w1(buf, &tmp);
+  mld_polyveck_caddq(&w1);
+  mld_polyveck_use_hint(&tmp, &w1, &h);
+  mld_polyveck_pack_w1(buf, &tmp);
   /* Call random oracle and verify challenge */
   mld_H(c2, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, buf,
         MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
