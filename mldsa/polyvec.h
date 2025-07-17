@@ -428,10 +428,10 @@ __contract__(
  * Name:        mld_polyveck_decompose
  *
  * Description: For all coefficients a of polynomials in vector of length
- *MLDSA_K, compute high and low bits a0, a1 such a mod^+ MLDSA_Q = a1*ALPHA
- *+ a0 with -ALPHA/2 < a0 <= ALPHA/2 except a1 = (MLDSA_Q-1)/ALPHA where we set
- *a1 = 0 and -ALPHA/2 <= a0 = a mod MLDSA_Q - MLDSA_Q < 0. Assumes coefficients
- *to be standard representatives.
+ * MLDSA_K, compute high and low bits a0, a1 such a mod^+ MLDSA_Q = a1*ALPHA
+ * + a0 with -ALPHA/2 < a0 <= ALPHA/2 except a1 = (MLDSA_Q-1)/ALPHA where we set
+ * a1 = 0 and -ALPHA/2 <= a0 = a mod MLDSA_Q - MLDSA_Q < 0. Assumes coefficients
+ * to be standard representatives.
  *
  * Arguments:   - mld_polyveck *v1: pointer to output vector of polynomials with
  *                              coefficients a1
@@ -450,8 +450,9 @@ __contract__(
   assigns(memory_slice(v1, sizeof(mld_polyveck)))
   assigns(memory_slice(v0, sizeof(mld_polyveck)))
   ensures(forall(k1, 0, MLDSA_K,
-                 array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2)) &&
-                 array_abs_bound(v0->vec[k1].coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1)))
+                 array_bound(v1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2))))
+  ensures(forall(k2, 0, MLDSA_K,
+                 array_abs_bound(v0->vec[k2].coeffs, 0, MLDSA_N, MLDSA_GAMMA2+1)))
 );
 
 #define mld_polyveck_make_hint MLD_NAMESPACE(polyveck_make_hint)
@@ -516,22 +517,13 @@ __contract__(
  **************************************************/
 void mld_polyveck_pack_w1(uint8_t r[MLDSA_K * MLDSA_POLYW1_PACKEDBYTES],
                           const mld_polyveck *w1)
-#if MLDSA_MODE == 2
 __contract__(
   requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
   requires(memory_no_alias(w1, sizeof(mld_polyveck)))
   requires(forall(k1, 0, MLDSA_K,
     array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2))))
-  assigns(object_whole(r)));
-#else  /* MLDSA_MODE == 2 */
-__contract__(
-  requires(memory_no_alias(r, MLDSA_K * MLDSA_POLYW1_PACKEDBYTES))
-  requires(memory_no_alias(w1, sizeof(mld_polyveck)))
-  requires(forall(k1, 0, MLDSA_K,
-    array_bound(w1->vec[k1].coeffs, 0, MLDSA_N, 0, (MLDSA_Q-1)/(2*MLDSA_GAMMA2))))
-  assigns(object_whole(r)));
-#endif /* MLDSA_MODE != 2 */
-
+  assigns(object_whole(r))
+);
 
 #define mld_polyveck_pack_eta MLD_NAMESPACE(polyveck_pack_eta)
 void mld_polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
