@@ -155,19 +155,153 @@ __contract__(
   shake256_squeeze(out, outlen, &state);
 }
 
+/* Reference: The reference implementation does not explicitly   */
+/* check the maximum nonce value, but instead loops indefinitely */
+/* (even when the nonce would overflow). Internally,             */
+/* sampling of y uses (nonceL), (nonceL+1), ... (nonce*L+L-1).   */
+/* Hence, there are no overflows if nonce < (UINT16_MAX - L)/L.  */
+/* Explicitly checking for this explicitly allows us to prove    */
+/* type-safety. Note that FIPS204 explicitly allows an upper-    */
+/* bound this loop of 814 (< (UINT16_MAX - L)/L) - see           */
+/* Appendix C of FIPS204.                                        */
+#define NONCE_UB ((UINT16_MAX - MLDSA_L) / MLDSA_L)
+
+/*************************************************
+ * Name:        attempt_signature_generation
+ *
+ * Description: Attempts to generate a single signature.
+ *
+ * Arguments:   - uint8_t *sig: pointer to output signature
+ *              - const uint8_t *mu: pointer to message or hash
+ *                                   of exactly MLDSA_CRHBYTES bytes
+ *              - const uint8_t *rhoprime: pointer to randomness seed
+ *              - uint16_t nonce: current nonce value
+ *              - const polyvecl mat[MLDSA_K]: expanded matrix
+ *              - const polyvecl *s1: secret vector s1
+ *              - const polyveck *s2: secret vector s2
+ *              - const polyveck *t0: vector t0
+ *
+ * Returns 0 if signature generation succeeds, -1 if rejected
+ *
+ * Reference: This code differs from the reference implementation
+ *            in that it factors out the core signature generation
+ *            step into a distinct function here in order to improve
+ *            efficiency of CBMC proof.
+ **************************************************/
+static int mld_attempt_signature_generation(
+    uint8_t *sig, const uint8_t *mu, const uint8_t rhoprime[MLDSA_CRHBYTES],
+    uint16_t nonce, const mld_polyvecl mat[MLDSA_K], const mld_polyvecl *s1,
+    const mld_polyveck *s2, const mld_polyveck *t0)
+__contract__(
+  requires(memory_no_alias(sig, CRYPTO_BYTES))
+  requires(memory_no_alias(mu, MLDSA_CRHBYTES))
+  requires(memory_no_alias(rhoprime, MLDSA_CRHBYTES))
+  requires(memory_no_alias(mat, MLDSA_K * sizeof(mld_polyvecl)))
+  requires(memory_no_alias(s1, sizeof(mld_polyvecl)))
+  requires(memory_no_alias(s2, sizeof(mld_polyveck)))
+  requires(memory_no_alias(t0, sizeof(mld_polyveck)))
+  requires(nonce <= NONCE_UB)
+  requires(forall(k1, 0, MLDSA_K, forall(l1, 0, MLDSA_L,
+                                         array_bound(mat[k1].vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
+  requires(forall(k2, 0, MLDSA_K, array_abs_bound(t0->vec[k2].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  requires(forall(k3, 0, MLDSA_L, array_abs_bound(s1->vec[k3].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  requires(forall(k4, 0, MLDSA_K, array_abs_bound(s2->vec[k4].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+  assigns(memory_slice(sig, CRYPTO_BYTES))
+  ensures(return_value == 0 || return_value == -1)
+)
+{
+  uint8_t challenge_bytes[MLDSA_CTILDEBYTES];
+  unsigned int n;
+  mld_polyvecl y, z;
+  mld_polyveck w2, w1, w0, h;
+  mld_poly cp;
+  int z_invalid, w0_invalid, h_invalid;
+
+  /* Sample intermediate vector y */
+  mld_polyvecl_uniform_gamma1(&y, rhoprime, nonce);
+
+  /* Matrix-vector multiplication */
+  z = y;
+  mld_polyvecl_ntt(&z);
+  mld_polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
+  mld_polyveck_reduce(&w1);
+  mld_polyveck_invntt_tomont(&w1);
+
+  /* Decompose w and call the random oracle */
+  mld_polyveck_caddq(&w1);
+  mld_polyveck_decompose(&w2, &w0, &w1);
+  mld_polyveck_pack_w1(sig, &w2);
+
+  mld_H(challenge_bytes, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, sig,
+        MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
+  mld_poly_challenge(&cp, challenge_bytes);
+  mld_poly_ntt(&cp);
+
+  /* Compute z, reject if it reveals secret */
+  mld_polyvecl_pointwise_poly_montgomery(&z, &cp, s1);
+  mld_polyvecl_invntt_tomont(&z);
+  mld_polyvecl_add(&z, &y);
+  mld_polyvecl_reduce(&z);
+
+  z_invalid = mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA);
+  if (z_invalid)
+  {
+    return -1; /* reject */
+  }
+
+  /* If z is valid, then its coefficients are bounded by  */
+  /* MLDSA_GAMMA1 - MLDSA_BETA. This will be needed below */
+  /* to prove the pre-condition of pack_sig()             */
+  cassert(forall(k1, 0, MLDSA_L,
+                 array_abs_bound(z.vec[k1].coeffs, 0, MLDSA_N,
+                                 (MLDSA_GAMMA1 - MLDSA_BETA))));
+
+  /* Check that subtracting cs2 does not change high bits of w and low bits
+   * do not reveal secret information */
+  mld_polyveck_pointwise_poly_montgomery(&h, &cp, s2);
+  mld_polyveck_invntt_tomont(&h);
+  mld_polyveck_sub(&w0, &h);
+  mld_polyveck_reduce(&w0);
+  w0_invalid = mld_polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA);
+  if (w0_invalid)
+  {
+    return -1; /* reject */
+  }
+
+  /* Compute hints for w1 */
+  mld_polyveck_pointwise_poly_montgomery(&h, &cp, t0);
+  mld_polyveck_invntt_tomont(&h);
+  mld_polyveck_reduce(&h);
+  h_invalid = mld_polyveck_chknorm(&h, MLDSA_GAMMA2);
+  if (h_invalid)
+  {
+    return -1; /* reject */
+  }
+
+  mld_polyveck_add(&w0, &h);
+  n = mld_polyveck_make_hint(&h, &w0, &w2);
+  if (n > MLDSA_OMEGA)
+  {
+    return -1; /* reject */
+  }
+
+  /* All is well - write signature */
+  mld_pack_sig(sig, challenge_bytes, &z, &h, n);
+  return 0; /* success */
+}
+
 int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
                                    const uint8_t *m, size_t mlen,
                                    const uint8_t *pre, size_t prelen,
                                    const uint8_t rnd[MLDSA_RNDBYTES],
                                    const uint8_t *sk, int externalmu)
 {
-  unsigned int n;
   uint8_t seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_TRBYTES + 2 * MLDSA_CRHBYTES];
   uint8_t *rho, *tr, *key, *mu, *rhoprime;
+  mld_polyvecl mat[MLDSA_K], s1;
+  mld_polyveck t0, s2;
+
   uint16_t nonce = 0;
-  mld_polyvecl mat[MLDSA_K], s1, y, z;
-  mld_polyveck t0, s2, w1, w0, h;
-  mld_poly cp;
 
   rho = seedbuf;
   tr = rho + MLDSA_SEEDBYTES;
@@ -200,78 +334,44 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   /* Reference: This code is re-structured using a while(1),  */
   /* with explicit "continue" statements (rather than "goto") */
   /* to implement rejection of invalid signatures.            */
-  /* The loop statement also supplies a syntactic location to */
-  /* place loop invariants for CBMC.                          */
   while (1)
   __loop__(
-    invariant(1) /* TODO */
+    assigns(nonce, object_whole(siglen), memory_slice(sig, CRYPTO_BYTES))
+    invariant(nonce <= NONCE_UB)
+
+    /* t0, s1, s2, and mat are initialized above and are NOT changed by this */
+    /* loop. We can therefore re-assert their bounds here as part of the     */
+    /* loop invariant. This makes proof noticeably faster with CBMC          */
+    invariant(forall(k1, 0, MLDSA_K, forall(l1, 0, MLDSA_L,
+              array_bound(mat[k1].vec[l1].coeffs, 0, MLDSA_N, 0, MLDSA_Q))))
+    invariant(forall(k2, 0, MLDSA_K, array_abs_bound(t0.vec[k2].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+    invariant(forall(k3, 0, MLDSA_L, array_abs_bound(s1.vec[k3].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
+    invariant(forall(k4, 0, MLDSA_K, array_abs_bound(s2.vec[k4].coeffs, 0, MLDSA_N, MLD_NTT_BOUND)))
   )
   {
-    /* Sample intermediate vector y */
-    mld_polyvecl_uniform_gamma1(&y, rhoprime, nonce++);
+    int result;
 
-    /* Matrix-vector multiplication */
-    z = y;
-    mld_polyvecl_ntt(&z);
-    mld_polyvec_matrix_pointwise_montgomery(&w1, mat, &z);
-    mld_polyveck_reduce(&w1);
-    mld_polyveck_invntt_tomont(&w1);
-
-    /* Decompose w and call the random oracle */
-    mld_polyveck_caddq(&w1);
-    mld_polyveck_decompose(&w1, &w0, &w1);
-    mld_polyveck_pack_w1(sig, &w1);
-
-    mld_H(sig, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, sig,
-          MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
-    mld_poly_challenge(&cp, sig);
-    mld_poly_ntt(&cp);
-
-    /* Compute z, reject if it reveals secret */
-    mld_polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
-    mld_polyvecl_invntt_tomont(&z);
-    mld_polyvecl_add(&z, &y);
-    mld_polyvecl_reduce(&z);
-    if (mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA))
+    /* Reference: this code explicitly checks for exhaustion of nonce     */
+    /* values to provide predictable termination and results in that case */
+    /* Checking here also means that incrementing nonce below can also    */
+    /* be proven to be type-safe.                                         */
+    if (nonce == NONCE_UB)
     {
-      /* reject */
-      continue;
+      /* To be on the safe-side, give well-defined values to *sig and     */
+      /* *siglen in case of error.                                        */
+      *siglen = 0;
+      memset(sig, 0, CRYPTO_BYTES);
+      return -1;
     }
 
-    /* Check that subtracting cs2 does not change high bits of w and low bits
-     * do not reveal secret information */
-    mld_polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
-    mld_polyveck_invntt_tomont(&h);
-    mld_polyveck_sub(&w0, &h);
-    mld_polyveck_reduce(&w0);
-    if (mld_polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA))
+    result = mld_attempt_signature_generation(sig, mu, rhoprime, nonce, mat,
+                                              &s1, &s2, &t0);
+    nonce++;
+    if (result == 0)
     {
-      /* reject */
-      continue;
+      *siglen = CRYPTO_BYTES;
+      return 0;
     }
-
-    /* Compute hints for w1 */
-    mld_polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
-    mld_polyveck_invntt_tomont(&h);
-    mld_polyveck_reduce(&h);
-    if (mld_polyveck_chknorm(&h, MLDSA_GAMMA2))
-    {
-      /* reject */
-      continue;
-    }
-
-    mld_polyveck_add(&w0, &h);
-    n = mld_polyveck_make_hint(&h, &w0, &w1);
-    if (n > MLDSA_OMEGA)
-    {
-      /* reject */
-      continue;
-    }
-
-    /* Write signature */
-    mld_pack_sig(sig, sig, &z, &h, n);
-    *siglen = CRYPTO_BYTES;
-    return 0;
   }
 }
 

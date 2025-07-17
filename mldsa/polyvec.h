@@ -81,6 +81,8 @@ __contract__(
   requires(forall(k2, 0, MLDSA_L, forall(k3, 0, MLDSA_N, (int64_t) u->vec[k2].coeffs[k3] + v->vec[k2].coeffs[k3] >= INT32_MIN)))
   assigns(object_whole(u))
   ensures(forall(k4, 0, MLDSA_L, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == old(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
+  ensures(forall(k6, 0, MLDSA_L,
+                 array_bound(u->vec[k6].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX)))
 );
 
 #define mld_polyvecl_ntt MLD_NAMESPACE(polyvecl_ntt)
@@ -475,6 +477,7 @@ __contract__(
   requires(memory_no_alias(v1, sizeof(mld_polyveck)))
   assigns(object_whole(h))
   ensures(return_value <= MLDSA_N * MLDSA_K)
+  ensures(forall(k1, 0, MLDSA_K, array_bound(h->vec[k1].coeffs, 0, MLDSA_N, 0, 2)))
 );
 
 #define mld_polyveck_use_hint MLD_NAMESPACE(polyveck_use_hint)

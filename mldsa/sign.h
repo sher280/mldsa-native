@@ -67,7 +67,7 @@ __contract__(
  * Description: Computes signature. Internal API.
  *
  * Arguments:   - uint8_t *sig:   pointer to output signature (of length
- *CRYPTO_BYTES)
+ *                                CRYPTO_BYTES)
  *              - size_t *siglen: pointer to output length of signature
  *              - uint8_t *m:     pointer to message to be signed
  *              - size_t mlen:    length of message
@@ -77,13 +77,33 @@ __contract__(
  *              - uint8_t *sk:    pointer to bit-packed secret key
  *              - int externalmu: indicates input message m is processed as mu
  *
- * Returns 0 (success)
+ * Returns 0 (success) or -1 (indicating nonce exhaustion)
+ *
+ * If the returned value is -1, then the values of *sig and
+ * *siglen should not be referenced.
+ *
+ * Reference: This code differs from the reference implementation
+ *            in that it adds an explicit check for nonce exhaustion
+ *            and can return -1 in that case.
  **************************************************/
 int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
                                    const uint8_t *m, size_t mlen,
                                    const uint8_t *pre, size_t prelen,
                                    const uint8_t rnd[MLDSA_RNDBYTES],
-                                   const uint8_t *sk, int externalmu);
+                                   const uint8_t *sk, int externalmu)
+__contract__(
+  requires(memory_no_alias(sig, CRYPTO_BYTES))
+  requires(memory_no_alias(siglen, sizeof(size_t)))
+  requires(memory_no_alias(m, mlen))
+  requires(memory_no_alias(pre, prelen))
+  requires(memory_no_alias(rnd, MLDSA_RNDBYTES))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  requires(externalmu == 0 || (externalmu == 1 && mlen == MLDSA_CRHBYTES))
+  assigns(memory_slice(sig, CRYPTO_BYTES))
+  assigns(object_whole(siglen))
+  ensures((return_value == 0 && *siglen == CRYPTO_BYTES) ||
+          (return_value == -1 && *siglen == 0))
+);
 
 #define crypto_sign_signature MLD_NAMESPACE(signature)
 /*************************************************

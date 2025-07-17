@@ -4,22 +4,29 @@
 include ../Makefile_params.common
 
 HARNESS_ENTRY = harness
-HARNESS_FILE = polyveck_pack_t0_harness
+HARNESS_FILE = crypto_sign_signature_internal_harness
 
 # This should be a unique identifier for this proof, and will appear on the
 # Litani dashboard. It can be human-readable and contain spaces if you wish.
-PROOF_UID = polyveck_pack_t0
+PROOF_UID = crypto_sign_signature_internal
 
 DEFINES +=
 INCLUDES +=
 
 REMOVE_FUNCTION_BODY +=
+UNWINDSET +=
 
 PROOF_SOURCES += $(PROOFDIR)/$(HARNESS_FILE).c
-PROJECT_SOURCES += $(SRCDIR)/mldsa/polyvec.c
+PROJECT_SOURCES += $(SRCDIR)/mldsa/sign.c
 
-CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyveck_pack_t0
-USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyt0_pack
+CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)signature_internal
+USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)unpack_sk \
+                       mld_H \
+                       $(MLD_NAMESPACE)polyvec_matrix_expand \
+                       $(MLD_NAMESPACE)polyvecl_ntt \
+                       $(MLD_NAMESPACE)polyveck_ntt \
+                       mld_attempt_signature_generation
+
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
@@ -29,7 +36,7 @@ CBMCFLAGS=--smt2
 CBMCFLAGS += --slice-formula
 CBMCFLAGS += --no-array-field-sensitivity
 
-FUNCTION_NAME = polyveck_pack_t0
+FUNCTION_NAME = crypto_sign_signature_internal
 
 # If this proof is found to consume huge amounts of RAM, you can set the
 # EXPENSIVE variable. With new enough versions of the proof tools, this will
@@ -38,7 +45,7 @@ FUNCTION_NAME = polyveck_pack_t0
 # EXPENSIVE = true
 
 # This function is large enough to need...
-CBMC_OBJECT_BITS = 9
+CBMC_OBJECT_BITS = 8
 
 # If you require access to a file-local ("static") function or object to conduct
 # your proof, set the following (and do not include the original source file

@@ -200,6 +200,7 @@ unsigned int mld_poly_make_hint(mld_poly *h, const mld_poly *a0,
   __loop__(
     invariant(i <= MLDSA_N)
     invariant(s <= i)
+    invariant(array_bound(h->coeffs, 0, i, 0, 2))
   )
   {
     const unsigned int hint_bit = mld_make_hint(a0->coeffs[i], a1->coeffs[i]);
