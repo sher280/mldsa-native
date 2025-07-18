@@ -260,6 +260,7 @@ __contract__(
   requires(memory_no_alias(a1, sizeof(mld_poly)))
   assigns(memory_slice(h, sizeof(mld_poly)))
   ensures(return_value <= MLDSA_N)
+  ensures(array_bound(h->coeffs, 0, MLDSA_N, 0, 2))
 );
 
 #define mld_poly_use_hint MLD_NAMESPACE(poly_use_hint)

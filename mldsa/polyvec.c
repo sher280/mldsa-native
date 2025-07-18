@@ -183,6 +183,7 @@ void mld_polyvecl_add(mld_polyvecl *u, const mld_polyvecl *v)
     invariant(forall(k0, i, MLDSA_L,
               forall(k1, 0, MLDSA_N, u->vec[k0].coeffs[k1] == loop_entry(*u).vec[k0].coeffs[k1])))
     invariant(forall(k4, 0, i, forall(k5, 0, MLDSA_N, u->vec[k4].coeffs[k5] == loop_entry(*u).vec[k4].coeffs[k5] + v->vec[k4].coeffs[k5])))
+    invariant(forall(k6, 0, i, array_bound(u->vec[k6].coeffs, 0, MLDSA_N, INT32_MIN, REDUCE32_DOMAIN_MAX)))
   )
   {
     mld_poly_add(&u->vec[i], &v->vec[i]);
@@ -508,6 +509,7 @@ unsigned int mld_polyveck_make_hint(mld_polyveck *h, const mld_polyveck *v0,
     assigns(i, s, object_whole(h))
     invariant(i <= MLDSA_K)
     invariant(s <= i * MLDSA_N)
+    invariant(forall(k1, 0, i, array_bound(h->vec[k1].coeffs, 0, MLDSA_N, 0, 2)))
   )
   {
     s += mld_poly_make_hint(&h->vec[i], &v0->vec[i], &v1->vec[i]);
