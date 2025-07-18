@@ -95,10 +95,10 @@ __contract__(
   requires(memory_no_alias(sig, CRYPTO_BYTES))
   requires(memory_no_alias(siglen, sizeof(size_t)))
   requires(memory_no_alias(m, mlen))
-  requires(memory_no_alias(pre, prelen))
   requires(memory_no_alias(rnd, MLDSA_RNDBYTES))
   requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
-  requires(externalmu == 0 || (externalmu == 1 && mlen == MLDSA_CRHBYTES))
+  requires((externalmu == 0 && pre != NULL && prelen >= 2 && memory_no_alias(pre, prelen)) ||
+           (externalmu == 1 && mlen == MLDSA_CRHBYTES))
   assigns(memory_slice(sig, CRYPTO_BYTES))
   assigns(object_whole(siglen))
   ensures((return_value == 0 && *siglen == CRYPTO_BYTES) ||
@@ -113,19 +113,30 @@ __contract__(
  *              Computes signature.
  *
  * Arguments:   - uint8_t *sig:   pointer to output signature (of length
- *CRYPTO_BYTES)
+ *                                CRYPTO_BYTES)
  *              - size_t *siglen: pointer to output length of signature
  *              - uint8_t *m:     pointer to message to be signed
  *              - size_t mlen:    length of message
  *              - uint8_t *ctx:   pointer to contex string
- *              - size_t ctxlen:  length of contex string
+ *              - size_t ctxlen:  length of contex string. Should be <= 255.
  *              - uint8_t *sk:    pointer to bit-packed secret key
  *
- * Returns 0 (success) or -1 (context string too long)
+ * Returns 0 (success) or -1 (context string too long OR nonce exhaustion)
  **************************************************/
 int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
                           size_t mlen, const uint8_t *ctx, size_t ctxlen,
-                          const uint8_t *sk);
+                          const uint8_t *sk)
+__contract__(
+  requires(memory_no_alias(sig, CRYPTO_BYTES))
+  requires(memory_no_alias(siglen, sizeof(size_t)))
+  requires(memory_no_alias(m, mlen))
+  requires(memory_no_alias(ctx, ctxlen))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  assigns(memory_slice(sig, CRYPTO_BYTES))
+  assigns(object_whole(siglen))
+  ensures((return_value == 0 && *siglen == CRYPTO_BYTES) ||
+          (return_value == -1 && *siglen == 0))
+);
 
 #define crypto_sign_signature_extmu MLD_NAMESPACE(signature_extmu)
 /*************************************************
@@ -135,16 +146,26 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
  *               Computes signature.
  *
  * Arguments:   - uint8_t *sig:   pointer to output signature (of length
- *CRYPTO_BYTES)
+ *                                CRYPTO_BYTES)
  *              - size_t *siglen: pointer to output length of signature
  *              - uint8_t mu:     input mu to be signed of size MLDSA_CRHBYTES
  *              - uint8_t *sk:    pointer to bit-packed secret key
  *
- * Returns 0 (success) or -1 (context string too long)
+ * Returns 0 (success) or -1 (context string too long OR nonce exhaustion)
  **************************************************/
 int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
                                 const uint8_t mu[MLDSA_CRHBYTES],
-                                const uint8_t *sk);
+                                const uint8_t *sk)
+__contract__(
+  requires(memory_no_alias(sig, CRYPTO_BYTES))
+  requires(memory_no_alias(siglen, sizeof(size_t)))
+  requires(memory_no_alias(mu, MLDSA_CRHBYTES))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  assigns(memory_slice(sig, CRYPTO_BYTES))
+  assigns(object_whole(siglen))
+  ensures((return_value == 0 && *siglen == CRYPTO_BYTES) ||
+          (return_value == -1 && *siglen == 0))
+);
 
 #define crypto_sign MLD_NAMESPACETOP
 /*************************************************
@@ -163,10 +184,22 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
  *              - size_t ctxlen: length of context string
  *              - const uint8_t *sk: pointer to bit-packed secret key
  *
- * Returns 0 (success) or -1 (context string too long)
+ * Returns 0 (success) or -1 (context string too long OR nonce exhausted)
  **************************************************/
 int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
-                const uint8_t *ctx, size_t ctxlen, const uint8_t *sk);
+                const uint8_t *ctx, size_t ctxlen, const uint8_t *sk)
+__contract__(
+  requires(mlen <= SIZE_MAX - CRYPTO_BYTES)
+  requires(memory_no_alias(sm, CRYPTO_BYTES + mlen))
+  requires(memory_no_alias(smlen, sizeof(size_t)))
+  requires(m == sm || memory_no_alias(m, mlen))
+  requires(memory_no_alias(ctx, ctxlen))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  assigns(memory_slice(sm, CRYPTO_BYTES + mlen))
+  assigns(object_whole(smlen))
+  ensures((return_value == 0 && *smlen == CRYPTO_BYTES + mlen) ||
+          (return_value == -1))
+);
 
 #define crypto_sign_verify_internal MLD_NAMESPACE(verify_internal)
 /*************************************************
@@ -181,7 +214,7 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
  *              - const uint8_t *pre: pointer to prefix string
  *              - size_t prelen: length of prefix string
  *              - const uint8_t *pk: pointer to bit-packed public key
- *               - int externalmu: indicates input message m is processed as mu
+ *              - int externalmu: indicates input message m is processed as mu
  *
  * Returns 0 if signature could be verified correctly and -1 otherwise
  **************************************************/

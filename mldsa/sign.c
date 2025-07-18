@@ -385,6 +385,9 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
 
   if (ctxlen > 255)
   {
+    /* To be on the safe-side, make sure *siglen has a well-defined */
+    /* value, even in the case of error.                            */
+    *siglen = 0;
     return -1;
   }
 
@@ -392,6 +395,11 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   pre[0] = 0;
   pre[1] = ctxlen;
   for (i = 0; i < ctxlen; i++)
+  __loop__(
+    assigns(i, object_whole(pre))
+    invariant(i <= ctxlen)
+    invariant(ctxlen <= 255)
+  )
   {
     pre[2 + i] = ctx[i];
   }
@@ -399,15 +407,11 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
 #ifdef MLD_RANDOMIZED_SIGNING
   mld_randombytes(rnd, MLDSA_RNDBYTES);
 #else
-  for (i = 0; i < MLDSA_RNDBYTES; i++)
-  {
-    rnd[i] = 0;
-  }
-#endif /* !MLD_RANDOMIZED_SIGNING */
+  memset(rnd, 0, MLDSA_RNDBYTES);
+#endif
 
-  crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, rnd, sk,
-                                 0);
-  return 0;
+  return crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen,
+                                        rnd, sk, 0);
 }
 
 int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
@@ -419,15 +423,11 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
 #ifdef MLD_RANDOMIZED_SIGNING
   mld_randombytes(rnd, MLDSA_RNDBYTES);
 #else
-  size_t i;
-  for (i = 0; i < MLDSA_RNDBYTES; i++)
-  {
-    rnd[i] = 0;
-  }
-#endif /* !MLD_RANDOMIZED_SIGNING */
+  memset(rnd, 0, MLDSA_RNDBYTES);
+#endif
 
-  crypto_sign_signature_internal(sig, siglen, mu, 0, NULL, 0, rnd, sk, 1);
-  return 0;
+  return crypto_sign_signature_internal(sig, siglen, mu, MLDSA_CRHBYTES, NULL,
+                                        0, rnd, sk, 1);
 }
 
 int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
@@ -437,6 +437,10 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
   size_t i;
 
   for (i = 0; i < mlen; ++i)
+  __loop__(
+    assigns(i, object_whole(sm))
+    invariant(i <= mlen)
+  )
   {
     sm[CRYPTO_BYTES + mlen - 1 - i] = m[mlen - 1 - i];
   }
