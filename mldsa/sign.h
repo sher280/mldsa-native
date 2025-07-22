@@ -18,6 +18,8 @@
  *
  * Description: FIPS 204: Algorithm 6 ML-DSA.KeyGen_internal.
  *              Generates public and private key. Internal API.
+ *              When MLD_CONFIG_KEYGEN_PCT is set, performs a Pairwise
+ *              Consistency Test (PCT) as required by FIPS 140-3 IG.
  *
  * Arguments:   - uint8_t *pk:   pointer to output public key (allocated
  *                               array of CRYPTO_PUBLICKEYBYTES bytes)
@@ -26,7 +28,7 @@
  *              - uint8_t *seed: pointer to input random seed (MLDSA_SEEDBYTES
  *                               bytes)
  *
- * Returns 0 (success)
+ * Returns 0 (success) or -1 (PCT failure)
  **************************************************/
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
                                  const uint8_t seed[MLDSA_SEEDBYTES])
@@ -36,6 +38,7 @@ __contract__(
   requires(memory_no_alias(seed, MLDSA_SEEDBYTES))
   assigns(object_whole(pk))
   assigns(object_whole(sk))
+  ensures(return_value == 0 || return_value == -1)
 );
 
 #define crypto_sign_keypair MLD_NAMESPACE(keypair)
@@ -44,13 +47,15 @@ __contract__(
  *
  * Description: FIPS 204: Algorithm 1 ML-DSA.KeyGen
  *              Generates public and private key.
+ *              When MLD_CONFIG_KEYGEN_PCT is set, performs a Pairwise
+ *              Consistency Test (PCT) as required by FIPS 140-3 IG.
  *
  * Arguments:   - uint8_t *pk:   pointer to output public key (allocated
  *                               array of CRYPTO_PUBLICKEYBYTES bytes)
  *              - uint8_t *sk:   pointer to output private key (allocated
  *                               array of CRYPTO_SECRETKEYBYTES bytes)
  *
- * Returns 0 (success)
+ * Returns 0 (success) or -1 (PCT failure)
  **************************************************/
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 __contract__(
@@ -58,6 +63,7 @@ __contract__(
   requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
   assigns(object_whole(pk))
   assigns(object_whole(sk))
+  ensures(return_value == 0 || return_value == -1)
 );
 
 #define crypto_sign_signature_internal MLD_NAMESPACE(signature_internal)
@@ -117,8 +123,9 @@ __contract__(
  *              - size_t *siglen: pointer to output length of signature
  *              - uint8_t *m:     pointer to message to be signed
  *              - size_t mlen:    length of message
- *              - uint8_t *ctx:   pointer to contex string
- *              - size_t ctxlen:  length of contex string. Should be <= 255.
+ *              - uint8_t *ctx:   pointer to context string. May be NULL
+ *                                iff ctxlen == 0
+ *              - size_t ctxlen:  length of context string. Should be <= 255.
  *              - uint8_t *sk:    pointer to bit-packed secret key
  *
  * Returns 0 (success) or -1 (context string too long OR nonce exhaustion)
@@ -130,7 +137,7 @@ __contract__(
   requires(memory_no_alias(sig, CRYPTO_BYTES))
   requires(memory_no_alias(siglen, sizeof(size_t)))
   requires(memory_no_alias(m, mlen))
-  requires(memory_no_alias(ctx, ctxlen))
+  requires((ctx == NULL && ctxlen == 0) || memory_no_alias(ctx, ctxlen))
   requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
   assigns(memory_slice(sig, CRYPTO_BYTES))
   assigns(object_whole(siglen))
@@ -243,6 +250,7 @@ __contract__(
  *              - const uint8_t *m: pointer to message
  *              - size_t mlen: length of message
  *              - const uint8_t *ctx: pointer to context string
+ *                                    May be NULL iff ctxlen == 0
  *              - size_t ctxlen: length of context string
  *              - const uint8_t *pk: pointer to bit-packed public key
  *
@@ -254,7 +262,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
 __contract__(
   requires(memory_no_alias(sig, siglen))
   requires(memory_no_alias(m, mlen))
-  requires(memory_no_alias(ctx, ctxlen))
+  requires((ctx == NULL && ctxlen == 0) || memory_no_alias(ctx, ctxlen))
   requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
   ensures(return_value == 0 || return_value == -1)
 );

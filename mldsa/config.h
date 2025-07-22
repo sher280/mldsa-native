@@ -59,4 +59,42 @@
 #define MLD_CONFIG_FIPS202_BACKEND_FILE "fips202/native/auto.h"
 #endif
 
+/******************************************************************************
+ * Name:        MLD_CONFIG_KEYGEN_PCT
+ *
+ * Description: Compliance with @[FIPS140_3_IG, p.87] requires a
+ *              Pairwise Consistency Test (PCT) to be carried out on a freshly
+ *              generated keypair before it can be exported.
+ *
+ *              Set this option if such a check should be implemented.
+ *              In this case, crypto_sign_keypair_internal and
+ *              crypto_sign_keypair will return a non-zero error code if the
+ *              PCT failed.
+ *
+ *              NOTE: This feature will drastically lower the performance of
+ *              key generation.
+ *
+ *****************************************************************************/
+/* #define MLD_CONFIG_KEYGEN_PCT */
+
+/******************************************************************************
+ * Name:        MLD_CONFIG_KEYGEN_PCT_BREAKAGE_TEST
+ *
+ * Description: If this option is set, the user must provide a runtime
+ *              function `static inline int mld_break_pct() { ... }` to
+ *              indicate whether the PCT should be made fail.
+ *
+ *              This option only has an effect if MLD_CONFIG_KEYGEN_PCT is set.
+ *
+ *****************************************************************************/
+/* #define MLD_CONFIG_KEYGEN_PCT_BREAKAGE_TEST
+   #if !defined(__ASSEMBLER__)
+   #include "sys.h"
+   static MLD_INLINE int mld_break_pct(void)
+   {
+       ... return 0/1 depending on whether PCT should be broken ...
+   }
+   #endif
+*/
+
 #endif /* !MLD_CONFIG_H */

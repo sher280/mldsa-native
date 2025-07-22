@@ -14,6 +14,79 @@
 #include "sign.h"
 #include "symmetric.h"
 
+
+static int mld_check_pct(uint8_t const pk[CRYPTO_PUBLICKEYBYTES],
+                         uint8_t const sk[CRYPTO_SECRETKEYBYTES])
+__contract__(
+  requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
+  requires(memory_no_alias(sk, CRYPTO_SECRETKEYBYTES))
+  ensures(return_value == 0 || return_value == -1)
+);
+
+#if defined(MLD_CONFIG_KEYGEN_PCT)
+/*************************************************
+ * [FIPS 140-3 IG]
+ * (https://csrc.nist.gov/csrc/media/Projects/cryptographic-module-validation-program/documents/fips%20140-3/FIPS%20140-3%20IG.pdf)
+ *
+ * TE10.35.02: Pair-wise Consistency Test (PCT) for DSA keypairs
+ *
+ * Purpose: Validates that a generated public/private key pair can correctly
+ * sign and verify data. Test performs signature generation using the private
+ * key (sk), followed by signature verification using the public key (pk).
+ * Returns 0 if the signature was successfully verified, non-zero if it cannot.
+ *
+ * Note: FIPS 204 requires that public/private key pairs are to be used only for
+ * the calculation and/of verification of digital signatures.
+ **************************************************/
+static int mld_check_pct(uint8_t const pk[CRYPTO_PUBLICKEYBYTES],
+                         uint8_t const sk[CRYPTO_SECRETKEYBYTES])
+{
+  uint8_t message[1] = {0};
+  uint8_t signature[CRYPTO_BYTES];
+  uint8_t pk_test[CRYPTO_PUBLICKEYBYTES];
+  size_t siglen;
+  int ret;
+
+  /* Copy public key for testing */
+  memcpy(pk_test, pk, CRYPTO_PUBLICKEYBYTES);
+
+  /* Sign a test message using the original secret key */
+  ret = crypto_sign_signature(signature, &siglen, message, sizeof(message),
+                              NULL, 0, sk);
+  if (ret == 0)
+  {
+#if defined(MLD_CONFIG_KEYGEN_PCT_BREAKAGE_TEST)
+    /* Deliberately break public key for testing purposes */
+    if (mld_break_pct())
+    {
+      pk_test[0] = ~pk_test[0];
+    }
+#endif /* MLD_CONFIG_KEYGEN_PCT_BREAKAGE_TEST */
+
+    /* Verify the signature using the (potentially corrupted) public key */
+    ret = crypto_sign_verify(signature, siglen, message, sizeof(message), NULL,
+                             0, pk_test);
+  }
+
+  /* Specification: Partially implements
+   * @[FIPS204, Section 3.6.3, Destruction of intermediate values]
+   TODO: add these when the rest of destruction of intermediate values are added
+    mld_zeroize(signature, sizeof(signature));
+    mld_zeroize(pk_test, sizeof(pk_test));
+  */
+  return ret;
+}
+#else  /* MLD_CONFIG_KEYGEN_PCT */
+static int mld_check_pct(uint8_t const pk[CRYPTO_PUBLICKEYBYTES],
+                         uint8_t const sk[CRYPTO_SECRETKEYBYTES])
+{
+  /* Skip PCT */
+  ((void)pk);
+  ((void)sk);
+  return 0;
+}
+#endif /* !MLD_CONFIG_KEYGEN_PCT */
+
 static void mld_sample_s1_s2(mld_polyvecl *s1, mld_polyveck *s2,
                              const uint8_t seed[MLDSA_CRHBYTES])
 __contract__(
@@ -96,6 +169,12 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   /* Compute H(rho, t1) and write secret key */
   shake256(tr, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
   mld_pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
+
+  /* Pairwise Consistency Test (PCT) @[FIPS140_3_IG, p.87] */
+  if (mld_check_pct(pk, sk))
+  {
+    return -1;
+  }
   return 0;
 }
 
