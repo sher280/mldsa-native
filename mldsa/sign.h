@@ -305,7 +305,7 @@ int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
 __contract__(
   requires(memory_no_alias(m, smlen))
   requires(memory_no_alias(mlen, sizeof(size_t)))
-  requires(memory_no_alias(sm, smlen))
+  requires(m == sm || memory_no_alias(sm, smlen))
   requires(memory_no_alias(ctx, ctxlen))
   requires(memory_no_alias(pk, CRYPTO_PUBLICKEYBYTES))
   assigns(memory_slice(m, smlen))
