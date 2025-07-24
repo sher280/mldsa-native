@@ -60,6 +60,46 @@
 #endif
 
 /******************************************************************************
+ * Name:        MLD_CONFIG_CUSTOM_ZEROIZE
+ *
+ * Description: In compliance with FIPS 204 Section 3.6.3, mldsa-native zeroizes
+ *              intermediate stack buffers before returning from function calls.
+ *
+ *              Set this option and define `mld_zeroize_native` if you want to
+ *              use a custom method to zeroize intermediate stack buffers.
+ *              The default implementation uses SecureZeroMemory on Windows
+ *              and a memset + compiler barrier otherwise. If neither of those
+ *              is available on the target platform, compilation will fail,
+ *              and you will need to use MLD_CONFIG_CUSTOM_ZEROIZE to provide
+ *              a custom implementation of `mld_zeroize_native()`.
+ *
+ *              WARNING:
+ *              The explicit stack zeroization conducted by mldsa-native
+ *              reduces the likelihood of data leaking on the stack, but
+ *              does not eliminate it! The C standard makes no guarantee about
+ *              where a compiler allocates structures and whether/where it makes
+ *              copies of them. Also, in addition to entire structures, there
+ *              may also be potentially exploitable leakage of individual values
+ *              on the stack.
+ *
+ *              If you need bullet-proof zeroization of the stack, you need to
+ *              consider additional measures instead of what this feature
+ *              provides. In this case, you can set mld_zeroize_native to a
+ *              no-op.
+ *
+ *****************************************************************************/
+/* #define MLD_CONFIG_CUSTOM_ZEROIZE
+   #if !defined(__ASSEMBLER__)
+   #include <stdint.h>
+   #include "sys.h"
+   static MLD_INLINE void mld_zeroize_native(void *ptr, size_t len)
+   {
+       ... your implementation ...
+   }
+   #endif
+*/
+
+/******************************************************************************
  * Name:        MLD_CONFIG_KEYGEN_PCT
  *
  * Description: Compliance with @[FIPS140_3_IG, p.87] requires a

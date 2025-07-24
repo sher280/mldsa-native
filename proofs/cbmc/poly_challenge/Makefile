@@ -21,12 +21,14 @@ PROJECT_SOURCES += $(SRCDIR)/mldsa/poly.c
 
 CHECK_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)poly_challenge
 USE_FUNCTION_CONTRACTS=$(FIPS202_NAMESPACE)shake256_init $(FIPS202_NAMESPACE)shake256_absorb $(FIPS202_NAMESPACE)shake256_finalize $(FIPS202_NAMESPACE)shake256_squeezeblocks
+USE_FUNCTION_CONTRACTS+=mld_zeroize
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
 
 # Disable any setting of EXTERNAL_SAT_SOLVER, and choose SMT backend instead
 EXTERNAL_SAT_SOLVER=
 CBMCFLAGS=--smt2
+CBMCFLAGS += --slice-formula
 
 FUNCTION_NAME = poly_challenge
 
@@ -37,7 +39,7 @@ FUNCTION_NAME = poly_challenge
 # EXPENSIVE = true
 
 # This function is large enough to need...
-CBMC_OBJECT_BITS = 8
+CBMC_OBJECT_BITS = 9
 
 # If you require access to a file-local ("static") function or object to conduct
 # your proof, set the following (and do not include the original source file

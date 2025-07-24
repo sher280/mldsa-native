@@ -68,12 +68,10 @@ static int mld_check_pct(uint8_t const pk[CRYPTO_PUBLICKEYBYTES],
                              0, pk_test);
   }
 
-  /* Specification: Partially implements
-   * @[FIPS204, Section 3.6.3, Destruction of intermediate values]
-   TODO: add these when the rest of destruction of intermediate values are added
-    mld_zeroize(signature, sizeof(signature));
-    mld_zeroize(pk_test, sizeof(pk_test));
-  */
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(signature, sizeof(signature));
+  mld_zeroize(pk_test, sizeof(pk_test));
+
   return ret;
 }
 #else  /* MLD_CONFIG_KEYGEN_PCT */
@@ -170,19 +168,37 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   shake256(tr, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES);
   mld_pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
 
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values.  */
+  mld_zeroize(seedbuf, sizeof(seedbuf));
+  mld_zeroize(inbuf, sizeof(inbuf));
+  mld_zeroize(tr, sizeof(tr));
+  mld_zeroize(mat, sizeof(mat));
+  mld_zeroize(&s1, sizeof(s1));
+  mld_zeroize(&s1hat, sizeof(s1hat));
+  mld_zeroize(&s2, sizeof(s2));
+  mld_zeroize(&t1, sizeof(t1));
+  mld_zeroize(&t2, sizeof(t2));
+  mld_zeroize(&t0, sizeof(t0));
+
   /* Pairwise Consistency Test (PCT) @[FIPS140_3_IG, p.87] */
   if (mld_check_pct(pk, sk))
   {
     return -1;
   }
+
   return 0;
 }
 
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
   uint8_t seed[MLDSA_SEEDBYTES];
+  int result;
   mld_randombytes(seed, MLDSA_SEEDBYTES);
-  return crypto_sign_keypair_internal(pk, sk, seed);
+  result = crypto_sign_keypair_internal(pk, sk, seed);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(seed, sizeof(seed));
+  return result;
 }
 
 /*************************************************
@@ -232,6 +248,9 @@ __contract__(
   }
   shake256_finalize(&state);
   shake256_squeeze(out, outlen, &state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(&state, sizeof(state));
 }
 
 /* Reference: The reference implementation does not explicitly   */
@@ -325,6 +344,15 @@ __contract__(
   z_invalid = mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA);
   if (z_invalid)
   {
+    /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+    mld_zeroize(challenge_bytes, MLDSA_CTILDEBYTES);
+    mld_zeroize(&y, sizeof(y));
+    mld_zeroize(&z, sizeof(z));
+    mld_zeroize(&w2, sizeof(w2));
+    mld_zeroize(&w1, sizeof(w1));
+    mld_zeroize(&w0, sizeof(w0));
+    mld_zeroize(&h, sizeof(h));
+    mld_zeroize(&cp, sizeof(cp));
     return -1; /* reject */
   }
 
@@ -344,6 +372,15 @@ __contract__(
   w0_invalid = mld_polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA);
   if (w0_invalid)
   {
+    /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+    mld_zeroize(challenge_bytes, sizeof(challenge_bytes));
+    mld_zeroize(&y, sizeof(y));
+    mld_zeroize(&z, sizeof(z));
+    mld_zeroize(&w2, sizeof(w2));
+    mld_zeroize(&w1, sizeof(w1));
+    mld_zeroize(&w0, sizeof(w0));
+    mld_zeroize(&h, sizeof(h));
+    mld_zeroize(&cp, sizeof(cp));
     return -1; /* reject */
   }
 
@@ -354,6 +391,15 @@ __contract__(
   h_invalid = mld_polyveck_chknorm(&h, MLDSA_GAMMA2);
   if (h_invalid)
   {
+    /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+    mld_zeroize(challenge_bytes, MLDSA_CTILDEBYTES);
+    mld_zeroize(&y, sizeof(y));
+    mld_zeroize(&z, sizeof(z));
+    mld_zeroize(&w2, sizeof(w2));
+    mld_zeroize(&w1, sizeof(w1));
+    mld_zeroize(&w0, sizeof(w0));
+    mld_zeroize(&h, sizeof(h));
+    mld_zeroize(&cp, sizeof(cp));
     return -1; /* reject */
   }
 
@@ -361,11 +407,31 @@ __contract__(
   n = mld_polyveck_make_hint(&h, &w0, &w2);
   if (n > MLDSA_OMEGA)
   {
+    /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+    mld_zeroize(challenge_bytes, MLDSA_CTILDEBYTES);
+    mld_zeroize(&y, sizeof(y));
+    mld_zeroize(&z, sizeof(z));
+    mld_zeroize(&w2, sizeof(w2));
+    mld_zeroize(&w1, sizeof(w1));
+    mld_zeroize(&w0, sizeof(w0));
+    mld_zeroize(&h, sizeof(h));
+    mld_zeroize(&cp, sizeof(cp));
     return -1; /* reject */
   }
 
   /* All is well - write signature */
   mld_pack_sig(sig, challenge_bytes, &z, &h, n);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(challenge_bytes, MLDSA_CTILDEBYTES);
+  mld_zeroize(&y, sizeof(y));
+  mld_zeroize(&z, sizeof(z));
+  mld_zeroize(&w2, sizeof(w2));
+  mld_zeroize(&w1, sizeof(w1));
+  mld_zeroize(&w0, sizeof(w0));
+  mld_zeroize(&h, sizeof(h));
+  mld_zeroize(&cp, sizeof(cp));
+
   return 0; /* success */
 }
 
@@ -449,6 +515,12 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
     if (result == 0)
     {
       *siglen = CRYPTO_BYTES;
+      /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+      mld_zeroize(seedbuf, sizeof(seedbuf));
+      mld_zeroize(mat, sizeof(mat));
+      mld_zeroize(&s1, sizeof(s1));
+      mld_zeroize(&s2, sizeof(s2));
+      mld_zeroize(&t0, sizeof(t0));
       return 0;
     }
   }
@@ -461,6 +533,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   size_t i;
   uint8_t pre[257];
   uint8_t rnd[MLDSA_RNDBYTES];
+  int result;
 
   if (ctxlen > 255)
   {
@@ -489,8 +562,15 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   memset(rnd, 0, MLDSA_RNDBYTES);
 #endif
 
-  return crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen,
-                                        rnd, sk, 0);
+
+  result = crypto_sign_signature_internal(sig, siglen, m, mlen, pre, 2 + ctxlen,
+                                          rnd, sk, 0);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(pre, sizeof(pre));
+  mld_zeroize(rnd, sizeof(rnd));
+
+  return result;
 }
 
 int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
@@ -498,6 +578,7 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
                                 const uint8_t *sk)
 {
   uint8_t rnd[MLDSA_RNDBYTES];
+  int result;
 
 #ifdef MLD_RANDOMIZED_SIGNING
   mld_randombytes(rnd, MLDSA_RNDBYTES);
@@ -505,8 +586,13 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
   memset(rnd, 0, MLDSA_RNDBYTES);
 #endif
 
-  return crypto_sign_signature_internal(sig, siglen, mu, MLDSA_CRHBYTES, NULL,
-                                        0, rnd, sk, 1);
+  result = crypto_sign_signature_internal(sig, siglen, mu, MLDSA_CRHBYTES, NULL,
+                                          0, rnd, sk, 1);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(rnd, sizeof(rnd));
+
+  return result;
 }
 
 int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
@@ -565,6 +651,9 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
     uint8_t hpk[MLDSA_CRHBYTES];
     mld_H(hpk, MLDSA_TRBYTES, pk, CRYPTO_PUBLICKEYBYTES, NULL, 0, NULL, 0);
     mld_H(mu, MLDSA_CRHBYTES, hpk, MLDSA_TRBYTES, pre, prelen, m, mlen);
+
+    /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+    mld_zeroize(hpk, sizeof(hpk));
   }
   else
   {
@@ -606,6 +695,20 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
       return -1;
     }
   }
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
+  mld_zeroize(rho, sizeof(rho));
+  mld_zeroize(mu, sizeof(mu));
+  mld_zeroize(c, sizeof(c));
+  mld_zeroize(c2, sizeof(c2));
+  mld_zeroize(&cp, sizeof(cp));
+  mld_zeroize(&z, sizeof(z));
+  mld_zeroize(&w1, sizeof(w1));
+  mld_zeroize(&tmp, sizeof(tmp));
+  mld_zeroize(&h, sizeof(h));
+  mld_zeroize(mat, sizeof(mat));
+
   return 0;
 }
 
@@ -615,6 +718,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
 {
   size_t i;
   uint8_t pre[257];
+  int result;
 
   if (ctxlen > 255)
   {
@@ -631,8 +735,13 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
     pre[2 + i] = ctx[i];
   }
 
-  return crypto_sign_verify_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, pk,
-                                     0);
+  result =
+      crypto_sign_verify_internal(sig, siglen, m, mlen, pre, 2 + ctxlen, pk, 0);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(pre, sizeof(pre));
+
+  return result;
 }
 
 int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,

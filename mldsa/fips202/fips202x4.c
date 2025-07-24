@@ -123,10 +123,8 @@ void mld_shake128x4_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2,
 void mld_shake128x4_init(mld_shake128x4ctx *state) { (void)state; }
 void mld_shake128x4_release(mld_shake128x4ctx *state)
 {
-  /* Specification: Partially implements
-   * @[FIPS203, Section 3.3, Destruction of intermediate values] */
-  (void)state;
-  /*mld_zeroize(state, sizeof(mld_shake128x4ctx));*/
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(state, sizeof(mld_shake128x4ctx));
 }
 
 
@@ -150,8 +148,6 @@ void mld_shake256x4_squeezeblocks(uint8_t *out0, uint8_t *out1, uint8_t *out2,
 void mld_shake256x4_init(mld_shake256x4ctx *state) { (void)state; }
 void mld_shake256x4_release(mld_shake256x4ctx *state)
 {
-  /* Specification: Partially implements
-   * @[FIPS203, Section 3.3, Destruction of intermediate values] */
-  (void)state;
-  /*mld_zeroize(state, sizeof(mld_shake256x4ctx));*/
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(state, sizeof(mld_shake256x4ctx));
 }
