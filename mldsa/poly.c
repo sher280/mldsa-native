@@ -376,6 +376,9 @@ void mld_poly_uniform(mld_poly *a, const uint8_t seed[MLDSA_SEEDBYTES + 2])
     ctr = mld_rej_uniform(a->coeffs, MLDSA_N, ctr, buf, buflen);
   }
   mld_xof128_release(&state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
 }
 
 void mld_poly_uniform_4x(mld_poly *vec0, mld_poly *vec1, mld_poly *vec2,
@@ -431,6 +434,9 @@ void mld_poly_uniform_4x(mld_poly *vec0, mld_poly *vec1, mld_poly *vec2,
     ctr[3] = mld_rej_uniform(vec3->coeffs, MLDSA_N, ctr[3], buf[3], buflen);
   }
   mld_xof128_x4_release(&state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
 }
 
 /*************************************************
@@ -628,6 +634,10 @@ void mld_poly_uniform_eta_4x(mld_poly *r0, mld_poly *r1, mld_poly *r2,
   }
 
   mld_xof256_x4_release(&state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
+  mld_zeroize(extseed, sizeof(extseed));
 }
 
 
@@ -651,6 +661,10 @@ void mld_poly_uniform_gamma1(mld_poly *a, const uint8_t seed[MLDSA_CRHBYTES],
   mld_polyz_unpack(a, buf);
 
   mld_xof256_release(&state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
+  mld_zeroize(extseed, sizeof(extseed));
 }
 
 void mld_poly_uniform_gamma1_4x(mld_poly *r0, mld_poly *r1, mld_poly *r2,
@@ -690,6 +704,10 @@ void mld_poly_uniform_gamma1_4x(mld_poly *r0, mld_poly *r1, mld_poly *r2,
   mld_polyz_unpack(r2, buf[2]);
   mld_polyz_unpack(r3, buf[3]);
   mld_xof256_x4_release(&state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
+  mld_zeroize(extseed, sizeof(extseed));
 }
 
 
@@ -763,6 +781,10 @@ void mld_poly_challenge(mld_poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
     /* Move to the next bit of signs for next time */
     signs >>= 1;
   }
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(buf, sizeof(buf));
+  mld_zeroize(&signs, sizeof(signs));
 
   mld_assert_bound(c->coeffs, MLDSA_N, -1, 2);
 }

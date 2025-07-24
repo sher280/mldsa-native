@@ -437,8 +437,8 @@ void shake128_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state)
 
 void shake128_release(keccak_state *state)
 {
-  (void)state;
-  /* TODO: add secure zeroization*/
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(state, sizeof(keccak_state));
 }
 
 /*************************************************
@@ -535,8 +535,8 @@ void shake256_squeezeblocks(uint8_t *out, size_t nblocks, keccak_state *state)
 
 void shake256_release(keccak_state *state)
 {
-  (void)state;
-  /* TODO: add secure zeroization*/
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(state, sizeof(keccak_state));
 }
 
 /*************************************************
@@ -560,6 +560,9 @@ void shake128(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
   outlen -= nblocks * SHAKE128_RATE;
   out += nblocks * SHAKE128_RATE;
   shake128_squeeze(out, outlen, &state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(&state, sizeof(state));
 }
 
 /*************************************************
@@ -583,6 +586,9 @@ void shake256(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
   outlen -= nblocks * SHAKE256_RATE;
   out += nblocks * SHAKE256_RATE;
   shake256_squeeze(out, outlen, &state);
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(&state, sizeof(state));
 }
 
 /*************************************************
@@ -606,6 +612,9 @@ void sha3_256(uint8_t h[SHA3_256_HASHBYTES], const uint8_t *in, size_t inlen)
   {
     store64(h + 8 * i, s[i]);
   }
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(s, sizeof(s));
 }
 
 /*************************************************
@@ -629,4 +638,7 @@ void sha3_512(uint8_t h[SHA3_512_HASHBYTES], const uint8_t *in, size_t inlen)
   {
     store64(h + 8 * i, s[i]);
   }
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(s, sizeof(s));
 }

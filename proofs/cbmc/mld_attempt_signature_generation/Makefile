@@ -43,6 +43,7 @@ USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)polyvecl_uniform_gamma1 \
                        $(MLD_NAMESPACE)polyveck_add \
                        $(MLD_NAMESPACE)polyveck_make_hint \
                        $(MLD_NAMESPACE)pack_sig
+USE_FUNCTION_CONTRACTS+=mld_zeroize
 
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1

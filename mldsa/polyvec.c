@@ -110,6 +110,9 @@ void mld_polyvec_matrix_expand(mld_polyvecl mat[MLDSA_K],
       mld_poly_permute_bitrev_to_custom(mat[i].vec[j].coeffs);
     }
   }
+
+  /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
+  mld_zeroize(seed_ext, sizeof(seed_ext));
 }
 
 void mld_polyvec_matrix_pointwise_montgomery(mld_polyveck *t,

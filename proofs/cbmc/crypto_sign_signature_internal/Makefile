@@ -26,6 +26,7 @@ USE_FUNCTION_CONTRACTS=$(MLD_NAMESPACE)unpack_sk \
                        $(MLD_NAMESPACE)polyvecl_ntt \
                        $(MLD_NAMESPACE)polyveck_ntt \
                        mld_attempt_signature_generation
+USE_FUNCTION_CONTRACTS+=mld_zeroize
 
 APPLY_LOOP_CONTRACTS=on
 USE_DYNAMIC_FRAMES=1
