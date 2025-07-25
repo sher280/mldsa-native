@@ -529,6 +529,16 @@ __contract__(
 );
 
 #define mld_polyveck_pack_eta MLD_NAMESPACE(polyveck_pack_eta)
+/*************************************************
+ * Name:        mld_polyveck_pack_eta
+ *
+ * Description: Bit-pack polynomial vector with coefficients
+ *              in [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with
+ *                            MLDSA_K * MLDSA_POLYETA_PACKEDBYTES bytes
+ *              - const polyveck *p: pointer to input polynomial vector
+ **************************************************/
 void mld_polyveck_pack_eta(uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES],
                            const mld_polyveck *p)
 __contract__(
@@ -540,6 +550,16 @@ __contract__(
 );
 
 #define mld_polyvecl_pack_eta MLD_NAMESPACE(polyvecl_pack_eta)
+/*************************************************
+ * Name:        mld_polyvecl_pack_eta
+ *
+ * Description: Bit-pack polynomial vector with coefficients in
+ *              [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with
+ *                            MLDSA_L * MLDSA_POLYETA_PACKEDBYTES bytes
+ *              - const polyveck *p: pointer to input polynomial vector
+ **************************************************/
 void mld_polyvecl_pack_eta(uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES],
                            const mld_polyvecl *p)
 __contract__(
@@ -551,6 +571,16 @@ __contract__(
 );
 
 #define mld_polyvecl_pack_z MLD_NAMESPACE(polyvecl_pack_z)
+/*************************************************
+ * Name:        mld_polyvecl_pack_z
+ *
+ * Description: Bit-pack polynomial vector with coefficients in
+ *              [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with
+ *                            MLDSA_L * MLDSA_POLYZ_PACKEDBYTES bytes
+ *              - const mld_polyvecl *p: pointer to input polynomial vector
+ **************************************************/
 void mld_polyvecl_pack_z(uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES],
                          const mld_polyvecl *p)
 __contract__(
@@ -562,6 +592,16 @@ __contract__(
 );
 
 #define mld_polyveck_pack_t0 MLD_NAMESPACE(polyveck_pack_t0)
+/*************************************************
+ * Name:        mld_polyveck_pack_t0
+ *
+ * Description: Bit-pack polynomial vector to with coefficients in
+ *              ]-2^{MLDSA_D-1}, 2^{MLDSA_D-1}].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with
+ *                            MLDSA_K * MLDSA_POLYT0_PACKEDBYTES bytes
+ *              - const mld_poly *p: pointer to input polynomial vector
+ **************************************************/
 void mld_polyveck_pack_t0(uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES],
                           const mld_polyveck *p)
 __contract__(
@@ -573,6 +613,16 @@ __contract__(
 );
 
 #define mld_polyvecl_unpack_eta MLD_NAMESPACE(polyvecl_unpack_eta)
+/*************************************************
+ * Name:        mld_polyvecl_unpack_eta
+ *
+ * Description: Unpack polynomial vector with coefficients in
+ *              [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - mld_polyvecl *p: pointer to output polynomial vector
+ *              - const uint8_t *r: input byte array with
+ *                                  bit-packed polynomial vector
+ **************************************************/
 void mld_polyvecl_unpack_eta(
     mld_polyvecl *p, const uint8_t r[MLDSA_L * MLDSA_POLYETA_PACKEDBYTES])
 __contract__(
@@ -584,6 +634,16 @@ __contract__(
 );
 
 #define mld_polyvecl_unpack_z MLD_NAMESPACE(polyvecl_unpack_z)
+/*************************************************
+ * Name:        mld_polyvecl_unpack_z
+ *
+ * Description: Unpack polynomial vector with coefficients in
+ *              [-(MLDSA_GAMMA1 - 1), MLDSA_GAMMA1].
+ *
+ * Arguments:   - mld_polyvecl *z: pointer to output polynomial vector
+ *              - const uint8_t *r: input byte array with
+ *                                  bit-packed polynomial vector
+ **************************************************/
 void mld_polyvecl_unpack_z(mld_polyvecl *z,
                            const uint8_t r[MLDSA_L * MLDSA_POLYZ_PACKEDBYTES])
 __contract__(
@@ -595,6 +655,16 @@ __contract__(
 );
 
 #define mld_polyveck_unpack_eta MLD_NAMESPACE(polyveck_unpack_eta)
+/*************************************************
+ * Name:        mld_polyveck_unpack_eta
+ *
+ * Description: Unpack polynomial vector with coefficients in
+ *              [-MLDSA_ETA,MLDSA_ETA].
+ *
+ * Arguments:   - mld_polyveck *p: pointer to output polynomial vector
+ *              - const uint8_t *r: input byte array with
+ *                                  bit-packed polynomial vector
+ **************************************************/
 void mld_polyveck_unpack_eta(
     mld_polyveck *p, const uint8_t r[MLDSA_K * MLDSA_POLYETA_PACKEDBYTES])
 __contract__(
@@ -606,6 +676,16 @@ __contract__(
 );
 
 #define mld_polyveck_unpack_t0 MLD_NAMESPACE(polyveck_unpack_t0)
+/*************************************************
+ * Name:        mld_polyveck_unpack_t0
+ *
+ * Description: Unpack polynomial vector with coefficients in
+ *              ]-2^{MLDSA_D-1}, 2^{MLDSA_D-1}].
+ *
+ * Arguments:   - mld_polyveck *p: pointer to output polynomial vector
+ *              - const uint8_t *r: input byte array with
+ *                                  bit-packed polynomial vector
+ **************************************************/
 void mld_polyveck_unpack_t0(mld_polyveck *p,
                             const uint8_t r[MLDSA_K * MLDSA_POLYT0_PACKEDBYTES])
 __contract__(
