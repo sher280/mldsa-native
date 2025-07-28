@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "ct.h"
 #include "debug.h"
 #include "fips202/fips202x4.h"
 #include "ntt.h"
@@ -253,8 +254,7 @@ int mld_poly_chknorm(const mld_poly *a, int32_t B)
   )
   {
     /* Absolute value */
-    t = a->coeffs[i] >> 31;
-    t = a->coeffs[i] - (t & 2 * a->coeffs[i]);
+    t = mld_ct_abs_i32(a->coeffs[i]);
 
     if (t >= B)
     {
