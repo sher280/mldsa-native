@@ -6,6 +6,12 @@
 #ifndef MLD_COMMON_H
 #define MLD_COMMON_H
 
+#if defined(MLD_CONFIG_FILE)
+#include MLD_CONFIG_FILE
+#else
+#include "config.h"
+#endif
+
 #include "cbmc.h"
 #include "params.h"
 #include "sys.h"

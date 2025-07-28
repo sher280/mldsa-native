@@ -5,7 +5,7 @@
 #ifndef MLD_PARAMS_H
 #define MLD_PARAMS_H
 
-#include "config.h"
+#include "common.h"
 
 #define MLDSA_SEEDBYTES 32
 #define MLDSA_CRHBYTES 64

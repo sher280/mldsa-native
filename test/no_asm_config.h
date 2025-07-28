@@ -22,25 +22,6 @@
 #define MLD_NAMESPACE(s) MLD_87_ref_##s
 #endif
 
-
-/******************************************************************************
- * Name:        MLD_CONFIG_FILE
- *
- * Description: If defined, this is a header that will be included instead
- *              of this default configuration file mldsa/config.h.
- *
- *              When you need to build mldsa-native in multiple configurations,
- *              using varying MLD_CONFIG_FILE can be more convenient
- *              then configuring everything through CFLAGS.
- *
- *              To use, MLD_CONFIG_FILE _must_ be defined prior
- *              to the inclusion of any mldsa-native headers. For example,
- *              it can be set by passing `-DMLD_CONFIG_FILE="..."`
- *              on the command line.
- *
- *****************************************************************************/
-/* #define MLD_CONFIG_FILE "config.h" */
-
 /******************************************************************************
  * Name:        MLD_CONFIG_ARITH_BACKEND_FILE
  *
@@ -107,16 +88,17 @@
  *              no-op.
  *
  *****************************************************************************/
-/* #define MLD_CONFIG_CUSTOM_ZEROIZE
-   #if !defined(__ASSEMBLER__)
-   #include <stdint.h>
-   #include "sys.h"
-   static MLD_INLINE void mld_zeroize_native(void *ptr, size_t len)
-   {
-       ... your implementation ...
-   }
-   #endif
-*/
+#define MLD_CONFIG_CUSTOM_ZEROIZE
+#if !defined(__ASSEMBLER__)
+#include <stdint.h>
+#include <string.h>
+#include "../mldsa/sys.h"
+static MLD_INLINE void mld_zeroize_native(void *ptr, size_t len)
+{
+  explicit_bzero(ptr, len);
+}
+#endif
+
 
 /******************************************************************************
  * Name:        MLD_CONFIG_KEYGEN_PCT
@@ -169,7 +151,7 @@
  *              Inline assembly is also used to implement a secure zeroization
  *              function on non-Windows platforms. If this option is set and
  *              the target platform is not Windows, you MUST set
- *              MLD_CONFIG_CUSTOM_ZEROIZE and provide a custom zeroization
+ *              MLK_CONFIG_CUSTOM_ZEROIZE and provide a custom zeroization
  *              function.
  *
  *              If this option is set, MLD_CONFIG_USE_NATIVE_BACKEND_FIPS202 and
@@ -177,7 +159,7 @@
  *              native backends will be used.
  *
  *****************************************************************************/
-/* #define MLD_CONFIG_NO_ASM */
+#define MLD_CONFIG_NO_ASM
 
 
 #endif /* !MLD_CONFIG_H */
