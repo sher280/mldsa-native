@@ -17,10 +17,18 @@
 	build test all \
 	clean quickcheck check-defined-CYCLES
 
+SHELL := /bin/bash
 .DEFAULT_GOAL := build
+
 all: build
 
 W := $(EXEC_WRAPPER)
+
+# Detect available SHA256 command
+SHA256SUM := $(shell command -v shasum >/dev/null 2>&1 && echo "shasum -a 256" || (command -v sha256sum >/dev/null 2>&1 && echo "sha256sum" || echo ""))
+ifeq ($(SHA256SUM),)
+$(error Neither 'shasum' nor 'sha256sum' found. Please install one of these tools.)
+endif
 
 include test/mk/config.mk
 include test/mk/components.mk
@@ -35,11 +43,11 @@ test: run_kat run_func run_acvp
 	$(Q)echo "  Everything checks fine!"
 
 run_kat_44: kat_44
-	$(W) $(MLDSA44_DIR)/bin/gen_KAT44 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44  kat-sha256
+	set -o pipefail; $(W) $(MLDSA44_DIR)/bin/gen_KAT44 | $(SHA256SUM) | cut -d " " -f 1 | xargs ./META.sh ML-DSA-44 kat-sha256
 run_kat_65: kat_65
-	$(W) $(MLDSA65_DIR)/bin/gen_KAT65 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-65  kat-sha256
+	set -o pipefail; $(W) $(MLDSA65_DIR)/bin/gen_KAT65 | $(SHA256SUM) | cut -d " " -f 1 | xargs ./META.sh ML-DSA-65 kat-sha256
 run_kat_87: kat_87
-	$(W) $(MLDSA87_DIR)/bin/gen_KAT87 | sha256sum | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87  kat-sha256
+	set -o pipefail; $(W) $(MLDSA87_DIR)/bin/gen_KAT87 | $(SHA256SUM) | cut -d " " -f 1 | xargs ./META.sh ML-DSA-87 kat-sha256
 run_kat: run_kat_44 run_kat_65 run_kat_87
 
 run_func_44: func_44
