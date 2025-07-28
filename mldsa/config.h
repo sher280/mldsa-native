@@ -179,5 +179,20 @@
  *****************************************************************************/
 /* #define MLD_CONFIG_NO_ASM */
 
+/******************************************************************************
+ * Name:        MLD_CONFIG_NO_ASM_VALUE_BARRIER
+ *
+ * Description: If this option is set, mldsa-native will be built without
+ *              use of native code or inline assembly for value barriers.
+ *
+ *              By default, inline assembly (if available) is used to implement
+ *              value barriers.
+ *              Without inline assembly, mldsa-native will use a global volatile
+ *              'opt blocker' instead; see ct.h.
+ *
+ *****************************************************************************/
+/* #define MLD_CONFIG_NO_ASM_VALUE_BARRIER */
+
+
 
 #endif /* !MLD_CONFIG_H */
