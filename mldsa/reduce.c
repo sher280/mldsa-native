@@ -4,6 +4,7 @@
  */
 #include <stdint.h>
 
+#include "ct.h"
 #include "reduce.h"
 
 /*************************************************
@@ -71,6 +72,5 @@ int32_t mld_reduce32(int32_t a)
 
 int32_t mld_caddq(int32_t a)
 {
-  a += (a >> 31) & MLDSA_Q;
-  return a;
+  return mld_ct_sel_int32(a + MLDSA_Q, a, mld_ct_cmask_neg_i32(a));
 }
