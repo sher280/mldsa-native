@@ -7,9 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "../mldsa/api.h"
+#include "../mldsa/sys.h"
 #include "notrandombytes/notrandombytes.h"
 
+#ifndef NTESTS
 #define NTESTS 100
+#endif
 #define MLEN 59
 #define CTXLEN 1
 
@@ -28,12 +31,18 @@ static int test_sign(void)
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
+  MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
+  MLD_CT_TESTING_SECRET(m, sizeof(m));
 
   crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
 
+  /* Constant time: Declassify outputs to check them. */
+  MLD_CT_TESTING_DECLASSIFY(rc, sizeof(int));
+  MLD_CT_TESTING_DECLASSIFY(m, sizeof(m));
+  MLD_CT_TESTING_DECLASSIFY(m2, sizeof(m2));
 
   if (rc)
   {
@@ -78,7 +87,9 @@ static int test_wrong_pk(void)
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
+  MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
+  MLD_CT_TESTING_SECRET(m, sizeof(m));
 
   crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
@@ -89,6 +100,10 @@ static int test_wrong_pk(void)
   pk[idx] ^= 1;
 
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  /* Constant time: Declassify outputs to check them. */
+  MLD_CT_TESTING_DECLASSIFY(rc, sizeof(int));
+  MLD_CT_TESTING_DECLASSIFY(m2, sizeof(m2));
 
   if (!rc)
   {
@@ -123,7 +138,9 @@ static int test_wrong_sig(void)
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
+  MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
+  MLD_CT_TESTING_SECRET(m, sizeof(m));
 
   crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
@@ -134,6 +151,10 @@ static int test_wrong_sig(void)
   sm[idx] ^= 1;
 
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  /* Constant time: Declassify outputs to check them. */
+  MLD_CT_TESTING_DECLASSIFY(rc, sizeof(int));
+  MLD_CT_TESTING_DECLASSIFY(m2, sizeof(m2));
 
   if (!rc)
   {
@@ -169,7 +190,9 @@ static int test_wrong_ctx(void)
 
   crypto_sign_keypair(pk, sk);
   randombytes(ctx, CTXLEN);
+  MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
+  MLD_CT_TESTING_SECRET(m, sizeof(m));
 
   crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
 
@@ -180,6 +203,10 @@ static int test_wrong_ctx(void)
   ctx[idx] ^= 1;
 
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
+
+  /* Constant time: Declassify outputs to check them. */
+  MLD_CT_TESTING_DECLASSIFY(rc, sizeof(int));
+  MLD_CT_TESTING_DECLASSIFY(m2, sizeof(m2));
 
   if (!rc)
   {

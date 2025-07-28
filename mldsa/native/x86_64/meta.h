@@ -54,26 +54,48 @@ static MLD_INLINE int mld_rej_uniform_eta2_native(int32_t *r, unsigned len,
                                                   const uint8_t *buf,
                                                   unsigned buflen)
 {
+  int outlen;
   /* AVX2 implementation assumes specific buffer lengths */
   if (len != MLDSA_N || buflen != MLD_AVX2_REJ_UNIFORM_ETA2_BUFLEN)
   {
     return -1;
   }
 
-  return (int)mld_rej_uniform_eta2_avx2(r, buf);
+  /* Constant time: Inputs and outputs to this function are secret.
+   * It is safe to leak which coefficients are accepted/rejected.
+   * The assembly implementation must not leak any other information about the
+   * accepted coefficients. Constant-time testing cannot cover this, and we
+   * hence have to manually verify the assembly.
+   * We declassify prior the input data and mark the outputs as secret.
+   */
+  MLD_CT_TESTING_DECLASSIFY(buf, buflen);
+  outlen = (int)mld_rej_uniform_eta2_avx2(r, buf);
+  MLD_CT_TESTING_SECRET(r, sizeof(int32_t) * outlen);
+  return outlen;
 }
 
 static MLD_INLINE int mld_rej_uniform_eta4_native(int32_t *r, unsigned len,
                                                   const uint8_t *buf,
                                                   unsigned buflen)
 {
+  int outlen;
   /* AVX2 implementation assumes specific buffer lengths */
   if (len != MLDSA_N || buflen != MLD_AVX2_REJ_UNIFORM_ETA4_BUFLEN)
   {
     return -1;
   }
 
-  return (int)mld_rej_uniform_eta4_avx2(r, buf);
+  /* Constant time: Inputs and outputs to this function are secret.
+   * It is safe to leak which coefficients are accepted/rejected.
+   * The assembly implementation must not leak any other information about the
+   * accepted coefficients. Constant-time testing cannot cover this, and we
+   * hence have to manually verify the assembly.
+   * We declassify prior the input data and mark the outputs as secret.
+   */
+  MLD_CT_TESTING_DECLASSIFY(buf, buflen);
+  outlen = (int)mld_rej_uniform_eta4_avx2(r, buf);
+  MLD_CT_TESTING_SECRET(r, sizeof(int32_t) * outlen);
+  return outlen;
 }
 
 #endif /* !__ASSEMBLER__ */

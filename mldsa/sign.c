@@ -144,9 +144,10 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   rhoprime = rho + MLDSA_SEEDBYTES;
   key = rhoprime + MLDSA_CRHBYTES;
 
+  /* Constant time: rho is part of the public key and, hence, public. */
+  MLD_CT_TESTING_DECLASSIFY(rho, MLDSA_SEEDBYTES);
   /* Expand matrix */
   mld_polyvec_matrix_expand(mat, rho);
-
   mld_sample_s1_s2(&s1, &s2, rhoprime);
 
   /* Matrix-vector multiplication */
@@ -180,6 +181,9 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   mld_zeroize(&t2, sizeof(t2));
   mld_zeroize(&t0, sizeof(t0));
 
+  /* Constant time: pk is the public key, inherently public data */
+  MLD_CT_TESTING_DECLASSIFY(pk, CRYPTO_PUBLICKEYBYTES);
+
   /* Pairwise Consistency Test (PCT) @[FIPS140_3_IG, p.87] */
   if (mld_check_pct(pk, sk))
   {
@@ -194,6 +198,7 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
   uint8_t seed[MLDSA_SEEDBYTES];
   int result;
   mld_randombytes(seed, MLDSA_SEEDBYTES);
+  MLD_CT_TESTING_SECRET(seed, sizeof(seed));
   result = crypto_sign_keypair_internal(pk, sk, seed);
 
   /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
@@ -332,6 +337,11 @@ __contract__(
 
   mld_H(challenge_bytes, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, sig,
         MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
+  /* Constant time: Leaking challenge_bytes does not reveal any information
+   * about the secret key as H() is modelled as random oracle.
+   * This also applies to challenges for rejected signatures.
+   * See Section 5.5 of @[Round3_Spec]. */
+  MLD_CT_TESTING_DECLASSIFY(challenge_bytes, sizeof(challenge_bytes));
   mld_poly_challenge(&cp, challenge_bytes);
   mld_poly_ntt(&cp);
 
@@ -342,6 +352,12 @@ __contract__(
   mld_polyvecl_reduce(&z);
 
   z_invalid = mld_polyvecl_chknorm(&z, MLDSA_GAMMA1 - MLDSA_BETA);
+  /* Constant time: It is fine (and prohibitively expensive to avoid)
+   * leaking the result of the norm check. In case of rejection it
+   * would even be okay to leak which coefficient led to rejection
+   * as the candidate signature will be discarded anyway.
+   * See Section 5.5 of @[Round3_Spec]. */
+  MLD_CT_TESTING_DECLASSIFY(&z_invalid, sizeof(uint32_t));
   if (z_invalid)
   {
     /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
@@ -369,7 +385,10 @@ __contract__(
   mld_polyveck_invntt_tomont(&h);
   mld_polyveck_sub(&w0, &h);
   mld_polyveck_reduce(&w0);
+
   w0_invalid = mld_polyveck_chknorm(&w0, MLDSA_GAMMA2 - MLDSA_BETA);
+  /* Constant time: w0_invalid may be leaked - see comment for z_invalid. */
+  MLD_CT_TESTING_DECLASSIFY(&w0_invalid, sizeof(uint32_t));
   if (w0_invalid)
   {
     /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
@@ -388,7 +407,10 @@ __contract__(
   mld_polyveck_pointwise_poly_montgomery(&h, &cp, t0);
   mld_polyveck_invntt_tomont(&h);
   mld_polyveck_reduce(&h);
+
   h_invalid = mld_polyveck_chknorm(&h, MLDSA_GAMMA2);
+  /* Constant time: h_invalid may be leaked - see comment for z_invalid. */
+  MLD_CT_TESTING_DECLASSIFY(&h_invalid, sizeof(uint32_t));
   if (h_invalid)
   {
     /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
@@ -404,6 +426,17 @@ __contract__(
   }
 
   mld_polyveck_add(&w0, &h);
+
+  /* Constant time: At this point all norm checks have passed and we, hence,
+   * know that the signature does not leak any secret information.
+   * Consequently, any value that can be computed from the signature and public
+   * key is considered public.
+   * w0 and w1 are public as they can be computed from Az - ct = \alpha w1 + w0.
+   * h=c*t0 is public as both c and t0 are public.
+   * For a more detailed discussion, refer to https://eprint.iacr.org/2022/1406.
+   */
+  MLD_CT_TESTING_DECLASSIFY(&w0, sizeof(w0));
+  MLD_CT_TESTING_DECLASSIFY(&w2, sizeof(w2));
   n = mld_polyveck_make_hint(&h, &w0, &w2);
   if (n > MLDSA_OMEGA)
   {
@@ -420,6 +453,10 @@ __contract__(
   }
 
   /* All is well - write signature */
+  /* Constant time: At this point it is clear that the signature is valid - it
+   * can, hence, be considered public. */
+  MLD_CT_TESTING_DECLASSIFY(&h, sizeof(h));
+  MLD_CT_TESTING_DECLASSIFY(&z, sizeof(z));
   mld_pack_sig(sig, challenge_bytes, &z, &h, n);
 
   /* FIPS 204. Section 3.6.3 Destruction of intermediate values. */
@@ -470,6 +507,8 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   mld_H(rhoprime, MLDSA_CRHBYTES, key, MLDSA_SEEDBYTES, rnd, MLDSA_RNDBYTES, mu,
         MLDSA_CRHBYTES);
 
+  /* Constant time: rho is part of the public key and, hence, public. */
+  MLD_CT_TESTING_DECLASSIFY(rho, MLDSA_SEEDBYTES);
   /* Expand matrix and transform vectors */
   mld_polyvec_matrix_expand(mat, rho);
   mld_polyvecl_ntt(&s1);
@@ -558,6 +597,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
 
 #ifdef MLD_RANDOMIZED_SIGNING
   mld_randombytes(rnd, MLDSA_RNDBYTES);
+  MLD_CT_TESTING_SECRET(rnd, sizeof(rnd));
 #else
   memset(rnd, 0, MLDSA_RNDBYTES);
 #endif
@@ -582,6 +622,7 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
 
 #ifdef MLD_RANDOMIZED_SIGNING
   mld_randombytes(rnd, MLDSA_RNDBYTES);
+  MLD_CT_TESTING_SECRET(rnd, sizeof(rnd));
 #else
   memset(rnd, 0, MLDSA_RNDBYTES);
 #endif
@@ -685,6 +726,16 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   /* Call random oracle and verify challenge */
   mld_H(c2, MLDSA_CTILDEBYTES, mu, MLDSA_CRHBYTES, buf,
         MLDSA_K * MLDSA_POLYW1_PACKEDBYTES, NULL, 0);
+
+  /* Constant time: All data in verification is usually considered public.
+   * However, in our constant-time tests we do not declassify the message and
+   * context string.
+   * The following conditional is the only place in verification whose run-time
+   * depends on the message. As all that can be leakaged here is the output of
+   * a hash call (that should behave like a random oracle), it is safe to
+   * declassify here even with a secret message.
+   */
+  MLD_CT_TESTING_DECLASSIFY(c2, sizeof(c2));
   for (i = 0; i < MLDSA_CTILDEBYTES; ++i)
   __loop__(
     invariant(i <= MLDSA_CTILDEBYTES)
