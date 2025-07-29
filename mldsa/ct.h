@@ -176,7 +176,9 @@ __contract__(
  **************************************************/
 /* TODO: proof */
 static MLD_INLINE uint32_t mld_ct_cmask_neg_i32(int32_t x)
-__contract__(ensures(return_value == ((x < 0) ? 0xFFFFFFFF : 0)))
+__contract__(
+  ensures(return_value == ((x < 0) ? 0xFFFFFFFF : 0))
+)
 {
   int64_t tmp = mld_value_barrier_i64((int64_t)x);
   tmp >>= 31;
@@ -197,7 +199,7 @@ __contract__(ensures(return_value == ((x < 0) ? 0xFFFFFFFF : 0)))
  *
  **************************************************/
 /* TODO: proof */
-static MLD_INLINE uint32_t mld_ct_abs_i32(int32_t x)
+static MLD_INLINE int32_t mld_ct_abs_i32(int32_t x)
 __contract__(
   requires(x >= -INT32_MAX)
   ensures(return_value == ((x < 0) ? -x : x))

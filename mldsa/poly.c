@@ -234,35 +234,35 @@ void mld_poly_use_hint(mld_poly *b, const mld_poly *a, const mld_poly *h)
 /* Reference: explicitly checks the bound B to be <= (MLDSA_Q - 1) / 8).
  * This is unnecessary as it's always a compile-time constant.
  * We instead model it as a precondition.
+ * Checking the bound is performed using a conditional arguing
+ * that it is okay to leak which coefficient violates the bound (while the
+ * coefficient itself must remain secret).
+ * We instead perform everything in constant-time.
  */
-int mld_poly_chknorm(const mld_poly *a, int32_t B)
+uint32_t mld_poly_chknorm(const mld_poly *a, int32_t B)
 {
   unsigned int i;
-  int rc = 0;
-  int32_t t;
+  uint32_t t = 0;
   mld_assert_bound(a->coeffs, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX);
 
-  /* It is ok to leak which coefficient violates the bound since
-     the probability for each coefficient is independent of secret
-     data but we must not leak the sign of the centralized representative. */
 
   for (i = 0; i < MLDSA_N; ++i)
   __loop__(
     invariant(i <= MLDSA_N)
-    invariant(rc == 0 || rc == 1)
-    invariant((rc == 0) == array_abs_bound(a->coeffs, 0, i, B))
+    invariant(t == 0 || t == 0xFFFFFFFF)
+    invariant((t == 0) == array_abs_bound(a->coeffs, 0, i, B))
   )
   {
-    /* Absolute value */
-    t = mld_ct_abs_i32(a->coeffs[i]);
+    /* Reference: Leaks which coefficient violates the bound via a conditional.
+     * We are more conservative to reduce the number of declassifications in
+     * constant-time testing.
+     */
 
-    if (t >= B)
-    {
-      rc = 1;
-    }
+    /* if (abs(a[i]) >= B) */
+    t |= mld_ct_cmask_neg_i32(B - 1 - mld_ct_abs_i32(a->coeffs[i]));
   }
 
-  return rc;
+  return t;
 }
 
 /*************************************************
