@@ -313,7 +313,7 @@ __contract__(
   mld_polyvecl y, z;
   mld_polyveck w2, w1, w0, h;
   mld_poly cp;
-  int z_invalid, w0_invalid, h_invalid;
+  uint32_t z_invalid, w0_invalid, h_invalid;
 
   /* Sample intermediate vector y */
   mld_polyvecl_uniform_gamma1(&y, rhoprime, nonce);

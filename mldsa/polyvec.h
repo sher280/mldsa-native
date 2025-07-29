@@ -195,15 +195,15 @@ __contract__(
  *              - int32_t B: norm bound
  *
  * Returns 0 if norm of all polynomials is strictly smaller than B <=
- * (MLDSA_Q-1)/8 and 1 otherwise.
+ * (MLDSA_Q-1)/8 and 0xFFFFFFFF otherwise.
  **************************************************/
-int mld_polyvecl_chknorm(const mld_polyvecl *v, int32_t B)
+uint32_t mld_polyvecl_chknorm(const mld_polyvecl *v, int32_t B)
 __contract__(
   requires(memory_no_alias(v, sizeof(mld_polyvecl)))
   requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
   requires(forall(k0, 0, MLDSA_L,
     array_bound(v->vec[k0].coeffs, 0, MLDSA_N, -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
-  ensures(return_value == 0 || return_value == 1)
+  ensures(return_value == 0 || return_value == 0xFFFFFFFF)
   ensures((return_value == 0) == forall(k1, 0, MLDSA_L, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, B)))
 );
 
@@ -384,16 +384,16 @@ __contract__(
  *              - int32_t B: norm bound
  *
  * Returns 0 if norm of all polynomials are strictly smaller than B <=
- *(MLDSA_Q-1)/8 and 1 otherwise.
+ *(MLDSA_Q-1)/8 and 0xFFFFFFFF otherwise.
  **************************************************/
-int mld_polyveck_chknorm(const mld_polyveck *v, int32_t B)
+uint32_t mld_polyveck_chknorm(const mld_polyveck *v, int32_t B)
 __contract__(
   requires(memory_no_alias(v, sizeof(mld_polyveck)))
   requires(0 <= B && B <= (MLDSA_Q - 1) / 8)
   requires(forall(k0, 0, MLDSA_K,
                   array_bound(v->vec[k0].coeffs, 0, MLDSA_N,
                               -REDUCE32_RANGE_MAX, REDUCE32_RANGE_MAX)))
-  ensures(return_value == 0 || return_value == 1)
+  ensures(return_value == 0 || return_value == 0xFFFFFFFF)
   ensures((return_value == 0) == forall(k1, 0, MLDSA_K, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, B)))
 );
 

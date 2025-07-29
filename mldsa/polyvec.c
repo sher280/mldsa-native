@@ -292,23 +292,26 @@ void mld_polyvecl_pointwise_acc_montgomery(mld_poly *w, const mld_polyvecl *u,
 }
 
 
-int mld_polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
+uint32_t mld_polyvecl_chknorm(const mld_polyvecl *v, int32_t bound)
 {
   unsigned int i;
+  uint32_t t = 0;
 
   for (i = 0; i < MLDSA_L; ++i)
   __loop__(
     invariant(i <= MLDSA_L)
-    invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
+    invariant(t == 0 || t == 0xFFFFFFFF)
+    invariant((t == 0) == forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
   )
   {
-    if (mld_poly_chknorm(&v->vec[i], bound))
-    {
-      return 1;
-    }
+    /* Reference: Leaks which polynomial violates the bound via a conditional.
+     * We are more conservative to reduce the number of declassifications in
+     * constant-time testing.
+     */
+    t |= mld_poly_chknorm(&v->vec[i], bound);
   }
 
-  return 0;
+  return t;
 }
 
 /**************************************************************/
@@ -447,23 +450,26 @@ void mld_polyveck_pointwise_poly_montgomery(mld_polyveck *r, const mld_poly *a,
 }
 
 
-int mld_polyveck_chknorm(const mld_polyveck *v, int32_t bound)
+uint32_t mld_polyveck_chknorm(const mld_polyveck *v, int32_t bound)
 {
   unsigned int i;
+  uint32_t t = 0;
 
   for (i = 0; i < MLDSA_K; ++i)
   __loop__(
     invariant(i <= MLDSA_K)
-    invariant(forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
+    invariant(t == 0 || t == 0xFFFFFFFF)
+    invariant((t == 0) == forall(k1, 0, i, array_abs_bound(v->vec[k1].coeffs, 0, MLDSA_N, bound)))
   )
   {
-    if (mld_poly_chknorm(&v->vec[i], bound))
-    {
-      return 1;
-    }
+    /* Reference: Leaks which polynomial violates the bound via a conditional.
+     * We are more conservative to reduce the number of declassifications in
+     * constant-time testing.
+     */
+    t |= mld_poly_chknorm(&v->vec[i], bound);
   }
 
-  return 0;
+  return t;
 }
 
 void mld_polyveck_power2round(mld_polyveck *v1, mld_polyveck *v0,
