@@ -6,7 +6,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "../mldsa/api.h"
+#include "../mldsa/fips202/fips202.h"
+#include "../mldsa/sign.h"
 #include "../mldsa/sys.h"
 #include "notrandombytes/notrandombytes.h"
 
@@ -30,54 +31,60 @@ static void print_hex(const uint8_t *data, size_t size)
 
 int main(void)
 {
-  unsigned i, j;
+  unsigned i;
   int rc;
   uint8_t pk[CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[CRYPTO_SECRETKEYBYTES];
-  uint8_t sm[MAXMLEN + CRYPTO_BYTES];
   uint8_t s[CRYPTO_BYTES];
-  uint8_t m[MAXMLEN];
-  uint8_t m2[MAXMLEN + CRYPTO_BYTES];
-  size_t smlen;
+  uint8_t *m;
+  /* empty ctx */
+  uint8_t pre[2] = {0, 0};
   size_t slen;
-  size_t mlen;
+
+  const uint8_t seed[64] = {
+      32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+      48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+      64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+      80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+  };
+  uint8_t coins[MLDSA_SEEDBYTES + MLDSA_RNDBYTES + MAXMLEN];
 
 #if defined(MLD_SYS_WINDOWS)
   /* Disable automatic CRLF conversion on Windows to match testvector hashes */
   _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
+  /*
+   * We cannot rely on randombytes in the KAT test as randombytes() is used
+   * inside of crypto_sign_signature() which is called as a part of
+   * key generation in case PCT (pairwise-consistency test) is enabled.
+   * To allow KAT tests to still pass successfully, we derandomize the
+   * KAT test to only use deterministic randomness derived using SHAKE.
+   */
+
+  shake256(coins, sizeof(coins), seed, sizeof(seed));
+
   for (i = 0; i < MAXMLEN; i = (i == 0) ? i + 1 : i << 2)
   {
-    randombytes(m, i);
+    shake256(coins, sizeof(coins), coins, sizeof(coins));
+    m = coins + MLDSA_SEEDBYTES + MLDSA_RNDBYTES;
 
-
-    crypto_sign_keypair(pk, sk);
+    crypto_sign_keypair_internal(pk, sk, coins);
 
     print_hex(pk, CRYPTO_PUBLICKEYBYTES);
     print_hex(sk, CRYPTO_SECRETKEYBYTES);
 
-    crypto_sign(sm, &smlen, m, i, NULL, CTXLEN, sk);
-    crypto_sign_signature(s, &slen, m, i, NULL, CTXLEN, sk);
+    crypto_sign_signature_internal(s, &slen, m, i, pre, sizeof(pre),
+                                   coins + MLDSA_SEEDBYTES, sk, 0);
 
-    print_hex(sm, smlen);
     print_hex(s, slen);
 
-    rc = crypto_sign_open(m2, &mlen, sm, smlen, NULL, CTXLEN, pk);
-    rc |= crypto_sign_verify(s, slen, m, i, NULL, CTXLEN, pk);
+    rc = crypto_sign_verify(s, slen, m, i, NULL, CTXLEN, pk);
 
     if (rc)
     {
       printf("ERROR: signature verification failed\n");
       return -1;
-    }
-    for (j = 0; j < i; j++)
-    {
-      if (m2[j] != m[j])
-      {
-        printf("ERROR: message recovery failed\n");
-        return -1;
-      }
     }
   }
   return 0;
