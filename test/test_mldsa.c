@@ -16,6 +16,18 @@
 #define MLEN 59
 #define CTXLEN 1
 
+#define CHECK(x)                                              \
+  do                                                          \
+  {                                                           \
+    int r;                                                    \
+    r = (x);                                                  \
+    if (!r)                                                   \
+    {                                                         \
+      fprintf(stderr, "ERROR (%s,%d)\n", __FILE__, __LINE__); \
+      return 1;                                               \
+    }                                                         \
+  } while (0)
+
 static int test_sign(void)
 {
   uint8_t pk[CRYPTO_PUBLICKEYBYTES];
@@ -29,13 +41,13 @@ static int test_sign(void)
   int rc;
 
 
-  crypto_sign_keypair(pk, sk);
+  CHECK(crypto_sign_keypair(pk, sk) == 0);
   randombytes(ctx, CTXLEN);
   MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
   MLD_CT_TESTING_SECRET(m, sizeof(m));
 
-  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
+  CHECK(crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk) == 0);
 
   rc = crypto_sign_open(m2, &mlen, sm, smlen, ctx, CTXLEN, pk);
 
@@ -85,13 +97,13 @@ static int test_wrong_pk(void)
   size_t idx;
   size_t i;
 
-  crypto_sign_keypair(pk, sk);
+  CHECK(crypto_sign_keypair(pk, sk) == 0);
   randombytes(ctx, CTXLEN);
   MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
   MLD_CT_TESTING_SECRET(m, sizeof(m));
 
-  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
+  CHECK(crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk) == 0);
 
   /* flip bit in public key */
   randombytes((uint8_t *)&idx, sizeof(size_t));
@@ -136,13 +148,13 @@ static int test_wrong_sig(void)
   size_t idx;
   size_t i;
 
-  crypto_sign_keypair(pk, sk);
+  CHECK(crypto_sign_keypair(pk, sk) == 0);
   randombytes(ctx, CTXLEN);
   MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
   MLD_CT_TESTING_SECRET(m, sizeof(m));
 
-  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
+  CHECK(crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk) == 0);
 
   /* flip bit in signed message */
   randombytes((uint8_t *)&idx, sizeof(size_t));
@@ -188,13 +200,13 @@ static int test_wrong_ctx(void)
   size_t idx;
   size_t i;
 
-  crypto_sign_keypair(pk, sk);
+  CHECK(crypto_sign_keypair(pk, sk) == 0);
   randombytes(ctx, CTXLEN);
   MLD_CT_TESTING_SECRET(ctx, sizeof(ctx));
   randombytes(m, MLEN);
   MLD_CT_TESTING_SECRET(m, sizeof(m));
 
-  crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk);
+  CHECK(crypto_sign(sm, &smlen, m, MLEN, ctx, CTXLEN, sk) == 0);
 
   /* flip bit in ctx */
   randombytes((uint8_t *)&idx, sizeof(size_t));
