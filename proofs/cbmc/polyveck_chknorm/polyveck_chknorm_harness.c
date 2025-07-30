@@ -7,6 +7,6 @@ void harness(void)
 {
   int32_t b;
   mld_polyveck *v;
-  int r;
+  uint32_t r;
   r = mld_polyveck_chknorm(v, b);
 }
