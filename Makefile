@@ -15,7 +15,9 @@
 	bench_components_44 bench_components_65 bench_components_87 bench_components \
 	run_bench_components_44 run_bench_components_65 run_bench_components_87 run_bench_components \
 	build test all \
-	clean quickcheck check-defined-CYCLES
+	clean quickcheck check-defined-CYCLES \
+	size_44 size_65 size_87 size \
+	run_size_44 run_size_65 run_size_87 run_size 
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := build
@@ -150,6 +152,31 @@ run_bench_components: \
 	run_bench_components_44 .WAIT\
 	run_bench_components_65 .WAIT\
 	run_bench_components_87
+
+
+size_44: $(BUILD_DIR)/libmldsa44.a
+size_65: $(BUILD_DIR)/libmldsa65.a
+size_87: $(BUILD_DIR)/libmldsa87.a
+size: size_44 size_65 size_87
+
+run_size_44: size_44
+	$(Q)echo "size $(BUILD_DIR)/libmldsa44.a"
+	$(Q)$(SIZE) $(BUILD_DIR)/libmldsa44.a | (read header; echo "$$header"; awk '$$5 != 0' | sort -k5 -n -r)
+
+run_size_65: size_65
+	$(Q)echo "size $(BUILD_DIR)/libmldsa65.a"
+	$(Q)$(SIZE) $(BUILD_DIR)/libmldsa65.a | (read header; echo "$$header"; awk '$$5 != 0' | sort -k5 -n -r)
+
+run_size_87: size_87
+	$(Q)echo "size $(BUILD_DIR)/libmldsa87.a"
+	$(Q)$(SIZE) $(BUILD_DIR)/libmldsa87.a | (read header; echo "$$header"; awk '$$5 != 0' | sort -k5 -n -r)
+
+
+run_size: \
+	run_size_44 \
+	run_size_65 \
+	run_size_87
+
 
 clean:
 	-$(RM) -rf *.gcno *.gcda *.lcov *.o *.so
