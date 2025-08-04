@@ -157,6 +157,18 @@
 */
 
 /******************************************************************************
+ * Name:        MLD_CONFIG_CT_TESTING_ENABLED
+ *
+ * Description: If set, mldsa-native annotates data as secret / public using
+ *              valgrind's annotations VALGRIND_MAKE_MEM_UNDEFINED and
+ *              VALGRIND_MAKE_MEM_DEFINED, enabling various checks for secret-
+ *              dependent control flow of variable time execution (depending
+ *              on the exact version of valgrind installed).
+ *
+ *****************************************************************************/
+/* #define MLD_CONFIG_CT_TESTING_ENABLED */
+
+/******************************************************************************
  * Name:        MLD_CONFIG_NO_ASM
  *
  * Description: If this option is set, mldsa-native will be built without

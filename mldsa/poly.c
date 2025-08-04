@@ -494,6 +494,7 @@ __contract__(
 )
 {
   unsigned int ctr, pos;
+  int t_valid;
   uint32_t t0, t1;
 
 /* TODO: CBMC proof based on mld_rej_uniform_eta2_native */
@@ -534,23 +535,36 @@ __contract__(
     t0 = buf[pos] & 0x0F;
     t1 = buf[pos++] >> 4;
 
+    /* Constant time: The inputs and outputs to the rejection sampling are
+     * secret. However, it is fine to leak which coefficients have been
+     * rejected. For constant-time testing, we declassify the result of
+     * the comparison.
+     */
 #if MLDSA_ETA == 2
-    if (t0 < 15)
+    t_valid = t0 < 15;
+    MLD_CT_TESTING_DECLASSIFY(&t_valid, sizeof(int));
+    if (t_valid) /* t0 < 15 */
     {
       t0 = t0 - (205 * t0 >> 10) * 5;
       a[ctr++] = 2 - (int32_t)t0;
     }
-    if (t1 < 15 && ctr < target)
+    t_valid = t1 < 15;
+    MLD_CT_TESTING_DECLASSIFY(&t_valid, sizeof(int));
+    if (t_valid && ctr < target) /* t1 < 15 */
     {
       t1 = t1 - (205 * t1 >> 10) * 5;
       a[ctr++] = 2 - (int32_t)t1;
     }
 #elif MLDSA_ETA == 4
-    if (t0 < 9)
+    t_valid = t0 < 9;
+    MLD_CT_TESTING_DECLASSIFY(&t_valid, sizeof(int));
+    if (t_valid) /* t0 < 9 */
     {
       a[ctr++] = 4 - (int32_t)t0;
     }
-    if (t1 < 9 && ctr < target)
+    t_valid = t1 < 9; /* t1 < 9 */
+    MLD_CT_TESTING_DECLASSIFY(&t_valid, sizeof(int));
+    if (t_valid && ctr < target)
     {
       a[ctr++] = 4 - (int32_t)t1;
     }
