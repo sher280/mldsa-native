@@ -8,10 +8,10 @@
 #include <stdint.h>
 #include "cbmc.h"
 #include "common.h"
+#include "ct.h"
 
 #define MLD_2_POW_D (1 << MLDSA_D)
 
-#define mld_power2round MLD_NAMESPACE(power2round)
 /*************************************************
  * Name:        mld_power2round
  *
@@ -26,7 +26,7 @@
  * Reference: In the reference implementation, a1 is passed as a
  * return value instead.
  **************************************************/
-void mld_power2round(int32_t *a0, int32_t *a1, int32_t a)
+static MLD_INLINE void mld_power2round(int32_t *a0, int32_t *a1, int32_t a)
 __contract__(
   requires(memory_no_alias(a0, sizeof(int32_t)))
   requires(memory_no_alias(a1, sizeof(int32_t)))
@@ -36,10 +36,12 @@ __contract__(
   ensures(*a0 > -(MLD_2_POW_D/2) && *a0 <= (MLD_2_POW_D/2))
   ensures(*a1 >= 0 && *a1 <= (MLDSA_Q - 1) / MLD_2_POW_D)
   ensures((*a1 * MLD_2_POW_D + *a0 - a) % MLDSA_Q == 0)
-);
+)
+{
+  *a1 = (a + (1 << (MLDSA_D - 1)) - 1) >> MLDSA_D;
+  *a0 = a - (*a1 << MLDSA_D);
+}
 
-
-#define mld_decompose MLD_NAMESPACE(decompose)
 /*************************************************
  * Name:        mld_decompose
  *
@@ -56,7 +58,7 @@ __contract__(
  *
  * Reference: a1 is passed as a return value instead
  **************************************************/
-void mld_decompose(int32_t *a0, int32_t *a1, int32_t a)
+static MLD_INLINE void mld_decompose(int32_t *a0, int32_t *a1, int32_t a)
 __contract__(
   requires(memory_no_alias(a0, sizeof(int32_t)))
   requires(memory_no_alias(a1, sizeof(int32_t)))
@@ -68,9 +70,32 @@ __contract__(
   ensures(*a0 >= -MLDSA_GAMMA2  && *a0 <= MLDSA_GAMMA2)
   ensures(*a1 >= 0 && *a1 < (MLDSA_Q-1)/(2*MLDSA_GAMMA2))
   ensures((*a1 * 2 * MLDSA_GAMMA2 + *a0 - a) % MLDSA_Q == 0)
-);
+)
+{
+  *a1 = (a + 127) >> 7;
+  /* We know a >= 0 and a < MLDSA_Q, so... */
+  cassert(*a1 >= 0 && *a1 <= 65472);
 
-#define mld_make_hint MLD_NAMESPACE(make_hint)
+#if MLDSA_MODE == 2
+  *a1 = (*a1 * 11275 + (1 << 23)) >> 24;
+  cassert(*a1 >= 0 && *a1 <= 44);
+
+  *a1 = mld_ct_sel_int32(0, *a1, mld_ct_cmask_neg_i32(43 - *a1));
+  cassert(*a1 >= 0 && *a1 <= 43);
+#else /* MLDSA_MODE == 2 */
+  *a1 = (*a1 * 1025 + (1 << 21)) >> 22;
+  cassert(*a1 >= 0 && *a1 <= 16);
+
+  *a1 &= 15;
+  cassert(*a1 >= 0 && *a1 <= 15);
+
+#endif /* MLDSA_MODE != 2 */
+
+  *a0 = a - *a1 * 2 * MLDSA_GAMMA2;
+  *a0 = mld_ct_sel_int32(*a0 - MLDSA_Q, *a0,
+                         mld_ct_cmask_neg_i32((MLDSA_Q - 1) / 2 - *a0));
+}
+
 /*************************************************
  * Name:        mld_make_hint
  *
@@ -82,12 +107,20 @@ __contract__(
  *
  * Returns 1 if overflow, 0 otherwise
  **************************************************/
-unsigned int mld_make_hint(int32_t a0, int32_t a1)
+static MLD_INLINE unsigned int mld_make_hint(int32_t a0, int32_t a1)
 __contract__(
   ensures(return_value >= 0 && return_value <= 1)
-);
+)
+{
+  if (a0 > MLDSA_GAMMA2 || a0 < -MLDSA_GAMMA2 ||
+      (a0 == -MLDSA_GAMMA2 && a1 != 0))
+  {
+    return 1;
+  }
 
-#define mld_use_hint MLD_NAMESPACE(use_hint)
+  return 0;
+}
+
 /*************************************************
  * Name:        mld_use_hint
  *
@@ -98,11 +131,41 @@ __contract__(
  *
  * Returns corrected high bits.
  **************************************************/
-int32_t mld_use_hint(int32_t a, unsigned int hint)
+static MLD_INLINE int32_t mld_use_hint(int32_t a, unsigned int hint)
 __contract__(
   requires(hint >= 0 && hint <= 1)
   requires(a >= 0 && a < MLDSA_Q)
   ensures(return_value >= 0 && return_value < (MLDSA_Q-1)/(2*MLDSA_GAMMA2))
-);
+)
+{
+  int32_t a0, a1;
+
+  mld_decompose(&a0, &a1, a);
+  if (hint == 0)
+  {
+    return a1;
+  }
+
+#if MLDSA_MODE == 2
+  if (a0 > 0)
+  {
+    return (a1 == 43) ? 0 : a1 + 1;
+  }
+  else
+  {
+    return (a1 == 0) ? 43 : a1 - 1;
+  }
+#else  /* MLDSA_MODE == 2 */
+  if (a0 > 0)
+  {
+    return (a1 + 1) & 15;
+  }
+  else
+  {
+    return (a1 - 1) & 15;
+  }
+#endif /* MLDSA_MODE != 2 */
+}
+
 
 #endif /* !MLD_ROUNDING_H */
