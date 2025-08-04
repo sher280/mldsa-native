@@ -19,6 +19,20 @@
 #define MAXMLEN 2048
 #define CTXLEN 0
 
+#define CHECK(x)                                              \
+  do                                                          \
+  {                                                           \
+    int r;                                                    \
+    r = (x);                                                  \
+    if (!r)                                                   \
+    {                                                         \
+      fprintf(stderr, "ERROR (%s,%d)\n", __FILE__, __LINE__); \
+      return 1;                                               \
+    }                                                         \
+  } while (0)
+
+
+
 static void print_hex(const uint8_t *data, size_t size)
 {
   size_t i;
@@ -69,13 +83,13 @@ int main(void)
     shake256(coins, sizeof(coins), coins, sizeof(coins));
     m = coins + MLDSA_SEEDBYTES + MLDSA_RNDBYTES;
 
-    crypto_sign_keypair_internal(pk, sk, coins);
+    CHECK(crypto_sign_keypair_internal(pk, sk, coins) == 0);
 
     print_hex(pk, CRYPTO_PUBLICKEYBYTES);
     print_hex(sk, CRYPTO_SECRETKEYBYTES);
 
-    crypto_sign_signature_internal(s, &slen, m, i, pre, sizeof(pre),
-                                   coins + MLDSA_SEEDBYTES, sk, 0);
+    CHECK(crypto_sign_signature_internal(s, &slen, m, i, pre, sizeof(pre),
+                                         coins + MLDSA_SEEDBYTES, sk, 0) == 0);
 
     print_hex(s, slen);
 

@@ -123,6 +123,7 @@ __contract__(
 #endif /* MLDSA_MODE == 5 */
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
                                  const uint8_t seed[MLDSA_SEEDBYTES])
 {
@@ -193,6 +194,7 @@ int crypto_sign_keypair_internal(uint8_t *pk, uint8_t *sk,
   return 0;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
   uint8_t seed[MLDSA_SEEDBYTES];
@@ -291,6 +293,7 @@ __contract__(
  *            step into a distinct function here in order to improve
  *            efficiency of CBMC proof.
  **************************************************/
+MLD_MUST_CHECK_RETURN_VALUE
 static int mld_attempt_signature_generation(
     uint8_t *sig, const uint8_t *mu, const uint8_t rhoprime[MLDSA_CRHBYTES],
     uint16_t nonce, const mld_polyvecl mat[MLDSA_K], const mld_polyvecl *s1,
@@ -471,7 +474,7 @@ __contract__(
 
   return 0; /* success */
 }
-
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
                                    const uint8_t *m, size_t mlen,
                                    const uint8_t *pre, size_t prelen,
@@ -565,6 +568,7 @@ int crypto_sign_signature_internal(uint8_t *sig, size_t *siglen,
   }
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
                           size_t mlen, const uint8_t *ctx, size_t ctxlen,
                           const uint8_t *sk)
@@ -613,6 +617,7 @@ int crypto_sign_signature(uint8_t *sig, size_t *siglen, const uint8_t *m,
   return result;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
                                 const uint8_t mu[MLDSA_CRHBYTES],
                                 const uint8_t *sk)
@@ -636,6 +641,7 @@ int crypto_sign_signature_extmu(uint8_t *sig, size_t *siglen,
   return result;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
                 const uint8_t *ctx, size_t ctxlen, const uint8_t *sk)
 {
@@ -656,6 +662,7 @@ int crypto_sign(uint8_t *sm, size_t *smlen, const uint8_t *m, size_t mlen,
   return ret;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
                                 const uint8_t *m, size_t mlen,
                                 const uint8_t *pre, size_t prelen,
@@ -763,6 +770,7 @@ int crypto_sign_verify_internal(const uint8_t *sig, size_t siglen,
   return 0;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
                        size_t mlen, const uint8_t *ctx, size_t ctxlen,
                        const uint8_t *pk)
@@ -795,6 +803,7 @@ int crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
   return result;
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,
                              const uint8_t mu[MLDSA_CRHBYTES],
                              const uint8_t *pk)
@@ -803,6 +812,7 @@ int crypto_sign_verify_extmu(const uint8_t *sig, size_t siglen,
                                      pk, 1);
 }
 
+MLD_MUST_CHECK_RETURN_VALUE
 int crypto_sign_open(uint8_t *m, size_t *mlen, const uint8_t *sm, size_t smlen,
                      const uint8_t *ctx, size_t ctxlen, const uint8_t *pk)
 {
