@@ -190,6 +190,14 @@ jobs:
            c23: True
            opt: all
            examples: False
+         - name: gcc-15
+           shell: ci_gcc15
+           # TODO: Add this once gcc15 is supported in nix on aarch64-Darwin
+           darwin: False
+           c17: True
+           c23: True
+           opt: all
+           examples: true
          - name: clang-18
            shell: ci_clang18
            darwin: True
@@ -344,7 +352,7 @@ jobs:
         with:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
           compile_mode: native
-          nix-shell: ci_valgrind-varlat_gcc14
+          nix-shell: ci_valgrind-varlat_gcc15
           nix-cache: false
           opt: all
           cflags: "${{ matrix.cflags }}"
