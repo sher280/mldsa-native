@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) The mldsa-native project authors
 # SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
@@ -8,28 +9,78 @@
 #
 # Invokes `acvp_mldsa{lvl}` under the hood.
 
+import argparse
 import os
 import json
 import sys
 import subprocess
+import urllib.request
+from pathlib import Path
 
 # Check if we need to use a wrapper for execution (e.g. QEMU)
 exec_prefix = os.environ.get("EXEC_WRAPPER", "")
 exec_prefix = [exec_prefix] if exec_prefix != "" else []
 
-acvp_dir = "test/acvp_data"
-acvp_keygen_json = f"{acvp_dir}/acvp_keygen_internalProjection.json"
-acvp_sigGen_json = f"{acvp_dir}/acvp_sigGen_internalProjection.json"
-acvp_sigVer_json = f"{acvp_dir}/acvp_sigVer_internalProjection.json"
 
-with open(acvp_keygen_json, "r") as f:
-    acvp_keygen_data = json.load(f)
+def download_acvp_files(version="v1.1.0.40"):
+    """Download ACVP test files for the specified version if not present."""
+    base_url = f"https://raw.githubusercontent.com/usnistgov/ACVP-Server/{version}/gen-val/json-files"
 
-with open(acvp_sigGen_json, "r") as f:
-    acvp_sigGen_data = json.load(f)
+    # Files we need to download for ML-KEM
+    files_to_download = [
+        "ML-DSA-keyGen-FIPS204/internalProjection.json",
+        "ML-DSA-sigGen-FIPS204/internalProjection.json",
+        "ML-DSA-sigGen-FIPS204/internalProjection.json",
+    ]
 
-with open(acvp_sigVer_json, "r") as f:
-    acvp_sigVer_data = json.load(f)
+    # Create directory structure
+    data_dir = Path(f"test/.acvp-data/{version}/files")
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    for file_path in files_to_download:
+        local_file = data_dir / file_path
+        local_file.parent.mkdir(parents=True, exist_ok=True)
+
+        if not local_file.exists():
+            url = f"{base_url}/{file_path}"
+            print(f"Downloading {file_path}...", file=sys.stderr)
+            try:
+                urllib.request.urlretrieve(url, local_file)
+                # Verify the file is valid JSON
+                with open(local_file, "r") as f:
+                    json.load(f)
+            except json.JSONDecodeError as e:
+                print(
+                    f"Error: Downloaded file {file_path} is not valid JSON: {e}",
+                    file=sys.stderr,
+                )
+                local_file.unlink(missing_ok=True)
+                return False
+            except Exception as e:
+                print(f"Error downloading {file_path}: {e}", file=sys.stderr)
+                local_file.unlink(missing_ok=True)
+                return False
+
+    return True
+
+
+def loadAcvpData(internalProjection):
+    with open(internalProjection, "r") as f:
+        internalProjectionData = json.load(f)
+    return (internalProjection, internalProjectionData)
+
+
+def loadDefaultAcvpData(version="v1.1.0.40"):
+    data_dir = f"test/.acvp-data/{version}/files"
+    acvp_jsons_for_version = [
+        f"{data_dir}/ML-DSA-keyGen-FIPS204/internalProjection.json",
+        f"{data_dir}/ML-DSA-sigGen-FIPS204/internalProjection.json",
+        f"{data_dir}/ML-DSA-sigGen-FIPS204/internalProjection.json",
+    ]
+    acvp_data = []
+    for internalProjection in acvp_jsons_for_version:
+        acvp_data.append(loadAcvpData(internalProjection))
+    return acvp_data
 
 
 def err(msg, **kwargs):
@@ -173,14 +224,62 @@ def run_sigVer_test(tg, tc):
     info("OK")
 
 
-for tg in acvp_keygen_data["testGroups"]:
-    for tc in tg["tests"]:
-        run_keyGen_test(tg, tc)
+def runTestSingle(internalProjectionName, internalProjection):
+    info(f"Running ACVP tests for {internalProjectionName}")
 
-for tg in acvp_sigGen_data["testGroups"]:
-    for tc in tg["tests"]:
-        run_sigGen_test(tg, tc)
+    assert internalProjection["algorithm"] == "ML-DSA"
+    assert (
+        internalProjection["mode"] == "keyGen"
+        or internalProjection["mode"] == "sigGen"
+        or internalProjection["mode"] == "sigVer"
+    )
 
-for tg in acvp_sigVer_data["testGroups"]:
-    for tc in tg["tests"]:
-        run_sigVer_test(tg, tc)
+    # copy top level fields into the results
+    results = internalProjection.copy()
+
+    results["testGroups"] = []
+    for tg in internalProjection["testGroups"]:
+        tgResult = {
+            "tgId": tg["tgId"],
+            "tests": [],
+        }
+        results["testGroups"].append(tgResult)
+        for tc in tg["tests"]:
+            if internalProjection["mode"] == "keyGen":
+                result = run_keyGen_test(tg, tc)
+            elif internalProjection["mode"] == "sigGen":
+                result = run_sigGen_test(tg, tc)
+            elif internalProjection["mode"] == "sigVer":
+                result = run_sigVer_test(tg, tc)
+            tgResult["tests"].append(result)
+
+
+def runTest(data):
+    for internalProjectionName, internalProjection in data:
+        runTestSingle(internalProjectionName, internalProjection)
+    info("ALL GOOD!")
+
+
+def test(version="v1.1.0.40"):
+    # load data from downloaded files
+    data = loadDefaultAcvpData(version)
+
+    runTest(data)
+
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--version",
+    "-v",
+    default="v1.1.0.40",
+    help="ACVP test vector version (default: v1.1.0.40)",
+)
+args = parser.parse_args()
+
+# Download files if needed
+if not download_acvp_files(args.version):
+    print("Failed to download ACVP test files", file=sys.stderr)
+    sys.exit(1)
+
+test(args.version)
