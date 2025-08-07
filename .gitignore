@@ -2,3 +2,5 @@
 
 test/build
 .direnv
+# Downloaded ACVP test data
+test/.acvp-data/
